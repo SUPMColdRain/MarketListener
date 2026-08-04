@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "run_id": "run-20260803-001",
+  "provider": "example_provider",
+  "status": "PASS",
+  "started_at": "2026-08-03T10:00:00+08:00",
+  "completed_at": "2026-08-03T10:00:02+08:00",
+  "capabilities": [{"name": "cn_stock_15m", "status": "PASS", "detail": "sample probe"}]
+}

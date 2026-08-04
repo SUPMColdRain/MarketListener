@@ -1,0 +1,15 @@
+[
+  {"id": "canonical-valid", "schema": "canonical-instrument.schema.json", "fixture": "valid/canonical-instrument.json", "valid": true},
+  {"id": "canonical-invalid-code", "schema": "canonical-instrument.schema.json", "fixture": "invalid/canonical-instrument-invalid-code.json", "valid": false},
+  {"id": "bar-valid", "schema": "bar.schema.json", "fixture": "valid/bar.json", "valid": true},
+  {"id": "bar-invalid-timestamp", "schema": "bar.schema.json", "fixture": "invalid/bar-invalid-timestamp.json", "valid": false},
+  {"id": "bar-invalid-period", "schema": "bar.schema.json", "fixture": "invalid/bar-invalid-period.json", "valid": false},
+  {"id": "bar-missing-source", "schema": "bar.schema.json", "fixture": "invalid/bar-missing-source.json", "valid": false},
+  {"id": "bar-invalid-ohlc", "schema": "bar.schema.json", "fixture": "invalid/bar-invalid-ohlc.json", "valid": false},
+  {"id": "bar-valid-mixed-offsets", "schema": "bar.schema.json", "fixture": "valid/bar-valid-mixed-offsets.json", "valid": true},
+  {"id": "provider-result-valid", "schema": "provider-run-result.schema.json", "fixture": "valid/provider-run-result.json", "valid": true},
+  {"id": "quality-issue-valid", "schema": "quality-issue.schema.json", "fixture": "valid/quality-issue.json", "valid": true},
+  {"id": "market-package-valid", "schema": "market-package-manifest.schema.json", "fixture": "valid/market-package-manifest.json", "valid": true},
+  {"id": "strategy-package-valid", "schema": "strategy-package-manifest.schema.json", "fixture": "valid/strategy-package-manifest.json", "valid": true},
+  {"id": "strategy-result-valid", "schema": "strategy-result.schema.json", "fixture": "valid/strategy-result.json", "valid": true}
+]

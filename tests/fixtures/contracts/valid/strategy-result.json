@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "strategy_id": "watchlist.example",
+  "strategy_version": "1.0.0",
+  "parameter_version": "1",
+  "data_version": "market-20260803-001",
+  "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": "600519"},
+  "signal_time": "2026-08-03T10:00:00+08:00",
+  "trigger_condition": "close crossed configured observation threshold",
+  "observation_reason": "Review with independent research before any decision.",
+  "risk_tags": ["NOT_INVESTMENT_ADVICE", "DATA_CUTOFF_APPLIES"],
+  "run_status": "PASS"
+}

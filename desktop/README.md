@@ -1,0 +1,18 @@
+# desktop（数据生产端）
+
+数据生产端包含 Provider 探针、标准化、质量检查、行情包与签名的当前代码基线。Day 0 已停止且没有真实 Provider `PASS`；正式任务从 `../START_HERE.md` 和 `../STATUS.md` 启动，完整任务边界见 `../Plan_full.md`。
+
+## 环境
+
+- Python 3.11（虚拟环境位于 `desktop/.venv`，不入库）
+
+## 命令
+
+```powershell
+python -m venv desktop\.venv
+desktop\.venv\Scripts\python -m pip install -e "desktop[dev]"
+desktop\.venv\Scripts\python -m market_monitor --version
+desktop\.venv\Scripts\python -m pytest desktop\tests
+```
+
+`Plan.md` 的 D0 编号仅保留为历史记录，不是后续会话的自动执行队列。

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "issue_id": "issue-001",
+  "category": "GAP",
+  "severity": "WARNING",
+  "message": "Expected interval is missing.",
+  "detected_at": "2026-08-03T10:05:00+08:00",
+  "partition_id": "CN-SSE-STOCK-15m-20260803"
+}

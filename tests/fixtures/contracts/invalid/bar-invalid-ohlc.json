@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": "600519"},
+  "period": "15m", "trading_day": "2026-08-03", "bar_open_time": "2026-08-03T09:30:00+08:00", "bar_close_time": "2026-08-03T09:45:00+08:00", "timezone": "Asia/Shanghai",
+  "open": 100.0, "high": 101.0, "low": 99.0, "close": 102.0, "volume": 1000.0, "amount": 101000.0, "open_interest": null, "price_mode": "RAW",
+  "source": {"provider": "example_provider", "source_symbol": "600519.SS", "retrieved_at": "2026-08-03T10:00:00+08:00"}, "source_period": "15m", "quality_status": "PASS"
+}

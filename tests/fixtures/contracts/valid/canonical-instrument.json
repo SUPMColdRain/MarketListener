@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": "600519"},
+  "display_name": "Example stock",
+  "currency": "CNY",
+  "timezone": "Asia/Shanghai",
+  "source_symbols": [{"provider": "example_provider", "symbol": "600519.SS"}]
+}

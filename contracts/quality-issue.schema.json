@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/quality-issue.schema.json",
+  "title": "Data quality issue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "issue_id", "category", "severity", "message", "detected_at"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "issue_id": {"type": "string", "minLength": 1},
+    "category": {"enum": ["TIMESTAMP", "OHLC", "VOLUME", "GAP", "DUPLICATE", "SOURCE", "SCHEMA"]},
+    "severity": {"enum": ["INFO", "WARNING", "ERROR", "QUARANTINED"]},
+    "message": {"type": "string", "minLength": 1},
+    "detected_at": {"type": "string", "format": "date-time"},
+    "instrument_key": {"type": "object"},
+    "partition_id": {"type": "string", "minLength": 1}
+  }
+}

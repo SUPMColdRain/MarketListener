@@ -1,0 +1,12 @@
+{
+  "package_id": "market-20260803-001",
+  "schema_version": 1,
+  "generated_at": "2026-08-03T10:10:00+08:00",
+  "minimum_app_version": "0.1.0",
+  "partitions": [{
+    "partition_id": "CN-SSE-STOCK-15m-20260803",
+    "data_cutoff": "2026-08-03T10:00:00+08:00",
+    "files": [{"name": "bars/CN-SSE-STOCK-15m-20260803.jsonl", "bytes": 1234, "row_count": 4, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]
+  }],
+  "source_run_summaries": [{"run_id": "run-20260803-001", "provider": "example_provider", "status": "PASS"}]
+}

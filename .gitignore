@@ -1,0 +1,35 @@
+# Python
+desktop/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+artifacts/
+reports/
+data/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+local.properties
+*.pem
+*.key
+*.p12
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.kotlin/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/canonical-instrument.schema.json",
+  "title": "Canonical instrument",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "instrument_key", "display_name", "currency", "timezone"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "instrument_key": {"$ref": "#/$defs/instrumentKey"},
+    "display_name": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "timezone": {"type": "string", "pattern": "^[A-Za-z_]+/[A-Za-z_]+(?:/[A-Za-z_]+)*$"},
+    "source_symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider", "symbol"],
+        "properties": {
+          "provider": {"type": "string", "minLength": 1},
+          "symbol": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "instrumentKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["country_or_market", "exchange", "asset_type", "code"],
+      "properties": {
+        "country_or_market": {"type": "string", "pattern": "^[A-Z]{2,12}$"},
+        "exchange": {"type": "string", "pattern": "^[A-Z0-9_-]{2,16}$"},
+        "asset_type": {"enum": ["STOCK", "INDEX", "FUTURE", "OPTION", "FUND", "ETF", "BOND", "COMMODITY", "CRYPTO"]},
+        "code": {"type": "string", "pattern": "^[A-Z0-9._-]+$"}
+      }
+    }
+  }
+}

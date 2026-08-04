@@ -1,0 +1,10 @@
+{
+  "package_id": "strategy-watchlist-001",
+  "schema_version": 1,
+  "strategy_id": "watchlist.example",
+  "strategy_version": "1.0.0",
+  "entrypoint": "strategy.main:run",
+  "parameter_schema": {"type": "object", "properties": {"window": {"type": "integer", "minimum": 2}}},
+  "test_vectors_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "minimum_app_version": "0.1.0"
+}
