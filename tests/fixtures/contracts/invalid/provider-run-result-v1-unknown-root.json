@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "run_id": "legacy-provider-invalid-root",
+  "provider": "legacy_provider",
+  "status": "PASS",
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [],
+  "future_v1_field": "must be rejected"
+}

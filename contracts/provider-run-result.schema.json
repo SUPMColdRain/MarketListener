@@ -1,31 +1,149 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://marketlistener.local/contracts/provider-run-result.schema.json",
-  "title": "Provider run result",
+  "title": "Provider capability run result v2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "run_id", "provider", "status", "started_at", "completed_at", "capabilities"],
+  "required": ["schema_version", "run_id", "source", "started_at", "completed_at", "capabilities"],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "run_id": {"type": "string", "minLength": 1},
-    "provider": {"type": "string", "minLength": 1},
-    "status": {"enum": ["PASS", "FAILED", "UNSUPPORTED"]},
+    "source": {"$ref": "#/$defs/source"},
     "started_at": {"type": "string", "format": "date-time"},
     "completed_at": {"type": "string", "format": "date-time"},
-    "capabilities": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "status"],
+    "capabilities": {"type": "array", "items": {"$ref": "#/$defs/capability"}},
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_schema_version", "legacy_provider_status"],
+      "properties": {
+        "from_schema_version": {"const": 1},
+        "legacy_provider_status": {"enum": ["PASS", "FAILED", "UNSUPPORTED"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"required": ["migration"]},
+      "then": {
         "properties": {
-          "name": {"type": "string", "minLength": 1},
-          "status": {"enum": ["PASS", "FAILED", "UNSUPPORTED"]},
-          "detail": {"type": "string"},
-          "row_count": {"type": "integer", "minimum": 0},
-          "earliest": {"type": "string", "format": "date-time"},
-          "latest": {"type": "string", "format": "date-time"}
+          "source": {
+            "allOf": [
+              {"required": ["legacy_name"]},
+              {"properties": {"id": {"pattern": "^legacy-"}}}
+            ]
+          },
+          "capabilities": {
+            "items": {
+              "anyOf": [
+                {"$ref": "#/$defs/migrated_capability"},
+                {"$ref": "#/$defs/migration_root_error_capability"}
+              ]
+            },
+            "contains": {"$ref": "#/$defs/migration_root_error_capability"},
+            "minContains": 0,
+            "maxContains": 1
+          }
         }
+      },
+      "else": {
+        "properties": {
+          "source": {
+            "allOf": [
+              {"not": {"required": ["legacy_name"]}},
+              {"properties": {"id": {"not": {"pattern": "^(?:legacy|migration-root-error)-"}}}}
+            ]
+          },
+          "capabilities": {"items": {"$ref": "#/$defs/normal_capability"}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "description"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+        "display_name": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "website": {"type": "string", "format": "uri"},
+        "legacy_name": {"type": "string", "minLength": 1}
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "market", "asset_type"],
+      "properties": {
+        "operation": {"enum": ["health_check", "instruments", "bars", "indicators", "calendar", "other"]},
+        "market": {"enum": ["GLOBAL", "CN", "HK", "US"]},
+        "asset_type": {"enum": ["GENERAL", "STOCK", "ETF", "INDEX", "FUTURE"]},
+        "period": {"type": "string", "pattern": "\\S"},
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"},
+        "instrument": {"type": "string", "pattern": "\\S"},
+        "parameters": {
+          "type": "object",
+          "propertyNames": {"pattern": "\\S"},
+          "additionalProperties": {"type": "string", "pattern": "\\S"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"operation": {"const": "bars"}}},
+          "then": {
+            "required": ["period"],
+            "properties": {
+              "market": {"not": {"const": "GLOBAL"}},
+              "asset_type": {"not": {"const": "GENERAL"}}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"operation": {"enum": ["health_check", "calendar"]}}},
+          "then": {
+            "not": {"anyOf": [{"required": ["period"]}, {"required": ["instrument"]}, {"required": ["start_date"]}, {"required": ["end_date"]}]},
+            "properties": {"asset_type": {"const": "GENERAL"}}
+          }
+        },
+        {
+          "if": {"required": ["start_date"]},
+          "then": {"required": ["end_date"]}
+        },
+        {
+          "if": {"required": ["end_date"]},
+          "then": {"required": ["start_date"]}
+        }
+      ]
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "request"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+        "description": {"type": "string", "minLength": 1},
+        "request": {"$ref": "#/$defs/request"},
+        "required_permissions": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "legacy_name": {"type": "string", "minLength": 1},
+        "legacy_occurrence": {"type": "integer", "minimum": 0}
+      },
+      "allOf": [
+        {"if": {"required": ["legacy_name"]}, "then": {"required": ["legacy_occurrence"]}},
+        {"if": {"required": ["legacy_occurrence"]}, "then": {"required": ["legacy_name"]}}
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {
+        "summary": {"type": "string", "minLength": 1},
+        "row_count": {"type": "integer", "minimum": 0},
+        "earliest": {"type": "string", "format": "date-time"},
+        "latest": {"type": "string", "format": "date-time"}
       }
     },
     "error": {
@@ -36,6 +154,118 @@
         "category": {"enum": ["AUTH", "NETWORK", "RATE_LIMIT", "PROVIDER", "NO_COVERAGE", "CONFIGURATION", "UNKNOWN"]},
         "message": {"type": "string", "minLength": 1}
       }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registration", "status", "probed_at", "evidence"],
+      "properties": {
+        "registration": {"$ref": "#/$defs/registration"},
+        "status": {"enum": ["PASS", "FAILED", "UNSUPPORTED", "BLOCKED"]},
+        "probed_at": {"type": "string", "format": "date-time"},
+        "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "error": {"$ref": "#/$defs/error"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "PASS"}}},
+          "then": {"not": {"required": ["error"]}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "BLOCKED"}}},
+          "then": {"anyOf": [{"required": ["limitations"]}, {"required": ["error"]}]}
+        }
+      ]
+    },
+    "normal_capability": {
+      "allOf": [
+        {"$ref": "#/$defs/capability"},
+        {
+          "properties": {
+            "registration": {
+              "allOf": [
+                {"not": {"required": ["legacy_name"]}},
+                {"not": {"required": ["legacy_occurrence"]}},
+                {"properties": {"id": {"not": {"pattern": "^(?:legacy|migration-root-error)-"}}}}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "migrated_capability": {
+      "allOf": [
+        {"$ref": "#/$defs/capability"},
+        {
+          "properties": {
+            "registration": {
+              "allOf": [
+                {"required": ["legacy_name", "legacy_occurrence"]},
+                {"properties": {"id": {"pattern": "^legacy-"}}}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "migration_root_error_capability": {
+      "allOf": [
+        {"$ref": "#/$defs/capability"},
+        {
+          "required": ["error"],
+          "properties": {
+            "status": {"const": "FAILED"},
+            "registration": {
+              "allOf": [
+                {"not": {"required": ["legacy_name"]}},
+                {"not": {"required": ["legacy_occurrence"]}},
+                {
+                  "required": ["id", "description", "request"],
+                  "properties": {
+                    "id": {"pattern": "^migration-root-error-"},
+                    "description": {"const": "Migrated v1 root-level error"},
+                    "request": {
+                      "allOf": [
+                        {
+                          "properties": {
+                            "operation": {"const": "other"},
+                            "market": {"const": "GLOBAL"},
+                            "asset_type": {"const": "GENERAL"}
+                          }
+                        },
+                        {
+                          "not": {
+                            "anyOf": [
+                              {"required": ["period"]},
+                              {"required": ["start_date"]},
+                              {"required": ["end_date"]},
+                              {"required": ["instrument"]},
+                              {"required": ["parameters"]}
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "evidence": {
+              "required": ["summary"],
+              "properties": {"summary": {"const": "legacy adapter returned no detail"}},
+              "not": {
+                "anyOf": [
+                  {"required": ["row_count"]},
+                  {"required": ["earliest"]},
+                  {"required": ["latest"]}
+                ]
+              }
+            }
+          },
+          "not": {"required": ["limitations"]}
+        }
+      ]
     }
   }
 }

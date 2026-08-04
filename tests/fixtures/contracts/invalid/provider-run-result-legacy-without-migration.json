@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "run_id": "ordinary-spoof",
+  "source": {
+    "id": "fixture-provider",
+    "display_name": "Fixture Provider",
+    "description": "Ordinary source pretending to be migrated",
+    "legacy_name": "legacy_provider"
+  },
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": []
+}

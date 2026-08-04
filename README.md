@@ -18,7 +18,7 @@
 
 ## 当前开发状态
 
-正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受。当前第一项 `READY` 任务为 `FULL-100`（Provider Contract v2）。
+正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受；`FULL-100`（Provider Contract v2）已通过全新独立验收，Schema/Python 契约与 v1 迁移边界均有可复核证据。当前唯一可实施的 `READY` 任务是 `FULL-101`。
 
 Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliveries/D0-*` 是历史计划和证据，不是后续会话的自动待办队列。
 

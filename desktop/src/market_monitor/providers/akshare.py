@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
-from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError
+from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError, SourceDescription, _legacy_adapter_capability
 from .joinquant import _error_detail, _provider_error
 
 
 class AkShareProvider(Provider):
     name = "akshare"
+    source_description = SourceDescription(
+        "akshare", "AKShare", "Open-source China-market data interface adapter"
+    )
 
     def __init__(self, *, sdk: Any | None = None) -> None:
         self._sdk = sdk
@@ -19,7 +22,7 @@ class AkShareProvider(Provider):
             spot = self._spot()
         except ProviderError as error:
             raise error
-        capabilities = [Capability("health_check", CapabilityStatus.PASS, "A-share spot query succeeded", len(spot))]
+        capabilities = [_legacy_adapter_capability("health_check", CapabilityStatus.PASS, "A-share spot query succeeded", len(spot))]
         capabilities.append(self._market_breadth(spot))
         capabilities.append(self._price_limit_counts(spot))
         capabilities.append(self._fund_flow())
@@ -73,9 +76,9 @@ class AkShareProvider(Provider):
                 raise ProviderError(ErrorCategory.FIELD_CHANGE, "AkShare spot response has no 涨跌幅 field")
             up = sum(change > 0 for change in usable)
             down = sum(change < 0 for change in usable)
-            return Capability("a_share_rise_fall_counts", CapabilityStatus.PASS, f"up={up}; down={down}; flat={len(usable) - up - down}", len(usable))
+            return _legacy_adapter_capability("a_share_rise_fall_counts", CapabilityStatus.PASS, f"up={up}; down={down}; flat={len(usable) - up - down}", len(usable))
         except ProviderError as error:
-            return Capability("a_share_rise_fall_counts", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability("a_share_rise_fall_counts", CapabilityStatus.FAILED, _error_detail(error))
 
     def _price_limit_counts(self, records: list[Mapping[str, Any]]) -> Capability:
         try:
@@ -85,18 +88,18 @@ class AkShareProvider(Provider):
                 raise ProviderError(ErrorCategory.FIELD_CHANGE, "AkShare spot response has no 涨跌幅 field")
             limit_up = sum(change >= 9.9 for change in usable)
             limit_down = sum(change <= -9.9 for change in usable)
-            return Capability("a_share_price_limit_counts", CapabilityStatus.PASS, f"limit_up={limit_up}; limit_down={limit_down}", len(usable))
+            return _legacy_adapter_capability("a_share_price_limit_counts", CapabilityStatus.PASS, f"limit_up={limit_up}; limit_down={limit_down}", len(usable))
         except ProviderError as error:
-            return Capability("a_share_price_limit_counts", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability("a_share_price_limit_counts", CapabilityStatus.FAILED, _error_detail(error))
 
     def _fund_flow(self) -> Capability:
         try:
             response = self.fetch_indicators()
             if not response.records:
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "AkShare returned zero market fund-flow rows")
-            return Capability("market_fund_flow", CapabilityStatus.PASS, response.detail, len(response.records))
+            return _legacy_adapter_capability("market_fund_flow", CapabilityStatus.PASS, response.detail, len(response.records))
         except ProviderError as error:
-            return Capability("market_fund_flow", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability("market_fund_flow", CapabilityStatus.FAILED, _error_detail(error))
 
     def _api(self) -> Any:
         if self._sdk is not None:

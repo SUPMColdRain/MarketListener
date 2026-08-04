@@ -1,15 +1,15 @@
 # 正式开发实时状态
 
-> 本文件是唯一实时任务状态源。最后更新：2026-08-05（FULL-003 已由全新独立验收通过，FULL-100 已解锁）。
+> 本文件是唯一实时任务状态源。最后更新：2026-08-05（FULL-100 已由全新独立验收接受，FULL-101 已解锁为唯一首项 READY）。
 
 ## 当前入口
 
-- 当前任务：`FULL-100`
+- 当前任务：`FULL-101`
 - 当前状态：`READY`
-- 当前角色：等待独立实现任务领取 Provider Contract v2；实施前必须先运行 FULL-003 统一验证。
-- 当前证据：`docs/deliveries/FULL-003.md`（已验收基线）
-- 第一项 `READY`：`FULL-100`。
-- 本次状态更新：`FULL-003`=`ACCEPTED`；`FULL-100`=`READY`；其余任务保持原状态。
+- 当前角色：等待全新独立实现；仅可领取本项，完成后进入 `REVIEW`。
+- 当前证据：`docs/deliveries/FULL-100.md`（实现、验证、独立审查与独立验收记录）。
+- 第一项 `READY`：`FULL-101`（依赖 `FULL-100` 已独立验收）。
+- 本次状态更新：`FULL-100`=`ACCEPTED`，`FULL-101`=`READY`；其余任务保持原状态。
 
 ## 状态表
 
@@ -18,8 +18,8 @@
 | FULL-001 | ACCEPTED | 无 | 独立验收已重跑全部文档专项验证并通过，见交付记录“独立验收”章节 |
 | FULL-002 | ACCEPTED | 001 | 独立验收已重跑 Python/JDK/Gradle/SDK、锁定解析、安全扫描与 Android 构建并通过，见交付记录“独立验收”章节 |
 | FULL-003 | ACCEPTED | 002 | 全新独立验收已重跑成功、错版、受控失败和故障恢复路径；50 个精确锁项与全部 Python/Android 基线子项均通过，见 `docs/deliveries/FULL-003.md` |
-| FULL-100 | READY | 003 | 依赖已验收；等待独立实现 Provider Contract v2，并先成功运行 FULL-003 统一验证 |
-| FULL-101 | PENDING | 100 | 等待依赖 |
+| FULL-100 | ACCEPTED | 003 | 全新独立验收已重跑统一验证和 v2/v1 迁移专项反例，确认 Schema/Python 一致、迁移无损且普通 v2 不能伪造迁移身份；见 `docs/deliveries/FULL-100.md` |
+| FULL-101 | READY | 100 | 依赖已满足；等待独立实现本地凭据配置、日志脱敏、探针超时/重试和 CLI 退出码 |
 | FULL-110 | PENDING | 101 | 等待依赖 |
 | FULL-111 | PENDING | 101 | 等待依赖；真实凭据仅在本机配置 |
 | FULL-112 | PENDING | 101 | 等待依赖；真实凭据仅在本机配置 |

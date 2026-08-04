@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "run_id": "legacy-provider-invalid-capability",
+  "provider": "legacy_provider",
+  "status": "PASS",
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [
+    {"name": "legacy", "status": "PASS", "future_capability_field": "must be rejected"}
+  ]
+}

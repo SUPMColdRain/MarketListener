@@ -13,12 +13,14 @@ from uuid import uuid4
 
 from .base import (
     Capability,
+    CapabilityRegistration,
     CapabilityStatus,
     ErrorCategory,
+    ProviderOperation,
+    ProviderRequest,
     Provider,
     ProviderError,
     ProviderRunResult,
-    aggregate_status,
     utc_now,
 )
 
@@ -43,7 +45,7 @@ class ProbeReport:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "generated_at": self.generated_at,
             "providers": [result.to_dict() for result in self.results],
         }
@@ -95,23 +97,19 @@ class ProbeRunner:
         if not completed.wait(self._timeout_seconds):
             return ProviderRunResult(
                 run_id=run_id,
-                provider=provider.name,
-                status=CapabilityStatus.FAILED,
+                source=provider.source,
                 started_at=started_at,
                 completed_at=utc_now(),
-                capabilities=(),
-                error=ProviderError(
-                    ErrorCategory.NETWORK,
-                    f"provider probe exceeded {self._timeout_seconds:g} seconds",
-                ),
+                capabilities=(self._run_error_capability(
+                    ProviderError(ErrorCategory.NETWORK, f"provider probe exceeded {self._timeout_seconds:g} seconds")
+                ),),
             )
         try:
             if raised:
                 raise raised
             return ProviderRunResult(
                 run_id=run_id,
-                provider=provider.name,
-                status=aggregate_status(capabilities),
+                source=provider.source,
                 started_at=started_at,
                 completed_at=utc_now(),
                 capabilities=capabilities,
@@ -119,23 +117,37 @@ class ProbeRunner:
         except ProviderError as error:
             return ProviderRunResult(
                 run_id=run_id,
-                provider=provider.name,
-                status=CapabilityStatus.FAILED,
+                source=provider.source,
                 started_at=started_at,
                 completed_at=utc_now(),
-                capabilities=(),
-                error=ProviderError(error.category, redact_secrets(error.message)),
+                capabilities=(self._run_error_capability(
+                    ProviderError(error.category, redact_secrets(error.message))
+                ),),
             )
         except Exception as error:
             return ProviderRunResult(
                 run_id=run_id,
-                provider=provider.name,
-                status=CapabilityStatus.FAILED,
+                source=provider.source,
                 started_at=started_at,
                 completed_at=utc_now(),
-                capabilities=(),
-                error=ProviderError(ErrorCategory.UNKNOWN, redact_secrets(str(error))),
+                capabilities=(self._run_error_capability(
+                    ProviderError(ErrorCategory.UNKNOWN, redact_secrets(str(error)))
+                ),),
             )
+
+    @staticmethod
+    def _run_error_capability(error: ProviderError) -> Capability:
+        return Capability(
+            "provider-run-error",
+            CapabilityStatus.FAILED,
+            detail="provider probe did not return individual capability results",
+            registration=CapabilityRegistration(
+                "provider-run-error",
+                "Provider run-level error represented as an independent capability",
+                ProviderRequest(ProviderOperation.HEALTH_CHECK),
+            ),
+            error=error,
+        )
 
     @staticmethod
     def _human_report(report: ProbeReport) -> str:
@@ -143,11 +155,11 @@ class ProbeRunner:
         if not report.results:
             lines.extend(["No providers were registered.", ""])
         for result in report.results:
-            lines.extend([f"## {result.provider}: {result.status.value}", ""])
+            lines.extend([f"## {result.source.display_name}", ""])
             for capability in result.capabilities:
                 suffix = f" - {capability.detail}" if capability.detail else ""
                 lines.append(f"- {capability.name}: {capability.status.value}{suffix}")
-            if result.error:
-                lines.append(f"- error: {result.error.category.value} - {result.error.message}")
+                if capability.error:
+                    lines.append(f"  - error: {capability.error.category.value} - {capability.error.message}")
             lines.append("")
         return "\n".join(lines)

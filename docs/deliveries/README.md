@@ -9,6 +9,7 @@
 - [FULL-001](./FULL-001.md)：正式全周期计划、实时状态入口、启动协议和 ADR-0007/0008 的实现交付；当前状态以根目录 `STATUS.md` 为准。
 - [FULL-002](./FULL-002.md)：首个 Git 回退提交及 Python/JDK/Gradle/Android SDK/依赖锁定基线。
 - [FULL-003](./FULL-003.md)：已独立验收的统一 Python/Android 基线验证入口、Ruff 锁定与成功/受控失败/恢复证据。
+- [FULL-100](./FULL-100.md)：待独立审查的 Provider Contract v2、v1→v2 迁移、能力登记与共享契约夹具。
 
 - `D0-001.md` 至 `D0-050.md`：按任务记录的历史实现与验证。
 - `D0-060-D0-062.md`：历史审查、端到端验收和封板结论。

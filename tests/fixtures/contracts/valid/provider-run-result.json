@@ -1,9 +1,54 @@
 {
-  "schema_version": 1,
-  "run_id": "run-20260803-001",
-  "provider": "example_provider",
-  "status": "PASS",
-  "started_at": "2026-08-03T10:00:00+08:00",
-  "completed_at": "2026-08-03T10:00:02+08:00",
-  "capabilities": [{"name": "cn_stock_15m", "status": "PASS", "detail": "sample probe"}]
+  "schema_version": 2,
+  "run_id": "probe-fixture-001",
+  "source": {
+    "id": "fixture-provider",
+    "display_name": "Fixture Provider",
+    "description": "Fixed source used only for contract validation"
+  },
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [
+    {
+      "registration": {
+        "id": "cn-stock-daily-bars",
+        "description": "A-share daily bar probe",
+        "request": {
+          "operation": "bars",
+          "market": "CN",
+          "asset_type": "STOCK",
+          "period": "1d",
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-05",
+          "instrument": "CN-SSE-STOCK-600519"
+        },
+        "required_permissions": ["historical-bars"]
+      },
+      "status": "PASS",
+      "probed_at": "2026-08-05T00:00:01+00:00",
+      "evidence": {
+        "summary": "Five fixed daily rows returned",
+        "row_count": 5,
+        "earliest": "2026-08-01T00:00:00+08:00",
+        "latest": "2026-08-05T00:00:00+08:00"
+      }
+    },
+    {
+      "registration": {
+        "id": "cn-stock-minute-bars",
+        "description": "A-share one-minute bar probe",
+        "request": {
+          "operation": "bars",
+          "market": "CN",
+          "asset_type": "STOCK",
+          "period": "1m"
+        }
+      },
+      "status": "BLOCKED",
+      "probed_at": "2026-08-05T00:00:01+00:00",
+      "limitations": ["local credential configuration is absent"],
+      "evidence": {"summary": "Probe was not sent without credentials"},
+      "error": {"category": "CONFIGURATION", "message": "local credentials are absent"}
+    }
+  ]
 }

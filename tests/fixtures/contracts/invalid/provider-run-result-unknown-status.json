@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "run_id": "probe-invalid-status",
+  "source": {"id": "fixture-provider", "display_name": "Fixture", "description": "Fixture source"},
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [{
+    "registration": {
+      "id": "cn-stock-daily-bars",
+      "description": "Daily bars",
+      "request": {"operation": "bars", "market": "CN", "asset_type": "STOCK", "period": "1d"}
+    },
+    "status": "MAYBE",
+    "probed_at": "2026-08-05T00:00:01+00:00",
+    "evidence": {"summary": "Invalid status fixture"}
+  }]
+}

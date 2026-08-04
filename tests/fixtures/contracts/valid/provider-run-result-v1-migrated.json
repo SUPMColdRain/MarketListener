@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "run_id": "migrated-fixture-001",
+  "source": {
+    "id": "legacy-fixture-source",
+    "display_name": "Legacy Fixture Source",
+    "description": "Migrated v1 fixture source",
+    "legacy_name": "legacy_fixture_source"
+  },
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [
+    {
+      "registration": {
+        "id": "legacy-fixture-capability",
+        "description": "Migrated legacy capability: 'fixture_capability'",
+        "request": {"operation": "other", "market": "GLOBAL", "asset_type": "GENERAL"},
+        "legacy_name": "fixture_capability",
+        "legacy_occurrence": 0
+      },
+      "status": "UNSUPPORTED",
+      "probed_at": "2026-08-05T00:00:01+00:00",
+      "evidence": {"summary": "Fixture capability is unsupported"}
+    },
+    {
+      "registration": {
+        "id": "migration-root-error-fixture",
+        "description": "Migrated v1 root-level error",
+        "request": {"operation": "other", "market": "GLOBAL", "asset_type": "GENERAL"}
+      },
+      "status": "FAILED",
+      "probed_at": "2026-08-05T00:00:01+00:00",
+      "evidence": {"summary": "legacy adapter returned no detail"},
+      "error": {"category": "NETWORK", "message": "Fixture connection closed"}
+    }
+  ],
+  "migration": {"from_schema_version": 1, "legacy_provider_status": "FAILED"}
+}

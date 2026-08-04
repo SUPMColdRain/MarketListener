@@ -6,11 +6,14 @@ import os
 from datetime import date, timedelta
 from typing import Any, Callable, Mapping, Sequence
 
-from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError
+from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError, SourceDescription, _legacy_adapter_capability
 
 
 class JoinQuantProvider(Provider):
     name = "joinquant"
+    source_description = SourceDescription(
+        "joinquant", "JoinQuant / JQData", "Credential-gated China-market data interface adapter"
+    )
     _stock_symbols = ("600519.XSHG", "000001.XSHE")
     _etf_symbols = ("510300.XSHG", "159915.XSHE")
     _index_symbol = "000300.XSHG"
@@ -43,10 +46,10 @@ class JoinQuantProvider(Provider):
         future = self._discover_current_future()
         if future is None:
             capabilities.append(
-                Capability("cn_future_discovery", CapabilityStatus.UNSUPPORTED, "No current future contract returned")
+                _legacy_adapter_capability("cn_future_discovery", CapabilityStatus.UNSUPPORTED, "No current future contract returned")
             )
         else:
-            capabilities.append(Capability("cn_future_discovery", CapabilityStatus.PASS, future))
+            capabilities.append(_legacy_adapter_capability("cn_future_discovery", CapabilityStatus.PASS, future))
             for period_name, frequency in self._periods:
                 capabilities.append(self._probe_bars(f"cn_future_{future}_{period_name}", future, frequency))
         return capabilities
@@ -118,9 +121,9 @@ class JoinQuantProvider(Provider):
     def _probe_health(self) -> Capability:
         try:
             response = self.health_check()
-            return Capability("health_check", CapabilityStatus.PASS, response.detail, row_count=len(response.records))
+            return _legacy_adapter_capability("health_check", CapabilityStatus.PASS, response.detail, row_count=len(response.records))
         except ProviderError as error:
-            return Capability("health_check", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability("health_check", CapabilityStatus.FAILED, _error_detail(error))
 
     def _probe_bars(self, capability_name: str, symbol: str, frequency: str) -> Capability:
         try:
@@ -128,7 +131,7 @@ class JoinQuantProvider(Provider):
             rows = _records(response)
             if not rows:
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "provider returned zero rows")
-            return Capability(
+            return _legacy_adapter_capability(
                 capability_name,
                 CapabilityStatus.PASS,
                 f"frequency={frequency}",
@@ -137,9 +140,9 @@ class JoinQuantProvider(Provider):
                 latest=_last_timestamp(response),
             )
         except ProviderError as error:
-            return Capability(capability_name, CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(capability_name, CapabilityStatus.FAILED, _error_detail(error))
         except Exception as error:
-            return Capability(capability_name, CapabilityStatus.FAILED, _error_detail(_provider_error(error)))
+            return _legacy_adapter_capability(capability_name, CapabilityStatus.FAILED, _error_detail(_provider_error(error)))
 
     def _discover_current_future(self) -> str | None:
         try:

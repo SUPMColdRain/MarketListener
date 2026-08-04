@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "run_id": "migration-missing-source-identity",
+  "source": {
+    "id": "legacy-fixture-source",
+    "display_name": "Legacy Fixture Source",
+    "description": "Migration source without its original name"
+  },
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [],
+  "migration": {"from_schema_version": 1, "legacy_provider_status": "FAILED"}
+}

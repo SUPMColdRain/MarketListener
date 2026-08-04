@@ -5,12 +5,15 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any, Callable, Mapping, Sequence
 
-from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError
+from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError, SourceDescription, _legacy_adapter_capability
 from .joinquant import _error_detail, _provider_error
 
 
 class BaostockProvider(Provider):
     name = "baostock"
+    source_description = SourceDescription(
+        "baostock", "BaoStock", "Public China-market historical data interface adapter"
+    )
     _symbols = ("sh.600519", "sz.000001")
 
     def __init__(self, *, sdk: Any | None = None, today: Callable[[], date] = date.today) -> None:
@@ -64,27 +67,27 @@ class BaostockProvider(Provider):
     def _probe_calendar(self) -> Capability:
         try:
             response = self.health_check()
-            return Capability("trading_calendar", CapabilityStatus.PASS, response.detail, row_count=len(response.records))
+            return _legacy_adapter_capability("trading_calendar", CapabilityStatus.PASS, response.detail, row_count=len(response.records))
         except ProviderError as error:
-            return Capability("trading_calendar", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability("trading_calendar", CapabilityStatus.FAILED, _error_detail(error))
 
     def _probe_bars(self, name: str, symbol: str, frequency: str) -> Capability:
         try:
             response = self._bars(symbol, frequency)
             if not response.records:
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "Baostock returned zero rows")
-            return Capability(name, CapabilityStatus.PASS, f"frequency={frequency}", len(response.records))
+            return _legacy_adapter_capability(name, CapabilityStatus.PASS, f"frequency={frequency}", len(response.records))
         except ProviderError as error:
-            return Capability(name, CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(name, CapabilityStatus.FAILED, _error_detail(error))
 
     def _probe_adjust_factor(self, symbol: str) -> Capability:
         try:
             response = self._adjust_factor(symbol)
             if not response.records:
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "Baostock returned zero adjustment factors")
-            return Capability(f"adjust_factor_{symbol}", CapabilityStatus.PASS, row_count=len(response.records))
+            return _legacy_adapter_capability(f"adjust_factor_{symbol}", CapabilityStatus.PASS, row_count=len(response.records))
         except ProviderError as error:
-            return Capability(f"adjust_factor_{symbol}", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(f"adjust_factor_{symbol}", CapabilityStatus.FAILED, _error_detail(error))
 
     def _bars(self, symbol: str, frequency: str) -> FetchResult:
         end = self._today()

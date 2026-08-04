@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "run_id": "legacy-provider-fixture-001",
+  "provider": "legacy_provider",
+  "status": "FAILED",
+  "started_at": "2026-08-05T00:00:00+00:00",
+  "completed_at": "2026-08-05T00:00:01+00:00",
+  "capabilities": [
+    {
+      "name": "vendor-only-thing",
+      "status": "UNSUPPORTED",
+      "detail": "Historical unknown capability retained for migration"
+    }
+  ],
+  "error": {"category": "NETWORK", "message": "connection closed"}
+}
