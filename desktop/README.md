@@ -16,4 +16,6 @@ desktop\.venv\Scripts\python -m market_monitor --version
 desktop\.venv\Scripts\python -m pytest desktop\tests
 ```
 
+统一基线验证使用仓库根目录的 `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`；它也会执行固定为 `ruff==0.12.11` 的静态检查。
+
 `Plan.md` 的 D0 编号仅保留为历史记录，不是后续会话的自动执行队列。

@@ -18,7 +18,7 @@
 
 ## 当前开发状态
 
-正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链，且已由独立验收接受；`FULL-003` 现为唯一可启动的 `READY` 任务。
+正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受。当前第一项 `READY` 任务为 `FULL-100`（Provider Contract v2）。
 
 Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliveries/D0-*` 是历史计划和证据，不是后续会话的自动待办队列。
 
@@ -31,7 +31,7 @@ Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliverie
 - `contracts/`：D0-002 固化的共享 JSON Schema。
 - `tests/fixtures/`：跨端共享测试夹具目录。
 - `docs/`：架构、交付、验收模板和阶段性交接文档。
-- `scripts/run_tests.ps1`：统一测试入口，依次执行 desktop pytest 与 android JVM 单元测试。
+- `scripts/verify.ps1`：统一基线验证入口，依次执行 Python 环境、Ruff、Schema、完整 pytest、Android Lint/JVM 单测与 Debug APK 构建。
 
 ## 锁定工具链基线
 
@@ -51,8 +51,8 @@ $env:JAVA_HOME = "C:\path\to\jdk-21"
 android\gradlew.bat -p android testDebugUnitTest
 android\gradlew.bat -p android assembleDebug
 
-# 统一入口
-powershell -ExecutionPolicy Bypass -File scripts\run_tests.ps1
+# 统一入口（脚本显式使用 JDK 21，并自动映射临时英文盘符运行 Gradle）
+powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
 ```
 
 ## Day 0 历史状态（只读，2026-08-04）
