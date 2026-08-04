@@ -16,6 +16,10 @@ local.properties
 *.pem
 *.key
 *.p12
+*.pfx
+*.jks
+*.keystore
+keystore.properties
 
 # Android / Gradle
 android/.gradle/

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools==83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,16 +8,16 @@ version = "0.1.0"
 description = "行情监控和产业链图谱项目数据生产端（D0-001 空 CLI 骨架）"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "jsonschema>=4.23,<5",
-    "jqdatasdk>=1.9,<2",
-    "baostock>=0.8.9,<0.9",
-    "akshare>=1.16,<2",
-    "duckdb>=1.5,<2",
-    "cryptography>=43,<46",
+    "jsonschema==4.26.0",
+    "jqdatasdk==1.9.8",
+    "baostock==0.8.9",
+    "akshare==1.18.81",
+    "duckdb==1.5.5",
+    "cryptography==45.0.7",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0,<9"]
+dev = ["pytest==8.4.2"]
 
 [project.scripts]
 market-monitor = "market_monitor.cli:main"

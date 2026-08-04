@@ -1,0 +1,22 @@
+schema_version = 1
+
+[python]
+version = "3.11.0"
+project_requires = ">=3.11,<3.12"
+dependency_lock = "desktop/requirements.lock"
+build_backend = "setuptools==83.0.0"
+
+[java]
+major_version = 21
+verified_runtime = "JetBrains Runtime 21.0.11+1-b1163.116"
+
+[android]
+gradle = "8.5"
+gradle_distribution_sha256 = "9d926787066a081739e8200858338b4a69e837c3a821a33aca9db09dd4a41026"
+android_gradle_plugin = "8.3.2"
+kotlin = "2.0.0"
+compile_sdk = 34
+target_sdk = 34
+min_sdk = 33
+build_tools = "34.0.0"
+platform_revision = 3

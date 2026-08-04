@@ -37,3 +37,10 @@
 - 用户决定不再执行 `Plan.md` 的 Day 0 任务。未完成项、失败报告和验收缺口保留原状，不把停止执行写成 Day 0 完成。
 - 新增 `docs/正式开发交接.md` 与 `docs/deliveries/README.md`，更新根入口、模块说明、Plan、经验记录和时序图，使后续对话从整个项目目标而非 D0 任务编号开始。
 - ADR、领域词汇、共享 Schema、交付模板和历史 D0 单项交付未改写；它们分别保持规范、契约、模板和历史证据性质。
+
+## 2026-08-05 - FULL-002 Git 与工具链基线
+
+- 创建首个 Git 根提交 `b270463bc9fe63932faf4e01858d8d5d870697d9`，保存已验收的 FULL-001 与 Day 0 历史基线；提交前确认无大文件、真实凭据或私钥。
+- 锁定 Python 3.11.0及49个运行/测试依赖，固定 setuptools 构建后端；依赖干跑解析、`pip check` 与49项 pytest 通过。
+- 锁定 JDK 21、Gradle 8.5及分发哈希、AGP/Kotlin、Android SDK 34 revision 3、Build Tools 34.0.0和151个 Android 传递模块。
+- JDK 20 被项目配置明确拒绝；JBR 21.0.11 下6项 Android JVM 测试与 Debug APK 构建通过。中文物理路径仍需临时 `subst` 到英文盘符，单独使用 junction 在 JDK 21 下不足以避免测试类加载失败。

@@ -18,7 +18,7 @@
 
 ## 当前开发状态
 
-正式项目计划已由 `FULL-001` 固化，实时进度只看 [STATUS.md](./STATUS.md)。当前 `FULL-001` 已完成实现交付并等待独立审查，尚无可启动的 `READY` 开发任务；验收接受后 `FULL-002` 才会成为第一项 `READY`。
+正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链，当前等待独立审查；尚无其他可启动的 `READY` 任务。
 
 Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliveries/D0-*` 是历史计划和证据，不是后续会话的自动待办队列。
 
@@ -33,20 +33,21 @@ Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliverie
 - `docs/`：架构、交付、验收模板和阶段性交接文档。
 - `scripts/run_tests.ps1`：统一测试入口，依次执行 desktop pytest 与 android JVM 单元测试。
 
-## 当前历史环境基线
+## 锁定工具链基线
 
-已验证历史组合为 Python 3.11、JDK 20.0.2、Gradle Wrapper 8.5、AGP 8.3.2、Kotlin 2.0.0 和 Compose BOM 2024.06.00。正式基线要求 JDK 21，但只能由 `FULL-002` 建立并验证；本文不把尚未完成的 JDK 21 验证写成成功。
+版本权威清单见 `toolchain.versions.toml`：Python 3.11.0、JDK 21、Gradle Wrapper 8.5、AGP 8.3.2、Kotlin 2.0.0、Android SDK 34（Platform revision 3）和 Build Tools 34.0.0。Python 完整依赖锁见 `desktop/requirements.lock`，Android 传递依赖由 Gradle lockfile 固定。
 
-Windows 中文路径说明：仓库实际目录名为 `阅读行情监控和产业链图谱项目`，但 Windows 下中文路径会导致 Android JVM 单元测试的 worker 无法加载测试类。已在 `C:\Users\qingd\Documents\MarketListener` 创建指向实际目录的 junction；Android Studio 请打开该英文路径，命令行也在该路径下执行 Gradle 命令。
+Windows 中文路径说明：仓库实际目录名为 `阅读行情监控和产业链图谱项目`。JDK 21/Gradle 的测试 worker 会把英文 junction 解析回中文物理路径并导致测试类加载失败；命令行验证应临时执行 `subst M: <仓库绝对路径>`，从 `M:\` 运行 Gradle，结束后执行 `subst M: /D`。盘符 `M:` 已占用时选择其他空闲盘符。Android Studio 仍可从 `C:\Users\qingd\Documents\MarketListener\android` 打开项目。
 
 ```powershell
 # 数据生产端
-python -m venv desktop\.venv
-desktop\.venv\Scripts\python -m pip install -e "desktop[dev]"
+py -3.11 -m venv desktop\.venv
+desktop\.venv\Scripts\python -m pip install -c desktop\requirements.lock -e "desktop[dev]"
 desktop\.venv\Scripts\python -m market_monitor --version
 desktop\.venv\Scripts\python -m pytest desktop\tests
 
 # Android
+$env:JAVA_HOME = "C:\path\to\jdk-21"
 android\gradlew.bat -p android testDebugUnitTest
 android\gradlew.bat -p android assembleDebug
 

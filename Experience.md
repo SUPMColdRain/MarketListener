@@ -4,9 +4,9 @@
 
 ## 环境与构建
 
-- Android Studio 必须从 `C:\Users\qingd\Documents\MarketListener\android` 打开项目。该英文 junction 指向实际中文目录，避免 Gradle/Kotlin 在中文物理路径下加载测试类失败。
-- 当前可用构建组合为 Gradle 8.5、AGP 8.3.2、Kotlin 2.0.0、JDK 20.0.2。Gradle 8.5 不能使用 Java 25 运行。
-- Android Studio 的 Gradle JDK 应为 `C:\Program Files\OpenJDK\jdk-20.0.2`。出现空 Module 时，先等待 Gradle Sync 成功，不要手工创建空的 Run Configuration。
+- Android Studio 从 `C:\Users\qingd\Documents\MarketListener\android` 打开项目；命令行 JVM 测试须把仓库临时 `subst` 到纯英文盘符。JDK 21 会把 junction 规范化回中文物理路径，仅使用 junction 仍会导致测试类 `ClassNotFoundException`。
+- FULL-002 锁定的构建组合为 Gradle 8.5、AGP 8.3.2、Kotlin 2.0.0、JDK 21；Gradle 配置会拒绝其他 Java 主版本。当前实测 JBR 21.0.11 成功。
+- Android Studio 的 Gradle JDK 应选择任一受信任的 JDK 21。出现空 Module 时，先等待 Gradle Sync 成功，不要手工创建空的 Run Configuration。
 - Debug APK 需要使用 Gradle Wrapper 构建，避免依赖全局 Gradle 安装。
 
 ## Android 原生库与 16 KB 页大小

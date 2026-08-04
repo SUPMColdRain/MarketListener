@@ -4,13 +4,14 @@
 
 ## 环境
 
-- Python 3.11（虚拟环境位于 `desktop/.venv`，不入库）
+- Python 3.11.0（`.python-version`；虚拟环境位于 `desktop/.venv`，不入库）
+- `requirements.lock` 固定运行时与测试传递依赖；`pyproject.toml` 的直接依赖与锁文件一致
 
 ## 命令
 
 ```powershell
-python -m venv desktop\.venv
-desktop\.venv\Scripts\python -m pip install -e "desktop[dev]"
+py -3.11 -m venv desktop\.venv
+desktop\.venv\Scripts\python -m pip install -c desktop\requirements.lock -e "desktop[dev]"
 desktop\.venv\Scripts\python -m market_monitor --version
 desktop\.venv\Scripts\python -m pytest desktop\tests
 ```

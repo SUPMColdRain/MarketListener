@@ -4,18 +4,19 @@ Android 消费端基于 Kotlin + Jetpack Compose，`minSdk=33`。当前基线包
 
 ## 环境
 
-- JDK 20（当前按用户要求使用 `C:\Program Files\OpenJDK\jdk-20.0.2`；Plan 默认 JDK 21 LTS 可后续恢复）
-- Android SDK（`local.properties` 的 `sdk.dir` 指向本机 SDK；缺失平台 AGP 会自动下载）
-- Gradle Wrapper 8.5、AGP 8.3.2、Kotlin 2.0.0、Compose BOM 2024.06.00
+- JDK 21（`.java-version`；Gradle 配置会拒绝其他主版本）
+- Android SDK Platform 34 revision 3、Build Tools 34.0.0（`local.properties` 的 `sdk.dir` 只保存本机路径，不入库）
+- Gradle Wrapper 8.5（分发 SHA-256 已固定）、AGP 8.3.2、Kotlin 2.0.0、Compose BOM 2024.06.00
+- `gradle.lockfile` 固定 Android 传递依赖；权威版本清单见 `../toolchain.versions.toml`
 
 ## 命令
 
 ```powershell
+$env:JAVA_HOME = "C:\path\to\jdk-21"
 android\gradlew.bat -p android testDebugUnitTest
 android\gradlew.bat -p android assembleDebug
 ```
 
-注意：Windows 中文路径会导致 JVM 单元测试 worker 加载测试类失败。请通过英文 junction
-`C:\Users\qingd\Documents\MarketListener` 打开项目并在其中执行命令。
+注意：Windows 中文物理路径会导致 JVM 单元测试 worker 加载测试类失败，而且 JDK 21 会把英文 junction 解析回物理路径。命令行测试应先把仓库临时映射到空闲盘符（示例：`subst M: <仓库绝对路径>`），从 `M:\` 执行上述 Gradle 命令，最后用 `subst M: /D` 释放盘符。Android Studio 可继续从英文 junction `C:\Users\qingd\Documents\MarketListener\android` 打开。
 
 后续开发不自动继续 `Plan.md` 的 D0 任务；架构和数据边界仍以 `../ADR.md` 为准。
