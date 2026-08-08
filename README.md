@@ -18,7 +18,7 @@
 
 ## 当前开发状态
 
-正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受；`FULL-100`（Provider Contract v2）已通过全新独立验收，Schema/Python 契约与 v1 迁移边界均有可复核证据。当前唯一可实施的 `READY` 任务是 `FULL-101`。
+正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受；`FULL-100`（Provider Contract v2）已通过全新独立验收。`FULL-101`（本地配置、日志脱敏、受控 runner 与 CLI 退出码）已完成层数无关转义归一化修复并重新进入 `REVIEW`，等待新的独立审查；详见 `STATUS.md` 与 `docs/deliveries/FULL-101.md`。
 
 Day 0 已于 2026-08-04 停止执行且未封板。`Plan.md` 与 `docs/deliveries/D0-*` 是历史计划和证据，不是后续会话的自动待办队列。
 
@@ -54,6 +54,18 @@ android\gradlew.bat -p android assembleDebug
 # 统一入口（脚本显式使用 JDK 21，并自动映射临时英文盘符运行 Gradle）
 powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
 ```
+
+## Provider 本地配置与安全探针
+
+凭据只可保存在进程环境变量，或在仓库外的显式配置文件中。`.env.example` 只是变量名说明，CLI 不会自动读取仓库内的 `.env`，也不会在输出中回显配置值。
+
+```powershell
+# 可选：在仓库外创建配置文件，再显式传入。不要把真实文件放入仓库。
+Copy-Item .env.example $env:USERPROFILE\market-monitor.env
+desktop\.venv\Scripts\python -m market_monitor probe --config-file $env:USERPROFILE\market-monitor.env --provider joinquant
+```
+
+`probe` 总会生成 JSON 和 Markdown 报告，并输出一行机器可读 JSON：`0` 表示没有失败或阻塞，`2` 表示部分能力失败/阻塞，`3` 表示全部选定能力都因本地配置缺失而阻塞，`64` 表示参数或显式配置文件错误。没有真实凭据时，JQData 的用户名和密码分别报告为 `BLOCKED/CONFIGURATION`；该命令不把未探测来源写成成功。
 
 ## Day 0 历史状态（只读，2026-08-04）
 

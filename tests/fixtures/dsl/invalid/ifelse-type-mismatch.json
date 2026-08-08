@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "strategy_id": "ifelse_type_mismatch",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "value_ten": {"type": "value", "value": 10.0},
+    "value_true": {"type": "value", "value": true},
+    "value_one": {"type": "value", "value": 1.0},
+    "cond": {"type": "gt", "left": "close_series", "right": "value_ten"},
+    "bad_if": {"type": "ifelse", "condition": "cond", "then": "close_series", "else": "value_true"},
+    "signal_node": {"type": "eq", "left": "bad_if", "right": "value_one"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []}
+}

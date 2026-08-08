@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "strategy_id": "unknown_parameter",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {"known": {"type": "number", "default": 1.0}},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "bad_param": {"type": "parameter", "name": "missing"},
+    "signal_node": {"type": "gt", "left": "close_series", "right": "bad_param"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []}
+}

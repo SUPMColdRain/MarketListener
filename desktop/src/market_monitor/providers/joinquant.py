@@ -6,7 +6,20 @@ import os
 from datetime import date, timedelta
 from typing import Any, Callable, Mapping, Sequence
 
-from .base import Capability, CapabilityStatus, ErrorCategory, FetchResult, Provider, ProviderError, SourceDescription, _legacy_adapter_capability
+from .base import (
+    Capability,
+    CapabilityRegistration,
+    CapabilityStatus,
+    ConfigurationRequirement,
+    ErrorCategory,
+    FetchResult,
+    Provider,
+    ProviderError,
+    ProviderOperation,
+    ProviderRequest,
+    SourceDescription,
+    _legacy_adapter_capability,
+)
 
 
 class JoinQuantProvider(Provider):
@@ -33,9 +46,36 @@ class JoinQuantProvider(Provider):
         self._today = today
         self._authenticated = False
 
+    def configuration_requirements(self) -> Sequence[ConfigurationRequirement]:
+        return (
+            ConfigurationRequirement(
+                "JQDATA_USERNAME",
+                "configuration-jqdata-username",
+                "Local JQData account name is required before credential-gated probes",
+            ),
+            ConfigurationRequirement(
+                "JQDATA_PASSWORD",
+                "configuration-jqdata-password",
+                "Local JQData password is required before credential-gated probes",
+            ),
+        )
+
+    def configure(self, values: Mapping[str, str]) -> None:
+        if self._username is None:
+            self._username = values.get("JQDATA_USERNAME")
+        if self._password is None:
+            self._password = values.get("JQDATA_PASSWORD")
+
+    def missing_configuration_requirements(self) -> Sequence[ConfigurationRequirement]:
+        return tuple(
+            requirement
+            for requirement in self.configuration_requirements()
+            if not (self._username if requirement.name == "JQDATA_USERNAME" else self._password)
+        )
+
     def probe_capabilities(self) -> Sequence[Capability]:
         self._authenticate()
-        capabilities: list[Capability] = [self._probe_health()]
+        capabilities: list[Capability] = [self._probe_health(), self._probe_query_quota()]
         for label, symbols in (("cn_stock", self._stock_symbols), ("cn_etf", self._etf_symbols)):
             for period_name, frequency in self._periods:
                 for symbol in symbols:
@@ -125,6 +165,32 @@ class JoinQuantProvider(Provider):
         except ProviderError as error:
             return _legacy_adapter_capability("health_check", CapabilityStatus.FAILED, _error_detail(error))
 
+    def _probe_query_quota(self) -> Capability:
+        registration = CapabilityRegistration(
+            "jqdata-query-quota",
+            "JQData daily query quota and remaining requests",
+            ProviderRequest(ProviderOperation.OTHER),
+        )
+        try:
+            quota = self._api().get_query_count()
+            if not isinstance(quota, Mapping):
+                raise ProviderError(ErrorCategory.FIELD_CHANGE, "JQData query quota is not a mapping")
+            total = quota.get("total")
+            spare = quota.get("spare")
+            if total is None or spare is None:
+                raise ProviderError(ErrorCategory.FIELD_CHANGE, "JQData query quota is missing total/spare")
+            return _registered_capability(
+                registration,
+                CapabilityStatus.PASS,
+                detail=f"total={total}; spare={spare}",
+                row_count=1,
+            )
+        except ProviderError as error:
+            return _registered_capability(registration, CapabilityStatus.FAILED, detail=_error_detail(error), error=error)
+        except Exception as error:
+            wrapped = _provider_error(error)
+            return _registered_capability(registration, CapabilityStatus.FAILED, detail=_error_detail(wrapped), error=wrapped)
+
     def _probe_bars(self, capability_name: str, symbol: str, frequency: str) -> Capability:
         try:
             response = self._get_price(symbol, frequency)
@@ -167,7 +233,7 @@ class JoinQuantProvider(Provider):
             return
         if not self._username or not self._password:
             raise ProviderError(
-                ErrorCategory.AUTHENTICATION,
+                ErrorCategory.CONFIGURATION,
                 "JoinQuant credentials are absent; set JQDATA_USERNAME and JQDATA_PASSWORD locally",
             )
         try:
@@ -249,3 +315,25 @@ def _provider_error(error: Exception) -> ProviderError:
 
 def _error_detail(error: ProviderError) -> str:
     return f"[{error.category.value}] {error.message}"
+
+
+def _registered_capability(
+    registration: CapabilityRegistration,
+    status: CapabilityStatus,
+    *,
+    detail: str | None = None,
+    row_count: int | None = None,
+    earliest: str | None = None,
+    latest: str | None = None,
+    error: ProviderError | None = None,
+) -> Capability:
+    return Capability(
+        registration.id,
+        status,
+        detail,
+        row_count,
+        earliest,
+        latest,
+        registration=registration,
+        error=error,
+    )

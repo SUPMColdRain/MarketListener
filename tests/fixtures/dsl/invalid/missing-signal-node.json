@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy_id": "missing_signal_node",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"}
+  },
+  "signal": {"node": "does_not_exist", "label": "x", "reason": "y", "risk_tags": []}
+}

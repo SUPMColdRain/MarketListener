@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": "600519"},
+  "action_type": "CASH_DIVIDEND",
+  "ex_date": "2026-07-15",
+  "record_date": "2026-07-14",
+  "pay_date": "2026-07-16",
+  "cash_per_share": 0.5,
+  "description": "每10股派5元（含税）",
+  "source": {"provider": "tushare", "source_symbol": "600519.SH", "retrieved_at": "2026-08-05T09:00:00+08:00"}
+}

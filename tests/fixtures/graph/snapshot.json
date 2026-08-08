@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "entities": [
+    {
+      "entity_id": "company.600519",
+      "entity_type": "COMPANY",
+      "name": "贵州茅台酒股份有限公司",
+      "normalized_name": "贵州茅台酒",
+      "aliases": ["贵州茅台", "茅台"]
+    },
+    {
+      "entity_id": "product.maotai",
+      "entity_type": "PRODUCT",
+      "name": "茅台酒",
+      "normalized_name": "茅台酒"
+    },
+    {
+      "entity_id": "company.huazhi",
+      "entity_type": "COMPANY",
+      "name": "华致酒行连锁管理股份有限公司",
+      "normalized_name": "华致酒行"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "evidence.0001",
+      "source_id": "supply-chain.html",
+      "source_type": "HTML",
+      "location": {"dom": "html/body/p[1]"},
+      "parsed_version": "1.0.0",
+      "extracted_at": "2026-08-06T01:00:00+00:00",
+      "sha256": "a000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "evidence_id": "evidence.0002",
+      "source_id": "2026-08-01-moutai.txt",
+      "source_type": "ANNOUNCEMENT",
+      "location": {"line": 2, "offset": 0},
+      "parsed_version": "1.0.0",
+      "extracted_at": "2026-08-06T01:00:00+00:00",
+      "sha256": "b000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "relationships": [
+    {
+      "schema_version": 1,
+      "relationship_id": "rel.supplies.0001",
+      "relationship_type": "SUPPLIES",
+      "source_entity_id": "company.600519",
+      "target_entity_id": "company.huazhi",
+      "direction": "DIRECTED",
+      "confidence": 0.92,
+      "confirmation_status": "AUTO_ACCEPTED",
+      "evidence_ids": ["evidence.0001"],
+      "created_at": "2026-08-06T01:00:00+00:00",
+      "updated_at": "2026-08-06T01:00:00+00:00",
+      "version": 1
+    },
+    {
+      "schema_version": 1,
+      "relationship_id": "rel.produces.0001",
+      "relationship_type": "PRODUCES",
+      "source_entity_id": "company.600519",
+      "target_entity_id": "product.maotai",
+      "direction": "DIRECTED",
+      "confidence": 0.95,
+      "confirmation_status": "HUMAN_CONFIRMED",
+      "evidence_ids": ["evidence.0002"],
+      "created_at": "2026-08-06T01:00:00+00:00",
+      "updated_at": "2026-08-06T02:00:00+00:00",
+      "version": 2
+    }
+  ]
+}

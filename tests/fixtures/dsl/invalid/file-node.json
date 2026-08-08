@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy_id": "file_access",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "bad": {"type": "read_file", "path": "/etc/passwd"}
+  },
+  "signal": {"node": "bad", "label": "x", "reason": "y", "risk_tags": []}
+}

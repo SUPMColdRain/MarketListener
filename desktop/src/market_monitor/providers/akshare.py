@@ -18,14 +18,11 @@ class AkShareProvider(Provider):
         self._sdk = sdk
 
     def probe_capabilities(self) -> Sequence[Capability]:
-        try:
-            spot = self._spot()
-        except ProviderError as error:
-            raise error
-        capabilities = [_legacy_adapter_capability("health_check", CapabilityStatus.PASS, "A-share spot query succeeded", len(spot))]
-        capabilities.append(self._market_breadth(spot))
-        capabilities.append(self._price_limit_counts(spot))
+        capabilities: list[Capability] = []
+        capabilities.extend(self._probe_snapshot())
+        capabilities.append(self._probe_calendar())
         capabilities.append(self._fund_flow())
+        capabilities.append(self._probe_bars())
         return capabilities
 
     def fetch_instruments(self) -> FetchResult:
@@ -34,8 +31,15 @@ class AkShareProvider(Provider):
 
     def fetch_bars(self) -> FetchResult:
         try:
-            frame = self._api().stock_zh_a_hist(symbol="600519", period="daily", adjust="")
-            return FetchResult(records=_records(frame), detail="AkShare 600519 daily bars")
+            frame = self._api().stock_zh_a_hist(symbol="600519", period="daily", adjust="qfq")
+            records = [_normalise_bar(row) for row in _records(frame)]
+            dates = [str(row["date"]) for row in records if row.get("date")]
+            return FetchResult(
+                records=records,
+                earliest=min(dates) if dates else None,
+                latest=max(dates) if dates else None,
+                detail="AkShare 600519 daily bars, forward adjusted",
+            )
         except Exception as error:
             raise _provider_error(error) from error
 
@@ -68,6 +72,68 @@ class AkShareProvider(Provider):
             raise ProviderError(ErrorCategory.NO_COVERAGE, "AkShare returned zero A-share spot rows")
         return records
 
+    def _probe_snapshot(self) -> list[Capability]:
+        try:
+            spot = self._spot()
+        except ProviderError as error:
+            return [
+                _legacy_adapter_capability(
+                    "health_check",
+                    CapabilityStatus.FAILED,
+                    _error_detail(error),
+                    error=error,
+                )
+            ]
+        capabilities = [
+            _legacy_adapter_capability(
+                "health_check",
+                CapabilityStatus.PASS,
+                "A-share spot query succeeded",
+                len(spot),
+            )
+        ]
+        capabilities.append(self._market_breadth(spot))
+        capabilities.append(self._price_limit_counts(spot))
+        return capabilities
+
+    def _probe_calendar(self) -> Capability:
+        try:
+            response = self.fetch_calendar()
+            if not response.records:
+                raise ProviderError(ErrorCategory.NO_COVERAGE, "AkShare returned zero trading-calendar rows")
+            return _legacy_adapter_capability(
+                "trading_calendar",
+                CapabilityStatus.PASS,
+                response.detail,
+                len(response.records),
+            )
+        except ProviderError as error:
+            return _legacy_adapter_capability(
+                "trading_calendar",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
+
+    def _probe_bars(self) -> Capability:
+        try:
+            response = self.fetch_bars()
+            if not response.records:
+                raise ProviderError(ErrorCategory.NO_COVERAGE, "AkShare returned zero daily bars")
+            return _legacy_adapter_capability(
+                "cn_stock_sh.600519_1d",
+                CapabilityStatus.PASS,
+                response.detail,
+                len(response.records),
+            )
+        except ProviderError as error:
+            return _legacy_adapter_capability(
+                "cn_stock_sh.600519_1d",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
+
     def _market_breadth(self, records: list[Mapping[str, Any]]) -> Capability:
         try:
             changes = [_number(record, "涨跌幅") for record in records]
@@ -78,7 +144,12 @@ class AkShareProvider(Provider):
             down = sum(change < 0 for change in usable)
             return _legacy_adapter_capability("a_share_rise_fall_counts", CapabilityStatus.PASS, f"up={up}; down={down}; flat={len(usable) - up - down}", len(usable))
         except ProviderError as error:
-            return _legacy_adapter_capability("a_share_rise_fall_counts", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                "a_share_rise_fall_counts",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _price_limit_counts(self, records: list[Mapping[str, Any]]) -> Capability:
         try:
@@ -90,7 +161,12 @@ class AkShareProvider(Provider):
             limit_down = sum(change <= -9.9 for change in usable)
             return _legacy_adapter_capability("a_share_price_limit_counts", CapabilityStatus.PASS, f"limit_up={limit_up}; limit_down={limit_down}", len(usable))
         except ProviderError as error:
-            return _legacy_adapter_capability("a_share_price_limit_counts", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                "a_share_price_limit_counts",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _fund_flow(self) -> Capability:
         try:
@@ -99,7 +175,12 @@ class AkShareProvider(Provider):
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "AkShare returned zero market fund-flow rows")
             return _legacy_adapter_capability("market_fund_flow", CapabilityStatus.PASS, response.detail, len(response.records))
         except ProviderError as error:
-            return _legacy_adapter_capability("market_fund_flow", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                "market_fund_flow",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _api(self) -> Any:
         if self._sdk is not None:
@@ -123,6 +204,24 @@ def _records(value: Any) -> list[Mapping[str, Any]]:
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return [item if isinstance(item, Mapping) else {"value": item} for item in value]
     return [{"value": value}]
+
+
+_BAR_FIELDS = {
+    "日期": "date",
+    "股票代码": "code",
+    "开盘": "open",
+    "最高": "high",
+    "最低": "low",
+    "收盘": "close",
+    "成交量": "volume",
+    "成交额": "amount",
+}
+
+
+def _normalise_bar(row: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Map AkShare Chinese bar columns to the cross-source English names."""
+
+    return {_BAR_FIELDS.get(key, key): value for key, value in row.items()}
 
 
 def _number(record: Mapping[str, Any], field: str) -> float | None:

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy_id": "exec_code",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "bad": {"type": "exec", "code": "print('hi')"}
+  },
+  "signal": {"node": "bad", "label": "x", "reason": "y", "risk_tags": []}
+}

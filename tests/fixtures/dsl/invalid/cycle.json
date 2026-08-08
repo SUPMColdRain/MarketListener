@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "strategy_id": "cycle_dsl",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "value_one": {"type": "value", "value": 1.0},
+    "a": {"type": "add", "left": "b", "right": "value_one"},
+    "b": {"type": "add", "left": "a", "right": "value_one"}
+  },
+  "signal": {"node": "a", "label": "x", "reason": "y", "risk_tags": []}
+}

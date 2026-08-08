@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "vectors": [
+    {
+      "id": "sma_cross",
+      "strategy": {
+        "schema_version": 1,
+        "strategy_id": "vector_sma_cross",
+        "strategy_version": "1.0.0",
+        "inputs": ["close"],
+        "parameters": {
+          "fast_window": {"type": "integer", "minimum": 2, "maximum": 10, "default": 2},
+          "slow_window": {"type": "integer", "minimum": 3, "maximum": 20, "default": 3}
+        },
+        "nodes": {
+          "close_series": {"type": "series", "input": "close"},
+          "fast_param": {"type": "parameter", "name": "fast_window"},
+          "slow_param": {"type": "parameter", "name": "slow_window"},
+          "fast_sma": {"type": "sma", "operand": "close_series", "window": "fast_param"},
+          "slow_sma": {"type": "sma", "operand": "close_series", "window": "slow_param"},
+          "golden_cross": {"type": "crosses_above", "fast": "fast_sma", "slow": "slow_sma"}
+        },
+        "signal": {
+          "node": "golden_cross",
+          "label": "快线上穿慢线",
+          "reason": "向量一致性测试",
+          "risk_tags": ["测试"]
+        }
+      },
+      "parameters": {"fast_window": 2, "slow_window": 3},
+      "series": {"close": [10.0, 10.5, 10.2, 10.8, 11.2, 11.0, 10.6, 10.9, 11.5, 12.0]},
+      "expected": {
+        "signal_indices": [4, 8],
+        "signals": [false, false, false, false, true, false, false, false, true, false],
+        "node_values": {
+          "fast_sma": [null, 10.25, 10.35, 10.5, 11.0, 11.1, 10.8, 10.75, 11.2, 11.75],
+          "slow_sma": [
+            null,
+            null,
+            10.233333333333333,
+            10.5,
+            10.733333333333333,
+            11.0,
+            10.933333333333334,
+            10.833333333333334,
+            11.0,
+            11.466666666666667
+          ]
+        },
+        "numeric_tolerance": 1e-9
+      }
+    },
+    {
+      "id": "roc_threshold",
+      "strategy": {
+        "schema_version": 1,
+        "strategy_id": "vector_roc_threshold",
+        "strategy_version": "1.0.0",
+        "inputs": ["close"],
+        "parameters": {
+          "threshold": {"type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.05}
+        },
+        "nodes": {
+          "close_series": {"type": "series", "input": "close"},
+          "threshold_param": {"type": "parameter", "name": "threshold"},
+          "close_roc": {"type": "roc", "operand": "close_series", "window": 2},
+          "above_threshold": {"type": "gt", "left": "close_roc", "right": "threshold_param"}
+        },
+        "signal": {
+          "node": "above_threshold",
+          "label": "涨幅超过阈值",
+          "reason": "向量一致性测试",
+          "risk_tags": ["测试"]
+        }
+      },
+      "parameters": {"threshold": 0.05},
+      "series": {"close": [10.0, 10.5, 10.2, 10.8, 11.2, 11.0, 10.6, 10.9, 11.5, 12.0]},
+      "expected": {
+        "signal_indices": [4, 8, 9],
+        "signals": [false, false, false, false, true, false, false, false, true, true],
+        "node_values": {
+          "close_roc": [
+            null,
+            null,
+            0.02,
+            0.02857142857142857,
+            0.09803921568627451,
+            0.018518518518518517,
+            -0.05357142857142857,
+            -0.00909090909090909,
+            0.08490566037735848,
+            0.10091743119266057
+          ]
+        },
+        "numeric_tolerance": 1e-9
+      }
+    },
+    {
+      "id": "ema_series",
+      "strategy": {
+        "schema_version": 1,
+        "strategy_id": "vector_ema",
+        "strategy_version": "1.0.0",
+        "inputs": ["close"],
+        "parameters": {
+          "window": {"type": "integer", "minimum": 2, "maximum": 10, "default": 3}
+        },
+        "nodes": {
+          "close_series": {"type": "series", "input": "close"},
+          "window_param": {"type": "parameter", "name": "window"},
+          "ema_line": {"type": "ema", "operand": "close_series", "window": "window_param"},
+          "signal_node": {"type": "gte", "left": "close_series", "right": "ema_line"}
+        },
+        "signal": {
+          "node": "signal_node",
+          "label": "收盘在均线上方",
+          "reason": "向量一致性测试",
+          "risk_tags": ["测试"]
+        }
+      },
+      "parameters": {"window": 3},
+      "series": {"close": [10.0, 10.5, 10.2, 10.8, 11.2, 11.0, 10.6, 10.9, 11.5, 12.0]},
+      "expected": {
+        "signal_indices": [3, 4, 5, 7, 8, 9],
+        "signals": [false, false, false, true, true, true, false, true, true, true],
+        "node_values": {
+          "ema_line": [
+            null,
+            null,
+            10.233333333333333,
+            10.516666666666667,
+            10.858333333333333,
+            10.929166666666667,
+            10.764583333333333,
+            10.832291666666666,
+            11.166145833333333,
+            11.583072916666666
+          ]
+        },
+        "numeric_tolerance": 1e-9
+      }
+    }
+  ]
+}

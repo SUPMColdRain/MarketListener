@@ -8,12 +8,16 @@ version = "0.1.0"
 description = "行情监控和产业链图谱项目数据生产端（D0-001 空 CLI 骨架）"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "jsonschema==4.26.0",
-    "jqdatasdk==1.9.8",
-    "baostock==0.8.9",
     "akshare==1.18.81",
-    "duckdb==1.5.5",
+    "baostock==0.8.9",
+    "beautifulsoup4==4.15.0",
     "cryptography==45.0.7",
+    "duckdb==1.5.5",
+    "jqdatasdk==1.9.8",
+    "jsonschema==4.26.0",
+    "openpyxl==3.1.5",
+    "pypdf==6.14.2",
+    "tushare==1.4.29",
 ]
 
 [project.optional-dependencies]

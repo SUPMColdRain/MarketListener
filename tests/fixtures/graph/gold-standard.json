@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "description": "FULL-702 fixed gold standard over the checked-in graph fixtures",
+  "entities": [
+    {"entity_type": "COMPANY", "name": "贵州茅台酒股份有限公司", "normalized_name": "贵州茅台酒"},
+    {"entity_type": "COMPANY", "name": "华致酒行连锁管理股份有限公司", "normalized_name": "华致酒行"},
+    {"entity_type": "COMPANY", "name": "宜宾五粮液股份有限公司", "normalized_name": "宜宾五粮液"},
+    {"entity_type": "PRODUCT", "name": "茅台酒", "normalized_name": "茅台酒"},
+    {"entity_type": "INDUSTRY", "name": "白酒", "normalized_name": "白酒"},
+    {"entity_type": "COMPANY", "name": "Moutai", "normalized_name": "moutai"},
+    {"entity_type": "PRODUCT", "name": "Moutai liquor", "normalized_name": "moutailiquor"},
+    {"entity_type": "COMPANY", "name": "CATL", "normalized_name": "catl"},
+    {"entity_type": "COMPANY", "name": "Ganfeng", "normalized_name": "ganfeng"},
+    {"entity_type": "COMPANY", "name": "Wuliangye", "normalized_name": "wuliangye"}
+  ],
+  "relationships": [
+    {"relationship_type": "SUPPLIES", "source": "贵州茅台酒", "target": "华致酒行"},
+    {"relationship_type": "CUSTOMER_OF", "source": "华致酒行", "target": "贵州茅台酒"},
+    {"relationship_type": "COMPETES_WITH", "source": "贵州茅台酒", "target": "宜宾五粮液"},
+    {"relationship_type": "PRODUCES", "source": "贵州茅台酒", "target": "茅台酒"},
+    {"relationship_type": "PART_OF", "source": "贵州茅台酒", "target": "白酒"},
+    {"relationship_type": "PRODUCES", "source": "moutai", "target": "moutailiquor"},
+    {"relationship_type": "PURCHASES", "source": "catl", "target": "ganfeng"},
+    {"relationship_type": "COMPETES_WITH", "source": "wuliangye", "target": "moutai"}
+  ]
+}

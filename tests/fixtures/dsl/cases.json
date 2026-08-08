@@ -1,0 +1,17 @@
+[
+  {"id": "ma-cross-valid", "fixture": "dsl/valid/ma-cross.json", "valid": true},
+  {"id": "volume-confirm-breakout-valid", "fixture": "dsl/valid/volume-confirm-breakout.json", "valid": true},
+  {"id": "unknown-node-type", "fixture": "dsl/invalid/unknown-node-type.json", "valid": false},
+  {"id": "network-node", "fixture": "dsl/invalid/network-node.json", "valid": false},
+  {"id": "file-node", "fixture": "dsl/invalid/file-node.json", "valid": false},
+  {"id": "arbitrary-code", "fixture": "dsl/invalid/arbitrary-code.json", "valid": false},
+  {"id": "missing-input", "fixture": "dsl/invalid/missing-input.json", "valid": false},
+  {"id": "unknown-parameter", "fixture": "dsl/invalid/unknown-parameter.json", "valid": false},
+  {"id": "non-boolean-signal", "fixture": "dsl/invalid/non-boolean-signal.json", "valid": false},
+  {"id": "missing-signal-node", "fixture": "dsl/invalid/missing-signal-node.json", "valid": false},
+  {"id": "cycle", "fixture": "dsl/invalid/cycle.json", "valid": false},
+  {"id": "too-deep", "fixture": "dsl/invalid/too-deep.json", "valid": false},
+  {"id": "too-many-nodes", "fixture": "dsl/invalid/too-many-nodes.json", "valid": false},
+  {"id": "bad-parameter-default", "fixture": "dsl/invalid/bad-parameter-default.json", "valid": false},
+  {"id": "ifelse-type-mismatch", "fixture": "dsl/invalid/ifelse-type-mismatch.json", "valid": false}
+]

@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/strategy-dsl.schema.json",
+  "title": "Strategy DSL v1",
+  "description": "Declarative, whitelisted strategy document. Android executes only the node types listed here; unknown nodes, arbitrary code, network access and file access are rejected by the schema and by both interpreters.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "strategy_id", "strategy_version", "inputs", "parameters", "nodes", "signal"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "strategy_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{2,63}$"},
+    "strategy_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "description": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "inputs": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["open", "high", "low", "close", "volume", "amount"]},
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 6
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/parameterDef"},
+      "maxProperties": 64
+    },
+    "nodes": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"},
+      "additionalProperties": {"$ref": "#/$defs/node"},
+      "minProperties": 1,
+      "maxProperties": 200
+    },
+    "signal": {"$ref": "#/$defs/signal"},
+    "limits": {"$ref": "#/$defs/limits"}
+  },
+  "$defs": {
+    "parameterDef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "default"],
+          "properties": {
+            "type": {"const": "number"},
+            "default": {"type": "number"},
+            "minimum": {"type": "number"},
+            "maximum": {"type": "number"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "default"],
+          "properties": {
+            "type": {"const": "integer"},
+            "default": {"type": "integer"},
+            "minimum": {"type": "integer"},
+            "maximum": {"type": "integer"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "default"],
+          "properties": {
+            "type": {"const": "boolean"},
+            "default": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_nodes": {"type": "integer", "minimum": 1, "maximum": 2000},
+        "max_depth": {"type": "integer", "minimum": 1, "maximum": 64}
+      }
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "label", "reason", "risk_tags"],
+      "properties": {
+        "node": {"$ref": "#/$defs/nodeRef"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 200},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "risk_tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1, "maxLength": 100},
+          "maxItems": 20
+        }
+      }
+    },
+    "nodeRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    },
+    "windowRef": {
+      "oneOf": [
+        {"type": "integer", "minimum": 1, "maximum": 1000},
+        {"$ref": "#/$defs/nodeRef"}
+      ]
+    },
+    "node": {
+      "oneOf": [
+        {"$ref": "#/$defs/nodes/series"},
+        {"$ref": "#/$defs/nodes/value"},
+        {"$ref": "#/$defs/nodes/parameter"},
+        {"$ref": "#/$defs/nodes/arithmetic"},
+        {"$ref": "#/$defs/nodes/unary"},
+        {"$ref": "#/$defs/nodes/comparison"},
+        {"$ref": "#/$defs/nodes/boolean"},
+        {"$ref": "#/$defs/nodes/ifelse"},
+        {"$ref": "#/$defs/nodes/rolling"},
+        {"$ref": "#/$defs/nodes/lag"},
+        {"$ref": "#/$defs/nodes/crosses"}
+      ]
+    },
+    "nodes": {
+      "series": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "input"],
+        "properties": {
+          "type": {"const": "series"},
+          "input": {"type": "string", "enum": ["open", "high", "low", "close", "volume", "amount"]}
+        }
+      },
+      "value": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "value"],
+        "properties": {
+          "type": {"const": "value"},
+          "value": {"type": ["number", "boolean"]}
+        }
+      },
+      "parameter": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "name"],
+        "properties": {
+          "type": {"const": "parameter"},
+          "name": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"}
+        }
+      },
+      "arithmetic": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "left", "right"],
+        "properties": {
+          "type": {"enum": ["add", "subtract", "multiply", "divide", "modulo", "pow", "max", "min"]},
+          "left": {"$ref": "#/$defs/nodeRef"},
+          "right": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "unary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "operand"],
+        "properties": {
+          "type": {"enum": ["negate", "abs", "sqrt", "ln", "log10", "floor", "ceil", "round"]},
+          "operand": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "comparison": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "left", "right"],
+        "properties": {
+          "type": {"enum": ["eq", "neq", "lt", "lte", "gt", "gte"]},
+          "left": {"$ref": "#/$defs/nodeRef"},
+          "right": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "boolean": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "left", "right"],
+        "properties": {
+          "type": {"enum": ["and", "or"]},
+          "left": {"$ref": "#/$defs/nodeRef"},
+          "right": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "not": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "operand"],
+        "properties": {
+          "type": {"const": "not"},
+          "operand": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "ifelse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "condition", "then", "else"],
+        "properties": {
+          "type": {"const": "ifelse"},
+          "condition": {"$ref": "#/$defs/nodeRef"},
+          "then": {"$ref": "#/$defs/nodeRef"},
+          "else": {"$ref": "#/$defs/nodeRef"}
+        }
+      },
+      "rolling": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "operand", "window"],
+        "properties": {
+          "type": {"enum": ["sma", "ema", "sum", "stddev", "rolling_max", "rolling_min", "roc"]},
+          "operand": {"$ref": "#/$defs/nodeRef"},
+          "window": {"$ref": "#/$defs/windowRef"}
+        }
+      },
+      "lag": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "operand", "offset"],
+        "properties": {
+          "type": {"const": "lag"},
+          "operand": {"$ref": "#/$defs/nodeRef"},
+          "offset": {"type": "integer", "minimum": 1, "maximum": 10000}
+        }
+      },
+      "crosses": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "fast", "slow"],
+        "properties": {
+          "type": {"enum": ["crosses_above", "crosses_below"]},
+          "fast": {"$ref": "#/$defs/nodeRef"},
+          "slow": {"$ref": "#/$defs/nodeRef"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "strategy_id": "missing_input",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "open_series": {"type": "series", "input": "open"},
+    "value_one": {"type": "value", "value": 1.0},
+    "signal_node": {"type": "gt", "left": "open_series", "right": "value_one"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []}
+}

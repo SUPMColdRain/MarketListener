@@ -69,7 +69,12 @@ class BaostockProvider(Provider):
             response = self.health_check()
             return _legacy_adapter_capability("trading_calendar", CapabilityStatus.PASS, response.detail, row_count=len(response.records))
         except ProviderError as error:
-            return _legacy_adapter_capability("trading_calendar", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                "trading_calendar",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _probe_bars(self, name: str, symbol: str, frequency: str) -> Capability:
         try:
@@ -78,7 +83,12 @@ class BaostockProvider(Provider):
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "Baostock returned zero rows")
             return _legacy_adapter_capability(name, CapabilityStatus.PASS, f"frequency={frequency}", len(response.records))
         except ProviderError as error:
-            return _legacy_adapter_capability(name, CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                name,
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _probe_adjust_factor(self, symbol: str) -> Capability:
         try:
@@ -87,7 +97,12 @@ class BaostockProvider(Provider):
                 raise ProviderError(ErrorCategory.NO_COVERAGE, "Baostock returned zero adjustment factors")
             return _legacy_adapter_capability(f"adjust_factor_{symbol}", CapabilityStatus.PASS, row_count=len(response.records))
         except ProviderError as error:
-            return _legacy_adapter_capability(f"adjust_factor_{symbol}", CapabilityStatus.FAILED, _error_detail(error))
+            return _legacy_adapter_capability(
+                f"adjust_factor_{symbol}",
+                CapabilityStatus.FAILED,
+                _error_detail(error),
+                error=error,
+            )
 
     def _bars(self, symbol: str, frequency: str) -> FetchResult:
         end = self._today()

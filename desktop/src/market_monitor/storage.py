@@ -75,20 +75,45 @@ class MarketStore:
             raise ValueError("A Silver partition requires at least one normalized bar")
         target = self.root / key.relative_path()
         target.parent.mkdir(parents=True, exist_ok=True)
-        staging_json = target.with_suffix(f".{uuid4().hex}.json")
         staging_parquet = target.with_suffix(f".{uuid4().hex}.parquet")
-        staging_json.write_text(json.dumps(list(bars), ensure_ascii=False), encoding="utf-8")
         try:
-            escaped_json = str(staging_json).replace("'", "''")
             escaped_parquet = str(staging_parquet).replace("'", "''")
+            existing: list[dict[str, str]] = []
+            if target.is_file():
+                existing = [
+                    {"bar_json": row[0], "instrument_id": row[1], "bar_period": row[2], "bar_open_time": row[3]}
+                    for row in self.connection.execute(
+                        f"SELECT bar_json, instrument_id, bar_period, bar_open_time FROM read_parquet('{str(target).replace(chr(39), chr(39) * 2)}')"
+                    ).fetchall()
+                ]
+            rows: dict[tuple[str, str, str], dict[str, str]] = {
+                (row["instrument_id"], row["bar_period"], row["bar_open_time"]): row for row in existing
+            }
+            for bar in bars:
+                key_tuple = (_bar_instrument_id(bar), str(bar.get("period", "")), str(bar.get("bar_open_time", "")))
+                rows[key_tuple] = {
+                    "bar_json": json.dumps(bar, ensure_ascii=False),
+                    "instrument_id": key_tuple[0],
+                    "bar_period": key_tuple[1],
+                    "bar_open_time": key_tuple[2],
+                }
             self.connection.execute(
-                f"COPY (SELECT * FROM read_json_auto('{escaped_json}')) TO '{escaped_parquet}' (FORMAT PARQUET)"
+                "CREATE OR REPLACE TEMP TABLE _silver_stage (bar_json VARCHAR, instrument_id VARCHAR, bar_period VARCHAR, bar_open_time VARCHAR)"
             )
+            for row in rows.values():
+                self.connection.execute(
+                    "INSERT INTO _silver_stage VALUES (?, ?, ?, ?)",
+                    (row["bar_json"], row["instrument_id"], row["bar_period"], row["bar_open_time"]),
+                )
+            self.connection.execute(
+                f"COPY (SELECT bar_json, instrument_id, bar_period, bar_open_time FROM _silver_stage) TO '{escaped_parquet}' (FORMAT PARQUET)"
+            )
+            self.connection.execute("DROP TABLE _silver_stage")
             row_count = self.connection.execute(
-                f"SELECT count(*) FROM read_parquet('{escaped_parquet}')"
+                f"SELECT count(*) FROM read_parquet('{escaped_parquet}') WHERE bar_json IS NOT NULL"
             ).fetchone()[0]
-            if row_count != len(bars):
-                raise RuntimeError(f"Silver validation row mismatch: expected {len(bars)}, got {row_count}")
+            if row_count != len(rows):
+                raise RuntimeError(f"Silver validation row mismatch: expected {len(rows)}, got {row_count}")
             checksum = _sha256(staging_parquet)
             os.replace(staging_parquet, target)
             self.connection.execute(
@@ -100,7 +125,6 @@ class MarketStore:
             )
             return target
         finally:
-            staging_json.unlink(missing_ok=True)
             staging_parquet.unlink(missing_ok=True)
 
     def partition_metadata(self, partition_id: str) -> tuple[Any, ...] | None:
@@ -143,3 +167,10 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _bar_instrument_id(bar: Mapping[str, Any]) -> str:
+    key = bar.get("instrument_key")
+    if isinstance(key, Mapping):
+        return ".".join(str(key.get(part, "")) for part in ("country_or_market", "exchange", "asset_type", "code"))
+    return str(key if key is not None else bar.get("instrument_id", ""))

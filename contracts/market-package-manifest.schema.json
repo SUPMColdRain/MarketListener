@@ -5,10 +5,18 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["package_id", "schema_version", "generated_at", "partitions", "source_run_summaries", "minimum_app_version"],
+  "allOf": [
+    {
+      "if": {"required": ["package_type"], "properties": {"package_type": {"const": "DELTA"}}},
+      "then": {"required": ["base_package_id"]}
+    }
+  ],
   "properties": {
     "package_id": {"type": "string", "minLength": 1},
     "schema_version": {"const": 1},
     "generated_at": {"type": "string", "format": "date-time"},
+    "package_type": {"enum": ["FULL", "DELTA"]},
+    "base_package_id": {"type": "string", "minLength": 1},
     "minimum_app_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "partitions": {
       "type": "array",
@@ -47,7 +55,7 @@
         "properties": {
           "run_id": {"type": "string", "minLength": 1},
           "provider": {"type": "string", "minLength": 1},
-          "status": {"enum": ["PASS", "FAILED", "UNSUPPORTED"]}
+          "status": {"enum": ["PASS", "FAILED", "PARTIAL_FAILURE", "BLOCKED", "UNSUPPORTED"]}
         }
       }
     }

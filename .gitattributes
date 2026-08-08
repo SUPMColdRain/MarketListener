@@ -10,3 +10,4 @@
 *.zip binary
 *.apk binary
 *.so binary
+*.pdf binary

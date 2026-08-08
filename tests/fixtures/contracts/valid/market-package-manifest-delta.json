@@ -1,0 +1,18 @@
+{
+  "package_id": "market-delta-001",
+  "schema_version": 1,
+  "generated_at": "2026-08-05T09:00:00+08:00",
+  "package_type": "DELTA",
+  "base_package_id": "market-001",
+  "minimum_app_version": "0.1.0",
+  "partitions": [
+    {
+      "partition_id": "CN-STOCK-1d-20260804",
+      "data_cutoff": "2026-08-04T15:00:00+08:00",
+      "files": [
+        {"name": "payload.sqlite", "bytes": 1, "row_count": 1, "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
+      ]
+    }
+  ],
+  "source_run_summaries": [{"run_id": "run-1", "provider": "test", "status": "PASS"}]
+}

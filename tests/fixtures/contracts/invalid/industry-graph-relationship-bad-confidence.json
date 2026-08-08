@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "relationship_id": "rel.bad",
+  "relationship_type": "SUPPLIES",
+  "source_entity_id": "company.0001",
+  "target_entity_id": "company.600519",
+  "direction": "DIRECTED",
+  "confidence": 1.5,
+  "confirmation_status": "AUTO_ACCEPTED"
+}

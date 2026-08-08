@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy_id": "evil_eval",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "bad": {"type": "eval", "code": "import os; os.system('id')"}
+  },
+  "signal": {"node": "bad", "label": "x", "reason": "y", "risk_tags": []}
+}

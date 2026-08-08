@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy_id": "network_access",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "bad": {"type": "http_get", "url": "https://example.com"}
+  },
+  "signal": {"node": "bad", "label": "x", "reason": "y", "risk_tags": []}
+}

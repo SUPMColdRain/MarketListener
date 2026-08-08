@@ -5,6 +5,7 @@ from .base import (
     CapabilityEvidence,
     CapabilityRegistration,
     CapabilityStatus,
+    ConfigurationRequirement,
     AssetType,
     ErrorCategory,
     FetchResult,
@@ -18,10 +19,11 @@ from .base import (
 )
 from .migration import migrate_v1_provider_run_result
 from .registry import CapabilityRegistry
-from .runner import ProbeRunner, redact_secrets
+from .runner import ProbeRunner, RetryPolicy, redact_secrets
 from .joinquant import JoinQuantProvider
 from .baostock import BaostockProvider
 from .akshare import AkShareProvider
+from .tushare import TushareProvider
 from .tdx_quant import TdxQuantProvider
 
 __all__ = [
@@ -31,13 +33,16 @@ __all__ = [
     "CapabilityRegistry",
     "BaostockProvider",
     "AkShareProvider",
+    "TushareProvider",
     "TdxQuantProvider",
     "CapabilityStatus",
+    "ConfigurationRequirement",
     "AssetType",
     "ErrorCategory",
     "FetchResult",
     "JoinQuantProvider",
     "ProbeRunner",
+    "RetryPolicy",
     "Provider",
     "ProviderError",
     "ProviderOperation",

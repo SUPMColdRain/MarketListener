@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "strategy_id": "too_deep",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "value_zero": {"type": "value", "value": 0.0},
+    "n00": {"type": "abs", "operand": "close_series"},
+    "n01": {"type": "abs", "operand": "n00"},
+    "n02": {"type": "abs", "operand": "n01"},
+    "n03": {"type": "abs", "operand": "n02"},
+    "n04": {"type": "abs", "operand": "n03"},
+    "n05": {"type": "abs", "operand": "n04"},
+    "n06": {"type": "abs", "operand": "n05"},
+    "n07": {"type": "abs", "operand": "n06"},
+    "n08": {"type": "abs", "operand": "n07"},
+    "signal_node": {"type": "gt", "left": "n08", "right": "value_zero"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []},
+  "limits": {"max_nodes": 64, "max_depth": 4}
+}

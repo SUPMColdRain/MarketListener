@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": "600519"},
+  "action_type": "SPLIT",
+  "ex_date": "2026-07-15",
+  "source": {"provider": "tushare", "source_symbol": "600519.SH", "retrieved_at": "2026-08-05T09:00:00+08:00"}
+}

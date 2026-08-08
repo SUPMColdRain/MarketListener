@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import zipfile
 import json
+import hashlib
 from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
@@ -44,8 +45,17 @@ def verify_market_package(package_path: Path, public_path: Path) -> bool:
             if names.count("signature.ed25519") != 1 or "manifest.json" not in names:
                 return False
             manifest = archive.read("manifest.json")
-            if json.loads(manifest).get("schema_version") != 1:
+            manifest_document = json.loads(manifest)
+            if manifest_document.get("schema_version") != 1:
                 return False
+            for partition in manifest_document.get("partitions", []):
+                for file_metadata in partition.get("files", []):
+                    name = file_metadata["name"]
+                    expected = file_metadata["sha256"]
+                    if names.count(name) != 1:
+                        return False
+                    if hashlib.sha256(archive.read(name)).hexdigest() != expected:
+                        return False
             public_key.verify(archive.read("signature.ed25519"), manifest)
         return True
     except (OSError, ValueError, InvalidSignature, KeyError, zipfile.BadZipFile):

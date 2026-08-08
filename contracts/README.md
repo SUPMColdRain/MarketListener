@@ -16,6 +16,11 @@ format definitions used by the desktop producer and Android consumer.
 - `market-package-manifest.schema.json`: market package inventory
 - `strategy-package-manifest.schema.json`: strategy package metadata
 - `strategy-result.schema.json`: observational strategy output and risk tags
+- `industry-graph-entity.schema.json`: graph entity (company/product/industry/region...)
+- `industry-graph-relationship.schema.json`: typed, directed relationship with
+  confidence and human-confirmation status
+- `industry-graph-evidence.schema.json`: traceable evidence with source type,
+  page/cell/DOM/line location, parser version and extraction time
 
 Cross-field OHLC bounds and bar timestamp ordering are enforced by matching
 desktop and Android validation code because JSON Schema cannot compare sibling

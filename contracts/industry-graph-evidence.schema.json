@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/industry-graph-evidence.schema.json",
+  "title": "Industry graph evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_id", "source_id", "source_type", "location", "parsed_version", "extracted_at"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "evidence_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{2,63}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_type": {"enum": ["HTML", "EXCEL", "PDF", "ANNOUNCEMENT", "TEXT"]},
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page": {"type": "integer", "minimum": 1},
+        "cell": {"type": "string", "minLength": 1},
+        "dom": {"type": "string", "minLength": 1},
+        "line": {"type": "integer", "minimum": 1},
+        "offset": {"type": "integer", "minimum": 0}
+      }
+    },
+    "parsed_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "extracted_at": {"type": "string", "format": "date-time"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

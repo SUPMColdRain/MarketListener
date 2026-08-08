@@ -1,6 +1,7 @@
 package com.marketmonitor.app
 
 import android.os.Bundle
+import android.os.StatFs
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,9 +27,11 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -40,22 +43,98 @@ import androidx.work.WorkManager
 import com.marketmonitor.app.data.ImportedInstrument
 import com.marketmonitor.app.data.ImportedMarketData
 import com.marketmonitor.app.data.ImportedMarketDataReader
+import com.marketmonitor.app.data.DatabaseFactory
+import com.marketmonitor.app.data.DatabaseBoundary
 import com.marketmonitor.app.data.MarketCandle
 import com.marketmonitor.app.data.MarketPackageImportWorker
+import com.marketmonitor.app.data.WatchlistRepository
+import com.marketmonitor.app.graph.GraphRepository
+import com.marketmonitor.app.graph.GraphSearchState
+import com.marketmonitor.app.graph.GraphTab
+import com.marketmonitor.app.market.MarketOverview
+import com.marketmonitor.app.market.StoragePolicy
+import com.marketmonitor.app.strategy.ui.PreferencesStrategyHistoryStore
+import com.marketmonitor.app.strategy.ui.StrategyTab
+import com.marketmonitor.app.strategy.ui.StrategyViewModel
+import com.marketmonitor.app.graph.applyQuery
+import com.marketmonitor.app.graph.loaded
+import com.marketmonitor.app.graph.selectEntity
+import com.marketmonitor.app.graph.selectRelationship
+import com.marketmonitor.app.trading.TradingRepository
+import com.marketmonitor.app.trading.ui.TradingScreen
 import java.io.File
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     private var importState by mutableStateOf(MarketImportUiState())
     private var marketData by mutableStateOf<ImportedMarketData?>(null)
+    private var graphRepository by mutableStateOf<GraphRepository?>(null)
+    private var graphState by mutableStateOf(GraphSearchState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         importState = restoredImportState()
         refreshMarketData()
+        refreshGraphSnapshot()
         enableEdgeToEdge()
-        setContent { MaterialTheme { MarketMonitorScreen(importState, marketData, ::enqueueImport) } }
+        setContent {
+            MaterialTheme {
+                val tradingRepository = remember { TradingRepository(DatabaseFactory.user(applicationContext)) }
+                val strategyViewModel = remember {
+                    StrategyViewModel(PreferencesStrategyHistoryStore(applicationContext))
+                }
+                val watchlistRepository = remember { WatchlistRepository(DatabaseFactory.user(applicationContext)) }
+                val graphPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                    if (uri != null) enqueueGraphImport(uri)
+                }
+                var activeSection by remember { mutableStateOf(0) }
+                Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                    TabRow(selectedTabIndex = activeSection) {
+                        Tab(selected = activeSection == 0, onClick = { activeSection = 0 }, text = { Text("行情") })
+                        Tab(selected = activeSection == 1, onClick = { activeSection = 1 }, text = { Text("交易") })
+                        Tab(selected = activeSection == 2, onClick = { activeSection = 2 }, text = { Text("图谱") })
+                        Tab(selected = activeSection == 3, onClick = { activeSection = 3 }, text = { Text("策略") })
+                    }
+                    when (activeSection) {
+                        0 -> MarketMonitorScreen(
+                            state = importState,
+                            marketData = marketData,
+                            onImport = ::enqueueImport,
+                            watchlistRepository = watchlistRepository,
+                            activePackageId = marketData?.packageId,
+                            onCleanColdData = {
+                                val coldRoot = DatabaseBoundary.coldDirectory(applicationContext)
+                                val availableBytes = runCatching { StatFs(coldRoot.absolutePath).availableBytes }
+                                    .getOrDefault(Long.MAX_VALUE)
+                                StoragePolicy.cleanup(
+                                    coldRoot = coldRoot.toPath(),
+                                    activePackageIds = setOfNotNull(marketData?.packageId),
+                                    availableBytes = availableBytes,
+                                    reserveBytes = 64L * 1024L * 1024L,
+                                ).freedBytes
+                            },
+                        )
+                        1 -> TradingScreen(tradingRepository, marketData)
+                        2 -> GraphTab(
+                            repository = graphRepository,
+                            state = graphState,
+                            onQueryChange = { keyword -> graphState = graphState.applyQuery(graphRepository, keyword) },
+                            onSelectEntity = { entityId -> graphState = graphState.selectEntity(graphRepository, entityId) },
+                            onSelectRelationship = { relationshipId ->
+                                graphState = graphState.selectRelationship(graphRepository, relationshipId)
+                            },
+                            onImport = {
+                                graphPicker.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
+                            },
+                        )
+                        3 -> StrategyTab(viewModel = strategyViewModel, marketData = marketData)
+                        else -> Unit
+                    }
+                }
+            }
+        }
     }
 
     private fun enqueueImport(uri: android.net.Uri) {
@@ -107,6 +186,34 @@ class MainActivity : ComponentActivity() {
             runOnUiThread { marketData = snapshot }
         }.start()
     }
+
+    private fun enqueueGraphImport(uri: android.net.Uri) {
+        Thread {
+            try {
+                val target = File(filesDir, "graph-snapshot.json")
+                contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use(input::copyTo) }
+                    ?: throw IllegalArgumentException("无法读取所选文件")
+                runOnUiThread { refreshGraphSnapshot() }
+            } catch (_: Exception) {
+                runOnUiThread { graphState = graphState.copy(error = "导入图谱快照失败") }
+            }
+        }.start()
+    }
+
+    private fun refreshGraphSnapshot() {
+        Thread {
+            val repository = try {
+                val file = File(filesDir, "graph-snapshot.json")
+                if (file.isFile) GraphRepository.fromJson(file.readText()) else null
+            } catch (_: Exception) {
+                null
+            }
+            runOnUiThread {
+                graphRepository = repository
+                graphState = graphState.loaded(repository)
+            }
+        }.start()
+    }
 }
 
 @Composable
@@ -114,10 +221,15 @@ private fun MarketMonitorScreen(
     state: MarketImportUiState,
     marketData: ImportedMarketData?,
     onImport: (android.net.Uri) -> Unit,
+    watchlistRepository: WatchlistRepository,
+    activePackageId: String?,
+    onCleanColdData: () -> Long,
 ) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) onImport(uri)
     }
+    var cleanedBytes by remember { mutableStateOf<Long?>(null) }
+    val overview = remember(marketData) { MarketOverview.compute(marketData) }
     Column(
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -129,13 +241,25 @@ private fun MarketMonitorScreen(
         StatusCard("数据状态", state.dataStatus)
         StatusCard("数据截止时间", state.cutoff)
         StatusCard("来源与质量", state.sourceAndQuality)
-        ImportedMarketContent(marketData, state.hasImportedMarketData)
+        OverviewCard(overview)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextButton(onClick = { cleanedBytes = onCleanColdData() }) { Text("清理冷数据") }
+            cleanedBytes?.let { Text("已释放 ${it / 1024} KB") }
+        }
+        ImportedMarketContent(marketData, state.hasImportedMarketData, watchlistRepository)
     }
 }
 
 @Composable
-private fun ImportedMarketContent(marketData: ImportedMarketData?, hasImportedMarketData: Boolean) {
+private fun ImportedMarketContent(
+    marketData: ImportedMarketData?,
+    hasImportedMarketData: Boolean,
+    watchlistRepository: WatchlistRepository,
+) {
     val instruments = marketData?.instruments.orEmpty()
+    val scope = rememberCoroutineScope()
+    var watchlistIds by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(marketData?.packageId) { watchlistIds = watchlistRepository.all() }
     var selectedInstrumentId by remember(marketData?.packageId) { mutableStateOf(instruments.firstOrNull()?.instrumentId) }
     val selectedInstrument = instruments.firstOrNull { it.instrumentId == selectedInstrumentId } ?: instruments.firstOrNull()
     var selectedPeriod by remember(selectedInstrument?.instrumentId) {
@@ -148,6 +272,24 @@ private fun ImportedMarketContent(marketData: ImportedMarketData?, hasImportedMa
     Text("K 线图", style = MaterialTheme.typography.titleMedium)
     if (instruments.isNotEmpty() && selectedInstrument != null) {
         InstrumentSelector(instruments, selectedInstrument.instrumentId) { selectedInstrumentId = it }
+        val inWatchlist = selectedInstrument.instrumentId in watchlistIds
+        TextButton(
+            onClick = {
+                scope.launch {
+                    if (inWatchlist) {
+                        watchlistRepository.remove(selectedInstrument.instrumentId)
+                    } else {
+                        watchlistRepository.add(selectedInstrument.instrumentId)
+                    }
+                    watchlistIds = watchlistRepository.all()
+                }
+            },
+        ) {
+            Text(if (inWatchlist) "移出自选" else "加入自选")
+        }
+        if (watchlistIds.isNotEmpty()) {
+            Text("自选（${watchlistIds.size}）：${watchlistIds.joinToString("、")}", style = MaterialTheme.typography.labelMedium)
+        }
         if (periods.isNotEmpty()) {
             TabRow(selectedTabIndex = periods.indexOf(activePeriod).coerceAtLeast(0)) {
                 periods.forEach { period ->
@@ -161,6 +303,17 @@ private fun ImportedMarketContent(marketData: ImportedMarketData?, hasImportedMa
         StatusCard("当前来源与质量", "来源：$sources；质量：$quality")
     }
     OfflineKline(candles, hasImportedMarketData)
+}
+
+@Composable
+private fun OverviewCard(overview: MarketOverview) {
+    val details = if (overview.packageId == null) {
+        "无已导入行情数据（不显示为零或正常）"
+    } else {
+        val staleText = if (overview.stale) "数据可能已陈旧" else "数据在阈值内"
+        "标的 ${overview.instruments.size}，K线 ${overview.totalCandles}，异常标的 ${overview.anomalyCount}；$staleText"
+    }
+    StatusCard("市场概览", details)
 }
 
 @Composable

@@ -2,15 +2,28 @@
 
 from __future__ import annotations
 
+from typing import Mapping
+
 from .base import CapabilityRegistration, Provider, ProviderRequest
 from .akshare import AkShareProvider
 from .baostock import BaostockProvider
 from .joinquant import JoinQuantProvider
 from .tdx_quant import TdxQuantProvider
+from .tushare import TushareProvider
 
 
-def registered_providers() -> tuple[Provider, ...]:
-    return (JoinQuantProvider(), BaostockProvider(), AkShareProvider(), TdxQuantProvider())
+def registered_providers(configuration: Mapping[str, str] | None = None) -> tuple[Provider, ...]:
+    providers: tuple[Provider, ...] = (
+        JoinQuantProvider(),
+        BaostockProvider(),
+        AkShareProvider(),
+        TushareProvider(),
+        TdxQuantProvider(),
+    )
+    if configuration is not None:
+        for provider in providers:
+            provider.configure(configuration)
+    return providers
 
 
 class CapabilityRegistry:

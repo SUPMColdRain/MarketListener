@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/adjustment-factor.schema.json",
+  "title": "Adjustment factor series",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "instrument_key", "mode", "factors", "source"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "instrument_key": {"$ref": "#/$defs/instrumentKey"},
+    "mode": {"enum": ["FORWARD_ADJUSTED", "BACKWARD_ADJUSTED"]},
+    "factors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["effective_date", "factor"],
+        "properties": {
+          "effective_date": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+          "factor": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "retrieved_at"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "retrieved_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "$defs": {
+    "instrumentKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["country_or_market", "exchange", "asset_type", "code"],
+      "properties": {
+        "country_or_market": {"type": "string", "pattern": "^[A-Z]{2,12}$"},
+        "exchange": {"type": "string", "pattern": "^[A-Z0-9_-]{2,16}$"},
+        "asset_type": {"enum": ["STOCK", "INDEX", "FUTURE", "OPTION", "FUND", "ETF", "BOND", "COMMODITY", "CRYPTO"]},
+        "code": {"type": "string", "pattern": "^[A-Z0-9._-]+$"}
+      }
+    }
+  }
+}

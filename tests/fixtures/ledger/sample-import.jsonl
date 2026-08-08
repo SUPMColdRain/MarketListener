@@ -1,0 +1,6 @@
+{"type":"header","source_label":"2026-08-01 券商对账单"}
+{"type":"strategy","id":"strat-a","name":"均线回踩"}
+{"type":"cash","kind":"DEPOSIT","amount":10000,"occurred_at":"2026-08-03T09:00:00+08:00","note":"期初入金"}
+{"type":"trade","instrument_id":"600519.SSE","strategy_id":"strat-a","side":"BUY","quantity":300,"price":10.0,"executed_at":"2026-08-03T10:00:00+08:00","order_group_id":"order-1","fees":[{"kind":"COMMISSION","amount":5.0}],"note":"第一笔部分成交"}
+{"type":"trade","instrument_id":"600519.SSE","strategy_id":"strat-a","side":"BUY","quantity":200,"price":12.0,"executed_at":"2026-08-03T10:05:00+08:00","order_group_id":"order-1","fees":[{"kind":"COMMISSION","amount":4.8}]}
+{"type":"cash","kind":"WITHDRAWAL","amount":-2000,"occurred_at":"2026-08-04T15:00:00+08:00"}

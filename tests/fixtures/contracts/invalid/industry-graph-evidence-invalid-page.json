@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "evidence_id": "evidence.0001",
+  "source_id": "announcement-2026-0001",
+  "source_type": "PDF",
+  "location": {"page": 0, "line": 15},
+  "parsed_version": "1.0.0",
+  "extracted_at": "2026-08-05T09:00:00+08:00"
+}

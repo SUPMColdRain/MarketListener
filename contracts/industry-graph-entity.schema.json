@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketlistener.local/contracts/industry-graph-entity.schema.json",
+  "title": "Industry graph entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "entity_id", "entity_type", "name", "normalized_name"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "entity_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{2,63}$"},
+    "entity_type": {
+      "enum": ["COMPANY", "PRODUCT", "INDUSTRY", "SUPPLIER", "CUSTOMER", "RAW_MATERIAL", "SERVICE", "REGION"]
+    },
+    "name": {"type": "string", "minLength": 1},
+    "normalized_name": {"type": "string", "minLength": 1},
+    "aliases": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "attributes": {"type": "object", "additionalProperties": true},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"}
+  }
+}

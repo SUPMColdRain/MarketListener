@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "strategy_id": "non_boolean_signal",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "close_sma": {"type": "sma", "operand": "close_series", "window": 5}
+  },
+  "signal": {"node": "close_sma", "label": "x", "reason": "y", "risk_tags": []}
+}

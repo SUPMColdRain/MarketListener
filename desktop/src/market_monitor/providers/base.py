@@ -324,6 +324,23 @@ class FetchResult:
 
 
 @dataclass(frozen=True)
+class ConfigurationRequirement:
+    """One local setting required before a provider capability may be probed."""
+
+    name: str
+    capability_id: str
+    description: str
+
+    def __post_init__(self) -> None:
+        if not self.name or not self.name.replace("_", "").isalnum():
+            raise ValueError("configuration requirement name must be an environment-style identifier")
+        if not _CAPABILITY_ID.fullmatch(self.capability_id):
+            raise ValueError("configuration requirement capability id must be lowercase kebab-case")
+        if not self.description.strip():
+            raise ValueError("configuration requirement description must not be blank")
+
+
+@dataclass(frozen=True)
 class ProviderRunResult:
     run_id: str
     source: SourceDescription
@@ -445,6 +462,24 @@ class Provider(ABC):
 
     name: str
     source_description: SourceDescription | None = None
+
+    def configuration_requirements(self) -> Sequence[ConfigurationRequirement]:
+        """Return every independently reportable local prerequisite.
+
+        The runner reports each absent requirement as ``BLOCKED/CONFIGURATION``
+        instead of invoking a credential-gated SDK and turning the whole source
+        into a generic authentication failure.
+        """
+
+        return ()
+
+    def missing_configuration_requirements(self) -> Sequence[ConfigurationRequirement]:
+        """Return the currently absent requirements after local configuration."""
+
+        return ()
+
+    def configure(self, values: Mapping[str, str]) -> None:
+        """Accept ephemeral local values without persisting them in the provider."""
 
     @property
     def source(self) -> SourceDescription:

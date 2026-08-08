@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "strategy_id": "bad_parameter_default",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {
+    "p": {"type": "integer", "minimum": 2, "maximum": 10, "default": 99}
+  },
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "p_param": {"type": "parameter", "name": "p"},
+    "signal_node": {"type": "gt", "left": "close_series", "right": "p_param"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []}
+}

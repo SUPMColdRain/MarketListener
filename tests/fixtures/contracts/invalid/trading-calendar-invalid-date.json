@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "market": "CN_STOCK",
+  "calendar_date": "2026/08/03",
+  "is_trading_day": true,
+  "source": {"provider": "tushare", "retrieved_at": "2026-08-05T09:00:00+08:00"}
+}

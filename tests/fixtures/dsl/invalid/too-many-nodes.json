@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "strategy_id": "too_many_nodes",
+  "strategy_version": "1.0.0",
+  "inputs": ["close"],
+  "parameters": {},
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "value_one": {"type": "value", "value": 1.0},
+    "value_zero": {"type": "value", "value": 0.0},
+    "n01": {"type": "add", "left": "close_series", "right": "value_one"},
+    "n02": {"type": "add", "left": "n01", "right": "value_one"},
+    "signal_node": {"type": "gt", "left": "n02", "right": "value_zero"}
+  },
+  "signal": {"node": "signal_node", "label": "x", "reason": "y", "risk_tags": []},
+  "limits": {"max_nodes": 2, "max_depth": 16}
+}

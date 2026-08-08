@@ -72,10 +72,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
     implementation("net.zetetic:sqlcipher-android:4.6.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     testImplementation("com.networknt:json-schema-validator:1.5.9")
+    testImplementation("org.xerial:sqlite-jdbc:3.41.2.2")
 }

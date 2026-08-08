@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "strategy_id": "ma_cross_demo",
+  "strategy_version": "1.0.0",
+  "description": "快慢均线金叉观察策略（仅生成信号，不构成交易指令）",
+  "inputs": ["close"],
+  "parameters": {
+    "fast_window": {"type": "integer", "minimum": 2, "maximum": 60, "default": 5},
+    "slow_window": {"type": "integer", "minimum": 3, "maximum": 300, "default": 20}
+  },
+  "nodes": {
+    "close_series": {"type": "series", "input": "close"},
+    "fast_param": {"type": "parameter", "name": "fast_window"},
+    "slow_param": {"type": "parameter", "name": "slow_window"},
+    "fast_sma": {"type": "sma", "operand": "close_series", "window": "fast_param"},
+    "slow_sma": {"type": "sma", "operand": "close_series", "window": "slow_param"},
+    "golden_cross": {"type": "crosses_above", "fast": "fast_sma", "slow": "slow_sma"}
+  },
+  "signal": {
+    "node": "golden_cross",
+    "label": "快线上穿慢线",
+    "reason": "短期均线从下方向上穿越长期均线，提示短期动能可能转强",
+    "risk_tags": ["趋势跟踪", "滞后性", "震荡市易反复"]
+  },
+  "limits": {"max_nodes": 64, "max_depth": 8}
+}
