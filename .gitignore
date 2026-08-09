@@ -7,6 +7,7 @@ __pycache__/
 artifacts/
 reports/
 data/
+行业产业链研报/
 
 # Local environment and secrets
 .env
@@ -20,6 +21,13 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Public signing keys embedded in the Android app are intentionally tracked.
+!android/app/src/main/res/raw/market_package_public_key.pem
+!android/app/src/main/res/raw/market_package_ecdsa_public_key.pem
+
+# Local research reports must never be uploaded to git.
+行业产业链研报/
 
 # Android / Gradle
 android/.gradle/
@@ -37,3 +45,10 @@ android/captures/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime data stores / local backups (never uploaded to git).
+data_control/
+data_control_old_20260808/
+desktop/*.log
+android/gradle_build_*.log
+android/gradle_build_*.err.log

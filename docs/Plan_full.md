@@ -10,6 +10,10 @@
 4. `行情监控和产业链图谱项目.md` 的产品与架构说明；
 5. `Plan.md` 与 `docs/deliveries/D0-*` 仅作为 Day 0 历史档案。
 
+> 正式开发口径（用户 2026-08-06 起）：项目不再区分 P0/FULL 阶段，全部按正式开发持续推进。
+> 本文与 `STATUS.md` 中遗留的 `FULL-*` 编号仅作为历史任务追踪编号，不代表优先级或阶段；
+> 当前 5.1–5.9 系列任务完成后统一测试、审查与验收，不逐任务中断审查。
+
 正式开发先完成计划固化，再从 `STATUS.md` 中第一项 `READY` 任务逐项推进。不得自动续跑原 `Plan.md` 的 `D0-*`，不得改写 Day 0 失败记录。
 
 ## 2. 状态机与角色分离
@@ -158,6 +162,27 @@ FULL-001 → FULL-002 → FULL-003
 | FULL-702 | 企业名称归一、实体消歧、关系抽取和重复合并 | 701 | 金标样本精度达标；低置信结果进入待确认 |
 | FULL-703 | 人工审核、修订和审计记录 | 702、500 | 自动结果不能覆盖人工确认 |
 | FULL-704 | Android产业链搜索、公司关系和来源查看 | 703、300 | 可从关系追溯到原始来源和确认状态 |
+
+### 5.8 补充：720+ 篇研报知识库生产流水线（2026-08-08 用户指示）
+
+用户明确要求：`行业产业链研报/` 下的全部行业研报（720+ 篇，不放入 Git 上传文件夹）不能一次性塞给单个 Agent，应作为“生产数据库”的过程，Android 每次打开产业链页面时不得重新阅读研报。正式实现如下：
+
+1. PDF 解析/OCR/文档切块 → `reports process`（幂等，每篇生成 `report_*.json`，带 `status`/`processed_at` 状态标识，已处理不重复读取）。
+2. 并发抽取结构化事实（公司/产品/原材料/环节/关系/证据定位）。
+3. `reports verify`：脚本化规则核验（schema/事实/实体/证据/链归属/警告），通过写 `review` 块，失败标记待人工或 OCR 复核。
+4. `reports chains`：按产业链重新聚合 → `chain_index.json` + `industry-map.html`（电脑端 HTML 产业链页，SVG 图形化图谱：原材料/上游/中游/下游/产品/公司节点，支持搜索、筛选与事实定位）。
+5. 图谱快照同步 `data_control/industry/industry-map.html`，随同步包下发；Android 产业链页加载网页快照，不解析研报。
+
+CLI 入口：
+
+```powershell
+desktop\.venv\Scripts\python -m market_monitor reports process --report-root "行业产业链研报" --output-root reports\industry
+desktop\.venv\Scripts\python -m market_monitor reports status --output-root reports\industry
+desktop\.venv\Scripts\python -m market_monitor reports verify --output-root reports\industry
+desktop\.venv\Scripts\python -m market_monitor reports chains --output-root reports\industry
+```
+
+当前事实（2026-08-09）：717/720 解析、33,096 条事实、719 篇核验通过、1 篇待复核（银河证券磷化铟报告，疑似扫描件待 OCR）、155 条产业链、22,083 条链上事实。核验为脚本化规则核验，未做真实网络检索核验；交付记录见 `docs/deliveries/FULL-705.md`，状态见 `STATUS.md`。
 
 ### 5.9 运维、回归与发布
 

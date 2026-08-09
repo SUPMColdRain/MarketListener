@@ -1,13 +1,17 @@
 # 正式开发实时状态
 
-> 本文件是唯一实时任务状态源。最后更新：2026-08-06（5.1–5.9 非门控任务实现全部完成；Android/DSL/图谱集群已完成独立验收：本机可执行项全部重跑通过，其中 12 项置 `ACCEPTED`，含真机要求的 8 项维持 `ACCEPTANCE` 并记录设备解除条件；门控任务如实 BLOCKED）。
+> 本文件是唯一实时任务状态源。最后更新：2026-08-09（Android 五大页面、数据页与桌面→手机同步链路已完成并实测；Android 同步包下载/手动导入两处报错已修复；真实 K 线覆盖 48 标的 / 72,321 根（部分覆盖，接口如实展示）；720 篇研报知识库流水线完成：717 解析 / 33,096 条事实 / 719 篇核验通过 / 1 篇待 OCR，聚合 155 条产业链并生成 SVG 图谱页 `/industry/`，快照已打入 ACTIVE 同步包 `market-20260808-190946-deaecd38`（72,321 bars + 25,545 gold_metrics + industry-map，约 7.25 MB）；桌面 pytest 507 项、Android JVM 74 项全部通过）。
+
+> 状态说明（2026-08-06 正式开发口径）：项目不再区分 P0/FULL 阶段；下文 `FULL-*` 编号仅作历史追踪编号，
+> 不代表优先级或阶段。当前开发以 5.1–5.9 系列任务为准，全部完成后统一测试、审查与验收；
+> 本表保留为历史状态档案，新进展以交付记录与最终验收报告为准。
 
 ## 当前入口
 
 - 当前工作模式：系列统一审查+验收（用户 2026-08-06 指示：完成 5.1–5.9 所有任务后再审查；现非门控实现已全部完成，Android/DSL/图谱集群验收已推进）。
-- 当前任务：Android/DSL/图谱集群独立验收已完成本机重跑（accept_android2）；数据/契约/流水线集群验收记录已由 root 代行落盘（`docs/reviews/acceptance-data.md`），审查补遗已由 root 代行追加（`docs/reviews/unified-review-data.md`）；FULL-803 本机回归与 Release APK 已完成（进入 `ACCEPTANCE`），FULL-900 等待 803 外部解除条件。
+- 当前任务：Android 五大页面（行情/数据/策略/统计/产业链底部导航）与数据页已完成，行情页含“从电脑同步”入口；桌面→手机同步链路（package_builder → 8765 后端 → Android 导入）已实测；历史验收记录：Android/DSL/图谱集群本机重跑（accept_android2）、数据/契约/流水线集群（`docs/reviews/acceptance-data.md`、`docs/reviews/unified-review-data.md`）；FULL-803 本机回归与 Release APK 已完成（进入 `ACCEPTANCE`），FULL-900 等待 803 外部解除条件。
 - 当前状态：FULL-400/401/402/403/500/501/502/503/700/701/702/703=`ACCEPTED`；FULL-123/300/301/302/303/404/504/704=`ACCEPTANCE`（真机解除条件未满足）；FULL-110/111/112/113/120/122/600/602/800=`ACCEPTANCE`（外部数据/凭据/网络/连续运行条件未满足）；FULL-803=`ACCEPTANCE`（真实数据/真机/签名/连续运行未满足）；FULL-900=`IN_PROGRESS`（封板准备完成，待 803 外部条件）；`FULL-610`/`FULL-804`=`BLOCKED`（外部条件未满足）。
-- 当前证据：`docs/deliveries/FULL-*.md` 全部任务均有交付记录；桌面 pytest 专项 115 项、Android JVM 68 项（20 suite/0 失败）、lint 0 errors 均为本机实测；Android/DSL/图谱验收证据见 `docs/reviews/acceptance-android-dsl-graph.md`；审查证据见 `docs/reviews/review-android-chain.md` 与 `docs/reviews/review-android-fixes-rereview.md`。
+- 当前证据：`docs/deliveries/FULL-*.md` 全部任务均有交付记录；2026-08-09 本机实测桌面 pytest 507 项（junit XML 记录，0 失败，新增覆盖统计与研报流水线回归测试）、ruff 通过、Android JVM 74 项（21 suite/0 失败）、lintDebug 0 errors（9 warnings）、assembleDebug 成功、APK `android/app/build/outputs/apk/debug/app-debug.apk`；Android/DSL/图谱验收证据见 `docs/reviews/acceptance-android-dsl-graph.md`；审查证据见 `docs/reviews/review-android-chain.md` 与 `docs/reviews/review-android-fixes-rereview.md`。
 - 状态说明：审查/验收按角色分离；真实凭据/设备/网络类任务继续如实记录，不伪造。
 - 本次状态更新：非门控实现全部进入 `REVIEW`；`FULL-610`/`FULL-804` 置 `BLOCKED`；`FULL-803` 进入 `IN_PROGRESS`（发布清单与 16KB 检查就绪，全量回归随统一审查推进）。
 - 本次状态更新：`FULL-500`~`FULL-504`=`PENDING`→`REVIEW`（5.6 系列实现完成：个人库交易账本数据模型/迁移、录入/导入/修订/持仓计算、统计归因、加密备份恢复、复盘 UI；Android JVM 54 项测试与 lint 全绿；真机流程待设备验收）。
@@ -15,6 +19,11 @@
 - 本次状态更新：accept_android2 独立验收完成——FULL-400/401/402/403/500/501/502/503/700/701/702/703 置 `ACCEPTED`（本机重跑通过）；FULL-123/300/301/302/303/404/504/704 维持 `ACCEPTANCE` 并写明 Android 13+ 真机解除条件；证据见 `docs/reviews/acceptance-android-dsl-graph.md` 与各交付文档“独立验收”章节。
 - 本次状态更新：数据链 FULL-110/111/112/113/120/122/600/602/800 由 `REVIEW` 进入 `ACCEPTANCE`（审查补遗与验收记录见 `docs/reviews/unified-review-data.md`、`docs/reviews/acceptance-data.md`，root 代行并如实标注）；FULL-803 由 `IN_PROGRESS` 进入 `ACCEPTANCE`（全量回归 PASS、Release APK 构建与 16KB 检查通过、未签名；见 `docs/deliveries/FULL-803.md` 与 `docs/release-checklist.md`）。
 - 本次状态更新：FULL-900 由 `PENDING` 进入 `IN_PROGRESS`——版本一致（0.1.0/versionCode 1）、Release APK 未签名+16KB PASS、封板报告包 `docs/release/`（能力/质量/验收/已知缺口）齐备；封板需 803 外部解除条件、keystore 签名与工作提交后打标签，见 `docs/deliveries/FULL-900.md`。
+- 本次状态更新（2026-08-09）：Android 五页与数据页实现完成——`MainActivity` 改底部 NavigationBar 五项；新增 `DataScreen.kt`（分组卡片+搜索+空态）与 `MetricGroups.kt`（纯函数分组/聚合/格式化），`ImportedMarketData.kt` 容错读取 `gold_metrics`；行情页新增“从电脑同步”卡片，输入 `http://<电脑IP>:8765` 下载 `/api/android-package` 并交给导入 Worker；桌面 `package_builder` 打包全量 COMPLETE silver + gold_metrics 并签名激活，后端 8765 在线；工作区保持未提交（用户明确要求不 commit）。
+- 本次状态更新（2026-08-09）：Android 同步链路两处报错已修复——`MainActivity.kt` 默认服务器地址改为电脑当前 IPv4 `http://192.168.1.88:8765`，同步/导入成功后刷新产业链 HTML，导入失败返回 `RESULT_ERROR_DETAIL` 明细；`MarketPackageImporter.kt` 白名单与抽取条目加入 `industry/industry-map.html`，手动导入 zip 不再报“行情包结构无效”。
+- 本次状态更新（2026-08-09）：720 篇研报知识库流水线全量跑通——`reports/industry/` 生成 720 个 `report_*.json`（717 解析 / 3 跳过 / 0 失败，33,096 条事实）；`reports verify` 719 通过 / 1 待复核（`20260712-银河证券-光器件行业深度报告：磷化铟…pdf`，疑似扫描件建议 OCR）；`reports chains` 聚合 155 条产业链（22,083 条链上事实）并生成 `industry-map.html`（SVG 图谱，9.6 MB），快照同步 `data_control/industry/` 且已打入同步包；后端 `/industry/`、`/industry/industry-map.html` 实测 200；Android 产业链页改为加载网页快照，不重读研报。
+- 本次状态更新（2026-08-09）：重建并激活同步包 `market-20260808-190946-deaecd38`（7,256,011 字节，含 `signature.ed25519`/`signature.ecdsa`/`payload.sqlite`/`industry/industry-map.html`）；后端 8765 重启到最新代码并实测 `/`、`/api/health`（含真实 coverage）、`/industry/`、`/industry/industry-map.html`、`/api/android-package` 全部 200；桌面 pytest 507 项通过（新增 `/api/health` 真实 parquet 覆盖统计测试与研报聚合/核验/SVG 图谱测试 4 项），Android `testDebugUnitTest assembleDebug` BUILD SUCCESSFUL（21 suites / 74 tests / 0 failures）。
+- 本次状态更新（2026-08-09）：图谱路由终核验——`/industry/industry-map.html` 返回 9,628,645 字节，经逐字节比对确认为本地新版 9,647,124 字节经 `read_text` 将 18,479 处 CRLF 归一化为 LF 后的内容（与旧版文件无关）；同步包 zip 内 `industry/industry-map.html` 与本地原始文件 SHA256 均为 `785EF2FF0AC4C7709B915ED5A38EF0C1234A521B40CE927FCAB82786D1CAA5D1`；`/`、`/api/health`（48 标的 / 72,321 行）、`/industry/industry-map.html`、`/api/android-package` 实测全部 200。
 
 ## 状态表
 
@@ -61,6 +70,7 @@
 | FULL-702 | ACCEPTED | 701 | 独立验收（accept_android2）重跑金标评估：实体与关系 P/R/F1=1.0（10/10 与 8/8），超阈值，见 `docs/reviews/acceptance-android-dsl-graph.md` 与交付文档“独立验收”章节 |
 | FULL-703 | ACCEPTED | 702、500 | 独立验收（accept_android2）重跑审核/修订/审计链 8 项与 JVM 全量通过，见 `docs/reviews/acceptance-android-dsl-graph.md` 与交付文档“独立验收”章节 |
 | FULL-704 | ACCEPTANCE | 703、300 | 独立验收本机部分通过；解除条件=真机从关系逐级追溯原始来源位置与确认状态；已知 P2（快照无大小限制/解析失败提示）与 P3（重复 entity_id、非懒加载），见 `docs/reviews/acceptance-android-dsl-graph.md` |
+| FULL-705 | ACCEPTANCE | 701–704 | 720+ 篇研报知识库流水线与电脑端 SVG 产业链图谱完成：`reports/industry/` 720 篇 JSON（717 解析/33,096 事实/719 核验通过/1 待 OCR），155 条链/22,083 条链上事实，`industry-map.html` 上线 `/industry/` 并打入同步包，Android 以网页快照导入复用；解除条件=真机导入并显示图谱快照、1 篇待复核研报 OCR/人工处理，见 `docs/deliveries/FULL-705.md` |
 | FULL-800 | ACCEPTANCE | 202、204 | 实现完成：每晚任务状态机（锁/重试/崩溃恢复）、CLI 白名单入口、run-nightly/install-nightly-task 脚本，本机已创建 `MarketMonitorNightly`（每日 18:30 Ready）；见 `docs/deliveries/FULL-800.md`；解除条件=连续夜间运行与受控中断/恢复演练 |
 | FULL-801 | ACCEPTED | 800 | 健康看板实现并复审通过；失败/陈旧/隔离区可见；代行验收见 `docs/reviews/acceptance-executed.md` |
 | FULL-802 | ACCEPTED | 801 | 凭据扫描/密钥轮换/备份演练/依赖审计实现并复审通过；代行验收见 `docs/reviews/acceptance-executed.md` |

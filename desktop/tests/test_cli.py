@@ -112,3 +112,53 @@ def test_cli_redacts_registered_short_secret_when_it_appears_as_a_report_path_to
 
     assert "s3" not in output
     assert "***" in output
+
+
+def test_cli_serve_emits_machine_readable_result(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(
+        "market_monitor.cli.serve_control_center",
+        lambda *args, **kwargs: ("127.0.0.1", 9876),
+    )
+
+    assert main(
+        ["serve", "--data-root", str(tmp_path), "--host", "127.0.0.1", "--port", "0", "--timeout-seconds", "0.2", "--quiet"]
+    ) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "SUCCESS"
+    assert "http://127.0.0.1:9876/" in payload["message"]
+
+
+def test_cli_serve_rejects_non_positive_timeout(capsys) -> None:
+    assert main(["serve", "--timeout-seconds", "0"]) == 64
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "ARGUMENT_ERROR"
+    assert "timeout-seconds" in payload["message"]
+
+
+def test_cli_fetch_emits_machine_readable_session_summary(monkeypatch, tmp_path, capsys) -> None:
+    def fake_run(data_root, **kwargs):
+        assert data_root == tmp_path
+        return {
+            "session_id": "session-test",
+            "status": "PARTIAL_FAILURE",
+            "passed": 12,
+            "failed": 3,
+            "blocked": 2,
+            "total_rows": 12345,
+        }
+
+    monkeypatch.setattr("market_monitor.cli.run_fetch_session", fake_run)
+    assert main(["fetch", "--data-root", str(tmp_path)]) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "PARTIAL_FAILURE"
+    assert payload["exit_code"] == 2
+    assert "session-test" in payload["message"]
+    assert "12345 rows" in payload["message"]
+
+
+def test_cli_fetch_rejects_non_positive_limits(monkeypatch, capsys) -> None:
+    monkeypatch.setattr("market_monitor.cli.run_fetch_session", lambda *a, **k: None)
+    assert main(["fetch", "--limit-futures", "0"]) == 64
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "ARGUMENT_ERROR"
+    assert "limit-futures" in payload["message"]

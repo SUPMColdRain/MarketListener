@@ -8,6 +8,7 @@ from .base import CapabilityRegistration, Provider, ProviderRequest
 from .akshare import AkShareProvider
 from .baostock import BaostockProvider
 from .joinquant import JoinQuantProvider
+from .pytdx import TdxProvider
 from .tdx_quant import TdxQuantProvider
 from .tushare import TushareProvider
 
@@ -17,6 +18,7 @@ def registered_providers(configuration: Mapping[str, str] | None = None) -> tupl
         JoinQuantProvider(),
         BaostockProvider(),
         AkShareProvider(),
+        TdxProvider(),
         TushareProvider(),
         TdxQuantProvider(),
     )

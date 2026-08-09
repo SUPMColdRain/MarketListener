@@ -133,6 +133,57 @@ class MarketStore:
             [partition_id],
         ).fetchone()
 
+    def upsert_dataset(self, dataset_json: Mapping[str, Any]) -> None:
+        """登记或更新一份 Data Catalog 数据集定义。"""
+
+        dataset_id = str(dataset_json["dataset_id"])
+        self.connection.execute(
+            """INSERT INTO datasets (dataset_id, dataset_json, registered_at) VALUES (?, ?, ?)
+            ON CONFLICT(dataset_id) DO UPDATE SET dataset_json=excluded.dataset_json, registered_at=excluded.registered_at""",
+            [dataset_id, json.dumps(dataset_json, ensure_ascii=False, sort_keys=True), _now()],
+        )
+        self.connection.commit()
+
+    def list_datasets(self) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            "SELECT dataset_id, dataset_json, registered_at FROM datasets ORDER BY dataset_id"
+        ).fetchall()
+        output: list[dict[str, Any]] = []
+        for row in rows:
+            document = json.loads(row[1])
+            document["registered_at"] = row[2]
+            output.append(document)
+        return output
+
+    def register_default_datasets(self) -> int:
+        """写入 Data Catalog 内置数据集；返回本次新增数量。"""
+
+        from market_monitor.dataset_catalog import DEFAULT_DATASETS, validate_dataset_definition
+
+        registered = 0
+        for definition in DEFAULT_DATASETS:
+            validate_dataset_definition(definition)
+            self.upsert_dataset(definition.to_dict())
+            registered += 1
+        return registered
+
+    def upsert_gold_metrics(self, metrics: Sequence[Mapping[str, Any]]) -> int:
+        """把 Gold 派生指标写入 gold_metrics 表；返回写入行数。"""
+
+        for metric in metrics:
+            self.connection.execute(
+                """INSERT INTO gold_metrics (metric_id, instrument_id, trading_date, period, metric_name, value,
+                definition, calculation_method, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(metric_id) DO UPDATE SET value=excluded.value, timestamp=excluded.timestamp""",
+                [
+                    metric["metric_id"], metric["instrument_id"], metric["trading_date"], metric["period"],
+                    metric["metric_name"], metric["value"], metric["definition"], metric["calculation_method"],
+                    metric["timestamp"],
+                ],
+            )
+        self.connection.commit()
+        return len(metrics)
+
     def _atomic_json(self, target: Path, data: Any) -> None:
         staging = target.with_suffix(f".{uuid4().hex}.json")
         try:
@@ -153,6 +204,18 @@ class MarketStore:
                 partition_id VARCHAR PRIMARY KEY, file_path VARCHAR NOT NULL, row_count BIGINT NOT NULL,
                 data_cutoff VARCHAR NOT NULL, sha256 VARCHAR NOT NULL, source_run_id VARCHAR NOT NULL,
                 status VARCHAR NOT NULL, updated_at VARCHAR NOT NULL
+            )"""
+        )
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS datasets (
+                dataset_id VARCHAR PRIMARY KEY, dataset_json VARCHAR NOT NULL, registered_at VARCHAR NOT NULL
+            )"""
+        )
+        self.connection.execute(
+            """CREATE TABLE IF NOT EXISTS gold_metrics (
+                metric_id VARCHAR PRIMARY KEY, instrument_id VARCHAR NOT NULL, trading_date VARCHAR NOT NULL,
+                period VARCHAR NOT NULL, metric_name VARCHAR NOT NULL, value DOUBLE NOT NULL,
+                definition VARCHAR NOT NULL, calculation_method VARCHAR NOT NULL, timestamp VARCHAR NOT NULL
             )"""
         )
 

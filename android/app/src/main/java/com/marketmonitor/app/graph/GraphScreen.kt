@@ -1,5 +1,6 @@
 package com.marketmonitor.app.graph
 
+import android.webkit.WebView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,8 +17,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import java.io.File
 
 /** Industry-graph tab: search, entity detail, relationships and source trace. */
 @Composable
@@ -28,7 +35,9 @@ fun GraphTab(
     onSelectEntity: (String) -> Unit,
     onSelectRelationship: (String) -> Unit,
     onImport: () -> Unit,
+    industryMapFile: File?,
 ) {
+    var viewMode by remember(industryMapFile) { mutableStateOf(if (industryMapFile != null) "map" else "search") }
     Column(
         modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -40,39 +49,73 @@ fun GraphTab(
             Text("产业链图谱", style = MaterialTheme.typography.titleLarge)
             Button(onClick = onImport) { Text("导入图谱快照") }
         }
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = onQueryChange,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("搜索公司、产品或行业") },
-            singleLine = true,
-        )
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        when {
-            state.selectedRelationshipId != null -> {
-                repository?.relationshipDetail(state.selectedRelationshipId)?.let { detail ->
-                    RelationshipDetailCard(detail, onBack = { onSelectEntity(state.selectedEntityId ?: detail.source.entityId) })
-                }
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (industryMapFile != null) {
+                TextButton(onClick = { viewMode = "map" }) { Text("SVG 图谱") }
             }
-            state.selectedEntityId != null -> {
-                repository?.entityFor(state.selectedEntityId)?.let { entity ->
-                    EntityDetailCard(
-                        entity = entity,
-                        relationships = repository.relationshipsFor(entity.entityId),
-                        repository = repository,
-                        onSelectRelationship = onSelectRelationship,
-                        onBack = { onQueryChange(state.query) },
-                    )
-                }
-            }
-            else -> SearchResults(
-                query = state.query,
-                results = state.results,
-                snapshotLoaded = state.snapshotLoaded,
-                onSelectEntity = onSelectEntity,
+            TextButton(onClick = { viewMode = "search" }) { Text("搜索/详情") }
+        }
+        if (viewMode == "map" && industryMapFile != null) {
+            IndustryMapView(industryMapFile)
+        } else {
+            OutlinedTextField(
+                value = state.query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("搜索公司、产品或行业") },
+                singleLine = true,
             )
+            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            when {
+                state.selectedRelationshipId != null -> {
+                    repository?.relationshipDetail(state.selectedRelationshipId)?.let { detail ->
+                        RelationshipDetailCard(detail, onBack = { onSelectEntity(state.selectedEntityId ?: detail.source.entityId) })
+                    }
+                }
+                state.selectedEntityId != null -> {
+                    repository?.entityFor(state.selectedEntityId)?.let { entity ->
+                        EntityDetailCard(
+                            entity = entity,
+                            relationships = repository.relationshipsFor(entity.entityId),
+                            repository = repository,
+                            onSelectRelationship = onSelectRelationship,
+                            onBack = { onQueryChange(state.query) },
+                        )
+                    }
+                }
+                else -> SearchResults(
+                    query = state.query,
+                    results = state.results,
+                    snapshotLoaded = state.snapshotLoaded,
+                    onSelectEntity = onSelectEntity,
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun IndustryMapView(file: File) {
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.allowFileAccess = true
+                settings.blockNetworkLoads = true
+            }
+        },
+        update = { webView ->
+            val url = "file://" + file.absolutePath
+            if (webView.url != url) {
+                webView.loadUrl(url)
+            }
+        },
+    )
 }
 
 @Composable

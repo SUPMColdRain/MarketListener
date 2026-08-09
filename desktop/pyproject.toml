@@ -17,6 +17,7 @@ dependencies = [
     "jsonschema==4.26.0",
     "openpyxl==3.1.5",
     "pypdf==6.14.2",
+    "pytdx==1.72",
     "tushare==1.4.29",
 ]
 
@@ -32,6 +33,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+pythonpath = ["src"]
 
 [tool.ruff]
 target-version = "py311"

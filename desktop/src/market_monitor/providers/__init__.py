@@ -23,6 +23,7 @@ from .runner import ProbeRunner, RetryPolicy, redact_secrets
 from .joinquant import JoinQuantProvider
 from .baostock import BaostockProvider
 from .akshare import AkShareProvider
+from .pytdx import TdxProvider
 from .tushare import TushareProvider
 from .tdx_quant import TdxQuantProvider
 
@@ -33,6 +34,7 @@ __all__ = [
     "CapabilityRegistry",
     "BaostockProvider",
     "AkShareProvider",
+    "TdxProvider",
     "TushareProvider",
     "TdxQuantProvider",
     "CapabilityStatus",

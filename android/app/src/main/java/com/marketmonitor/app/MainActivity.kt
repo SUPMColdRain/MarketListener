@@ -17,11 +17,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -63,21 +68,26 @@ import com.marketmonitor.app.graph.selectRelationship
 import com.marketmonitor.app.trading.TradingRepository
 import com.marketmonitor.app.trading.ui.TradingScreen
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import com.marketmonitor.app.ui.DataScreen
 
 class MainActivity : ComponentActivity() {
     private var importState by mutableStateOf(MarketImportUiState())
     private var marketData by mutableStateOf<ImportedMarketData?>(null)
     private var graphRepository by mutableStateOf<GraphRepository?>(null)
     private var graphState by mutableStateOf(GraphSearchState())
+    private var industryMapFile by mutableStateOf<File?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         importState = restoredImportState()
         refreshMarketData()
         refreshGraphSnapshot()
+        refreshIndustryHtml()
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
@@ -90,47 +100,78 @@ class MainActivity : ComponentActivity() {
                     if (uri != null) enqueueGraphImport(uri)
                 }
                 var activeSection by remember { mutableStateOf(0) }
-                Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                    TabRow(selectedTabIndex = activeSection) {
-                        Tab(selected = activeSection == 0, onClick = { activeSection = 0 }, text = { Text("行情") })
-                        Tab(selected = activeSection == 1, onClick = { activeSection = 1 }, text = { Text("交易") })
-                        Tab(selected = activeSection == 2, onClick = { activeSection = 2 }, text = { Text("图谱") })
-                        Tab(selected = activeSection == 3, onClick = { activeSection = 3 }, text = { Text("策略") })
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.weight(1f).statusBarsPadding()) {
+                        when (activeSection) {
+                            0 -> MarketMonitorScreen(
+                                state = importState,
+                                marketData = marketData,
+                                onImport = ::enqueueImport,
+                                onSyncFromServer = ::enqueueSyncFromServer,
+                                watchlistRepository = watchlistRepository,
+                                activePackageId = marketData?.packageId,
+                                onCleanColdData = {
+                                    val coldRoot = DatabaseBoundary.coldDirectory(applicationContext)
+                                    val availableBytes = runCatching { StatFs(coldRoot.absolutePath).availableBytes }
+                                        .getOrDefault(Long.MAX_VALUE)
+                                    StoragePolicy.cleanup(
+                                        coldRoot = coldRoot.toPath(),
+                                        activePackageIds = setOfNotNull(marketData?.packageId),
+                                        availableBytes = availableBytes,
+                                        reserveBytes = 64L * 1024L * 1024L,
+                                    ).freedBytes
+                                },
+                            )
+                            1 -> DataScreen(marketData)
+                            2 -> StrategyTab(viewModel = strategyViewModel, marketData = marketData)
+                            3 -> TradingScreen(tradingRepository, marketData)
+                            4 -> GraphTab(
+                                repository = graphRepository,
+                                state = graphState,
+                                onQueryChange = { keyword -> graphState = graphState.applyQuery(graphRepository, keyword) },
+                                onSelectEntity = { entityId -> graphState = graphState.selectEntity(graphRepository, entityId) },
+                                onSelectRelationship = { relationshipId ->
+                                    graphState = graphState.selectRelationship(graphRepository, relationshipId)
+                                },
+                                onImport = {
+                                    graphPicker.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
+                                },
+                                industryMapFile = industryMapFile,
+                            )
+                            else -> Unit
+                        }
                     }
-                    when (activeSection) {
-                        0 -> MarketMonitorScreen(
-                            state = importState,
-                            marketData = marketData,
-                            onImport = ::enqueueImport,
-                            watchlistRepository = watchlistRepository,
-                            activePackageId = marketData?.packageId,
-                            onCleanColdData = {
-                                val coldRoot = DatabaseBoundary.coldDirectory(applicationContext)
-                                val availableBytes = runCatching { StatFs(coldRoot.absolutePath).availableBytes }
-                                    .getOrDefault(Long.MAX_VALUE)
-                                StoragePolicy.cleanup(
-                                    coldRoot = coldRoot.toPath(),
-                                    activePackageIds = setOfNotNull(marketData?.packageId),
-                                    availableBytes = availableBytes,
-                                    reserveBytes = 64L * 1024L * 1024L,
-                                ).freedBytes
-                            },
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = activeSection == 0,
+                            onClick = { activeSection = 0 },
+                            icon = { Text("行情") },
+                            label = { Text("行情") },
                         )
-                        1 -> TradingScreen(tradingRepository, marketData)
-                        2 -> GraphTab(
-                            repository = graphRepository,
-                            state = graphState,
-                            onQueryChange = { keyword -> graphState = graphState.applyQuery(graphRepository, keyword) },
-                            onSelectEntity = { entityId -> graphState = graphState.selectEntity(graphRepository, entityId) },
-                            onSelectRelationship = { relationshipId ->
-                                graphState = graphState.selectRelationship(graphRepository, relationshipId)
-                            },
-                            onImport = {
-                                graphPicker.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
-                            },
+                        NavigationBarItem(
+                            selected = activeSection == 1,
+                            onClick = { activeSection = 1 },
+                            icon = { Text("数据") },
+                            label = { Text("数据") },
                         )
-                        3 -> StrategyTab(viewModel = strategyViewModel, marketData = marketData)
-                        else -> Unit
+                        NavigationBarItem(
+                            selected = activeSection == 2,
+                            onClick = { activeSection = 2 },
+                            icon = { Text("策略") },
+                            label = { Text("策略") },
+                        )
+                        NavigationBarItem(
+                            selected = activeSection == 3,
+                            onClick = { activeSection = 3 },
+                            icon = { Text("统计") },
+                            label = { Text("统计") },
+                        )
+                        NavigationBarItem(
+                            selected = activeSection == 4,
+                            onClick = { activeSection = 4 },
+                            icon = { Text("产业链") },
+                            label = { Text("产业链") },
+                        )
                     }
                 }
             }
@@ -144,24 +185,62 @@ class MainActivity : ComponentActivity() {
                 val target = File(cacheDir, "selected-market-package.zip")
                 contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use(input::copyTo) }
                     ?: throw IllegalArgumentException("无法读取所选文件")
-                val request = OneTimeWorkRequestBuilder<MarketPackageImportWorker>()
-                    .setInputData(Data.Builder().putString("package_path", target.path).build())
-                    .build()
-                runOnUiThread {
-                    importState = MarketImportUiState(dataStatus = "行情包已加入队列，正在验证")
-                    val workManager = WorkManager.getInstance(this)
-                    workManager.enqueue(request)
-                    workManager.getWorkInfoByIdLiveData(request.id).observe(this) { info ->
-                        if (info != null) {
-                            importState = stateForWork(info)
-                            if (info.state == WorkInfo.State.SUCCEEDED) refreshMarketData()
-                        }
-                    }
-                }
+                runOnUiThread { enqueuePackageFile(target) }
             } catch (_: Exception) {
                 runOnUiThread { importState = MarketImportUiState(dataStatus = "读取行情包失败") }
             }
         }.start()
+    }
+
+    private fun enqueueSyncFromServer(rawUrl: String) {
+        val baseUrl = rawUrl.trim().trimEnd('/')
+        if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+            importState = MarketImportUiState(dataStatus = "服务器地址需以 http:// 或 https:// 开头")
+            return
+        }
+        importState = MarketImportUiState(dataStatus = "正在从电脑下载同步包（$baseUrl）")
+        Thread {
+            try {
+                val target = File(cacheDir, "synced-market-package.zip")
+                val connection = URL("$baseUrl/api/android-package").openConnection() as HttpURLConnection
+                connection.connectTimeout = 10_000
+                connection.readTimeout = 120_000
+                connection.instanceFollowRedirects = true
+                connection.setRequestProperty("Accept", "application/zip")
+                val status = connection.responseCode
+                if (status != 200) {
+                    val detail = connection.errorStream?.bufferedReader()?.use { it.readText() }
+                    throw IllegalStateException("同步包下载失败：HTTP $status${detail?.let { " $it" } ?: ""}")
+                }
+                connection.inputStream.use { input -> target.outputStream().use(input::copyTo) }
+                if (target.length() == 0L) throw IllegalStateException("下载的同步包为空")
+                runOnUiThread { enqueuePackageFile(target) }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    importState = MarketImportUiState(
+                        dataStatus = "从电脑同步失败：${error.message ?: "未知错误"}",
+                    )
+                }
+            }
+        }.start()
+    }
+
+    private fun enqueuePackageFile(target: File) {
+        importState = MarketImportUiState(dataStatus = "行情包已加入队列，正在验证")
+        val request = OneTimeWorkRequestBuilder<MarketPackageImportWorker>()
+            .setInputData(Data.Builder().putString("package_path", target.path).build())
+            .build()
+        val workManager = WorkManager.getInstance(this)
+        workManager.enqueue(request)
+        workManager.getWorkInfoByIdLiveData(request.id).observe(this) { info ->
+            if (info != null) {
+                importState = stateForWork(info)
+                if (info.state == WorkInfo.State.SUCCEEDED) {
+                    refreshMarketData()
+                    refreshIndustryHtml()
+                }
+            }
+        }
     }
 
     private fun restoredImportState(): MarketImportUiState {
@@ -214,6 +293,27 @@ class MainActivity : ComponentActivity() {
             }
         }.start()
     }
+
+    private fun refreshIndustryHtml() {
+        Thread {
+            val target = File(filesDir, "industry-map.html")
+            val activePackageId = getSharedPreferences("market-package", MODE_PRIVATE).getString("active", null)
+            val source = activePackageId?.let {
+                File(DatabaseBoundary.coldDirectory(this), "packages/$it/industry/industry-map.html")
+            }
+            val copied = try {
+                if (source != null && source.isFile) {
+                    source.copyTo(target, overwrite = true)
+                    true
+                } else {
+                    false
+                }
+            } catch (_: Exception) {
+                false
+            }
+            runOnUiThread { industryMapFile = if (copied && target.isFile) target else null }
+        }.start()
+    }
 }
 
 @Composable
@@ -221,6 +321,7 @@ private fun MarketMonitorScreen(
     state: MarketImportUiState,
     marketData: ImportedMarketData?,
     onImport: (android.net.Uri) -> Unit,
+    onSyncFromServer: (String) -> Unit,
     watchlistRepository: WatchlistRepository,
     activePackageId: String?,
     onCleanColdData: () -> Long,
@@ -231,13 +332,14 @@ private fun MarketMonitorScreen(
     var cleanedBytes by remember { mutableStateOf<Long?>(null) }
     val overview = remember(marketData) { MarketOverview.compute(marketData) }
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("行情监控", style = MaterialTheme.typography.titleLarge)
             Button(onClick = { picker.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("导入行情包") }
         }
+        SyncCard(onSyncFromServer)
         StatusCard("数据状态", state.dataStatus)
         StatusCard("数据截止时间", state.cutoff)
         StatusCard("来源与质量", state.sourceAndQuality)
@@ -247,6 +349,34 @@ private fun MarketMonitorScreen(
             cleanedBytes?.let { Text("已释放 ${it / 1024} KB") }
         }
         ImportedMarketContent(marketData, state.hasImportedMarketData, watchlistRepository)
+    }
+}
+
+@Composable
+private fun SyncCard(onSyncFromServer: (String) -> Unit) {
+    var serverUrl by remember { mutableStateOf("http://192.168.1.88:8765") }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("从电脑同步", style = MaterialTheme.typography.labelLarge)
+            Text(
+                "电脑端运行 market_monitor serve 后，手机与电脑连同一局域网，输入电脑 IP 即可。",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            OutlinedTextField(
+                value = serverUrl,
+                onValueChange = { serverUrl = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                singleLine = true,
+                label = { Text("电脑后端地址") },
+                placeholder = { Text("http://<电脑IP>:8765") },
+            )
+            Button(
+                onClick = { onSyncFromServer(serverUrl) },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text("下载并导入同步包")
+            }
+        }
     }
 }
 
@@ -393,7 +523,12 @@ private fun stateForWork(info: WorkInfo): MarketImportUiState = when (info.state
         sourceAndQuality = "签名、哈希和载荷校验已通过",
         hasImportedMarketData = true,
     )
-    WorkInfo.State.FAILED -> MarketImportUiState(dataStatus = "导入失败：${validationErrorText(info.outputData.getString(MarketPackageImportWorker.RESULT_ERROR))}")
+    WorkInfo.State.FAILED -> {
+        val errorCode = info.outputData.getString(MarketPackageImportWorker.RESULT_ERROR)
+        val detail = info.outputData.getString(MarketPackageImportWorker.RESULT_ERROR_DETAIL)
+        val detailSuffix = detail?.takeIf { it.isNotBlank() }?.let { "（$it）" } ?: ""
+        MarketImportUiState(dataStatus = "导入失败：${validationErrorText(errorCode)}$detailSuffix")
+    }
     WorkInfo.State.CANCELLED -> MarketImportUiState(dataStatus = "导入任务已取消")
     WorkInfo.State.BLOCKED -> MarketImportUiState(dataStatus = "导入任务被阻塞")
 }

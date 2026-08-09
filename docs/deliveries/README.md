@@ -46,6 +46,7 @@
 - [FULL-702](./FULL-702.md)：名称归一/消歧/规则抽取/合并；金标实体与关系 P/R/F1=1.0。
 - [FULL-703](./FULL-703.md)：人工审核/修订/审计链、并发冲突、自动不覆盖人工确认。
 - [FULL-704](./FULL-704.md)：Android 图谱搜索/关系/证据 UI 与查询层；真机待设备验收。
+- [FULL-705](./FULL-705.md)：720+ 篇研报知识库流水线（PDF 解析/并发抽取/规则核验/按链聚合）与 155 条产业链 SVG 图谱；快照同步 `data_control/industry/industry-map.html` 并打入同步包，Android 以网页快照导入复用；1 篇待 OCR 复核。
 - [FULL-800](./FULL-800.md)：每晚任务状态机/CLI/Windows 计划任务（本机已创建 MarketMonitorNightly）。
 - [FULL-801](./FULL-801.md)：本地健康看板（运行历史/分区陈旧/隔离区/存储占用）。
 - [FULL-802](./FULL-802.md)：凭据扫描/签名密钥轮换/备份演练/pip check 依赖审计。

@@ -27,6 +27,8 @@ def build_market_package(
     *,
     package_type: str = "FULL",
     base_package_id: str | None = None,
+    gold_metrics: Sequence[Mapping[str, Any]] = (),
+    extra_files: Sequence[tuple[str, Path]] = (),
 ) -> Path:
     if package_type not in ("FULL", "DELTA"):
         raise ValueError(f"Unknown package type: {package_type}")
@@ -41,10 +43,15 @@ def build_market_package(
     with tempfile.TemporaryDirectory(prefix="market-package-") as temporary:
         root = Path(temporary)
         payload = root / "payload.sqlite"
-        _write_payload(payload, bars)
+        _write_payload(payload, bars, gold_metrics)
         quality_path = root / "quality-report.json"
         quality_path.write_text(json.dumps(quality_report.to_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         files = [_file_metadata(payload), _file_metadata(quality_path)]
+        for archive_name, source_path in extra_files:
+            source_path = Path(source_path)
+            if not source_path.is_file():
+                raise FileNotFoundError(f"extra package file not found: {source_path}")
+            files.append(_extra_file_metadata(archive_name, source_path))
         manifest = {
             "package_id": package_id,
             "schema_version": 1,
@@ -61,6 +68,8 @@ def build_market_package(
         with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
             for file in (root / "manifest.json", payload, quality_path):
                 archive.write(file, file.name)
+            for archive_name, source_path in extra_files:
+                archive.write(Path(source_path), archive_name)
     return target
 
 
@@ -74,6 +83,7 @@ def build_delta_package(
     source_run_summaries: Sequence[Mapping[str, str]],
     minimum_app_version: str = "0.1.0",
     ledger: PackageLedger | None = None,
+    gold_metrics: Sequence[Mapping[str, Any]] = (),
 ) -> Path:
     """Build an immutable incremental (DELTA) package layered on a base."""
 
@@ -89,6 +99,7 @@ def build_delta_package(
         minimum_app_version,
         package_type="DELTA",
         base_package_id=base_package_id,
+        gold_metrics=gold_metrics,
     )
 
 
@@ -156,7 +167,11 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _write_payload(path: Path, bars: Sequence[Mapping[str, Any]]) -> None:
+def _write_payload(
+    path: Path,
+    bars: Sequence[Mapping[str, Any]],
+    gold_metrics: Sequence[Mapping[str, Any]] = (),
+) -> None:
     connection = sqlite3.connect(path)
     try:
         connection.executescript(
@@ -166,6 +181,11 @@ def _write_payload(path: Path, bars: Sequence[Mapping[str, Any]]) -> None:
                 instrument_id TEXT NOT NULL REFERENCES instruments(instrument_id), period TEXT NOT NULL,
                 bar_open_time TEXT NOT NULL, bar_json TEXT NOT NULL,
                 PRIMARY KEY (instrument_id, period, bar_open_time)
+            );
+            CREATE TABLE gold_metrics (
+                metric_id TEXT PRIMARY KEY, instrument_id TEXT NOT NULL, trading_date TEXT NOT NULL,
+                period TEXT NOT NULL, metric_name TEXT NOT NULL, value DOUBLE NOT NULL,
+                definition TEXT NOT NULL, calculation_method TEXT NOT NULL, timestamp TEXT NOT NULL
             );"""
         )
         instruments: dict[str, Mapping[str, Any]] = {}
@@ -179,6 +199,23 @@ def _write_payload(path: Path, bars: Sequence[Mapping[str, Any]]) -> None:
             key = bar["instrument_key"]
             instrument_id = ".".join(str(key[field]) for field in ("country_or_market", "exchange", "asset_type", "code"))
             connection.execute("INSERT INTO bars VALUES (?, ?, ?, ?)", (instrument_id, bar["period"], bar["bar_open_time"], json.dumps(bar, ensure_ascii=False)))
+        for metric in gold_metrics:
+            connection.execute(
+                """INSERT INTO gold_metrics
+                (metric_id, instrument_id, trading_date, period, metric_name, value, definition, calculation_method, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    metric["metric_id"],
+                    metric["instrument_id"],
+                    metric["trading_date"],
+                    metric["period"],
+                    metric["metric_name"],
+                    metric["value"],
+                    metric.get("definition", ""),
+                    metric.get("calculation_method", ""),
+                    metric.get("timestamp", ""),
+                ),
+            )
         connection.commit()
     finally:
         connection.close()
@@ -188,11 +225,17 @@ def _file_metadata(path: Path) -> dict[str, Any]:
     return {"name": path.name, "bytes": path.stat().st_size, "row_count": _row_count(path), "sha256": _sha256(path)}
 
 
+def _extra_file_metadata(archive_name: str, path: Path) -> dict[str, Any]:
+    return {"name": archive_name, "bytes": path.stat().st_size, "row_count": 0, "sha256": _sha256(path)}
+
+
 def _row_count(path: Path) -> int:
     if path.suffix == ".sqlite":
         connection = sqlite3.connect(path)
         try:
-            return connection.execute("SELECT count(*) FROM bars").fetchone()[0]
+            bars = connection.execute("SELECT count(*) FROM bars").fetchone()[0]
+            metrics = connection.execute("SELECT count(*) FROM gold_metrics").fetchone()[0]
+            return int(bars) + int(metrics)
         finally:
             connection.close()
     return 0

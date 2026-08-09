@@ -1,8 +1,28 @@
-from market_monitor.aggregation import aggregate_bars
+from datetime import datetime, timezone
+
+from market_monitor.aggregation import aggregate_bars, aggregate_daily_bars
 
 
 def minute(open_time, close_time, trading_day="2026-08-03", close=100.0):
     return {"trading_day": trading_day, "bar_open_time": open_time, "bar_close_time": close_time, "period": "15m", "open": close - 1, "high": close + 1, "low": close - 2, "close": close, "volume": 10, "amount": 100, "open_interest": None}
+
+
+def daily(day, code, open_price=100.0, high=101.0, low=99.0, close=100.5, volume=10.0, amount=1000.0, oi=5.0):
+    return {
+        "instrument_key": {"country_or_market": "CN", "exchange": "SSE", "asset_type": "STOCK", "code": code},
+        "instrument_id": code,
+        "trading_day": day,
+        "period": "1d",
+        "bar_open_time": f"{day}T09:30:00+08:00",
+        "bar_close_time": f"{day}T15:00:00+08:00",
+        "open": open_price,
+        "high": high,
+        "low": low,
+        "close": close,
+        "volume": volume,
+        "amount": amount,
+        "open_interest": oi,
+    }
 
 
 def test_a_share_lunch_break_never_merges_into_a_single_hour_bar():
@@ -23,7 +43,56 @@ def test_tail_bar_is_marked_partial_and_ohlcv_is_aggregated():
     assert result[0]["volume"] == 20.0 and result[0]["is_partial"]
 
 
-def test_future_night_session_does_not_cross_trading_days():
+def test_future_night_session_belongs_to_next_trading_day():
     rows = [minute("2026-08-03T21:00:00+08:00", "2026-08-03T21:15:00+08:00", trading_day="2026-08-03"), minute("2026-08-04T09:00:00+08:00", "2026-08-04T09:15:00+08:00", trading_day="2026-08-04")]
     result = aggregate_bars(rows, 30, "CN_FUTURE")
-    assert [item["trading_day"] for item in result] == ["2026-08-03", "2026-08-04"]
+    assert [item["trading_day"] for item in result] == ["2026-08-04", "2026-08-04"]
+
+
+def test_daily_bars_aggregate_to_weekly():
+    days = ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07"]
+    rows = [daily(day, "600519") for day in days]
+    result = aggregate_daily_bars(rows, "1w")
+    assert len(result) == 1
+    bar = result[0]
+    assert bar["period"] == "1w"
+    assert bar["trading_day"] == "2026-08-07"
+    assert bar["bar_open_time"] == "2026-08-03T09:30:00+08:00"
+    assert bar["bar_close_time"] == "2026-08-07T15:00:00+08:00"
+    assert bar["open"] == 100.0 and bar["close"] == 100.5
+    assert bar["high"] == 101.0 and bar["low"] == 99.0
+    assert bar["volume"] == 50.0 and bar["amount"] == 5000.0
+    assert bar["open_interest"] == 5.0
+    assert bar["aggregated_from"] == "1d"
+
+
+def test_daily_bars_aggregate_to_monthly_without_mixing_instruments():
+    rows = [
+        daily("2026-07-31", "600519", close=10.0, open_price=9.0, high=10.5, low=8.5),
+        daily("2026-08-03", "600519", close=11.0, open_price=10.0, high=11.5, low=9.5),
+        daily("2026-08-04", "000001", close=12.0, open_price=11.0, high=12.5, low=10.5),
+    ]
+    result = aggregate_daily_bars(rows, "1mo")
+    assert len(result) == 3
+    july_600519 = next(bar for bar in result if bar["trading_day"] == "2026-07-31")
+    assert july_600519["period"] == "1mo"
+    assert july_600519["open"] == 9.0 and july_600519["close"] == 10.0
+    assert july_600519["high"] == 10.5 and july_600519["low"] == 8.5
+    assert july_600519["volume"] == 10.0
+    august_000001 = next(bar for bar in result if "000001" in str(bar["instrument_key"]))
+    assert august_000001["trading_day"] == "2026-08-04"
+
+
+def test_weekly_aggregation_marks_partial_when_now_is_given():
+    rows = [daily("2026-08-03", "600519")]
+    result = aggregate_daily_bars(rows, "1w", now=datetime(2026, 8, 3, 12, 0, tzinfo=timezone.utc))
+    assert result[0]["is_partial"] is True
+
+
+def test_daily_aggregation_rejects_unknown_period():
+    try:
+        aggregate_daily_bars([], "1y")
+    except ValueError as exc:
+        assert "output_period" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected ValueError")
