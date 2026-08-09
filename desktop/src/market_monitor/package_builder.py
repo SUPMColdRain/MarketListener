@@ -122,6 +122,9 @@ def build_android_package(
     industry_map = data_root / "industry" / "industry-map.html"
     if industry_map.is_file():
         extra_files.append(("industry/industry-map.html", industry_map))
+    industry_atlas = data_root / "industry" / "industry-atlas.html"
+    if industry_atlas.is_file():
+        extra_files.append(("industry/industry-atlas.html", industry_atlas))
     package_path = build_market_package(
         packages_dir,
         package_id,
@@ -151,6 +154,7 @@ def build_android_package(
         "signature": "ed25519+ecdsa" if ecdsa_private_key is not None else "ed25519",
         "ledger": str(ledger_path),
         "industry_map": str(industry_map) if industry_map.is_file() else None,
+        "industry_atlas": str(industry_atlas) if industry_atlas.is_file() else None,
     }
 
 

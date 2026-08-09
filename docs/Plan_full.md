@@ -182,7 +182,7 @@ desktop\.venv\Scripts\python -m market_monitor reports verify --output-root repo
 desktop\.venv\Scripts\python -m market_monitor reports chains --output-root reports\industry
 ```
 
-当前事实（2026-08-09）：717/720 解析、33,096 条事实、719 篇核验通过、1 篇待复核（银河证券磷化铟报告，疑似扫描件待 OCR）、155 条产业链、22,083 条链上事实。核验为脚本化规则核验，未做真实网络检索核验；交付记录见 `docs/deliveries/FULL-705.md`，状态见 `STATUS.md`。
+当前事实（2026-08-09，研报补齐与 per-fact 链聚合后）：721/721 份 JSON 全部 REVIEWED（含 1 篇 OCR 补偿、1 篇源缺失保留）、33,193 条事实、721 篇核验通过、177 条原始子链、33,193 条链上事实；新版 `industry-atlas.json/html` 已合并 F10（CN 5,539 + HK 2,806 + legacy 1,017）、7,090 家公司带证券代码（Atlas 展示口径 75 条链；产业链定义待用户人工校验），A 股收入构成（revenue）已补齐 5,539 家（港股无可用数据源）。核验为脚本化规则核验，未做真实网络检索核验；交付记录见 `docs/deliveries/FULL-705.md`，状态见 `STATUS.md`。
 
 ### 5.9 运维、回归与发布
 
@@ -292,3 +292,21 @@ desktop\.venv\Scripts\python -m market_monitor reports chains --output-root repo
 ## 11. 固定启动指令
 
 `FULL-001` 完成后，所有新任务必须先声明实现、审查或验收角色，并使用 `START_HERE.md` 中对应的固定提示词。实现角色领取 `READY` 或当前 `CHANGES_REQUIRED`，审查角色领取 `REVIEW`，验收角色领取 `ACCEPTANCE`；三类入口不得互相替代。
+
+## 12. 2026-08-09 收尾状态（产业链图谱专项）
+
+用户反馈产业链/环节/产品定义仍不理想（如“创业板”被当作通信产业链产品），决定之后由用户自行阅读研报 PDF 人工校验；自动化产业链提炼暂停，F10/revenue 抓取已由计划任务限速续抓完成。
+
+### 12.1 已收尾
+
+- Atlas v2 市场板块脏词过滤：`industry_atlas.py` 新增 `_MARKET_BOARD_TERMS`/`_is_market_board_name()`（“创业板/科创板/沪深/中证/主板/北交所”等不再作为产品），F10 链候选多段 key 优先，行业分段归一化；`test_industry_atlas.py` 9/9、全量桌面 pytest 0 失败。
+- F10 收入构成（revenue）续抓完成：CN `revenue_20260809.jsonl` 4,730 条 + `corrupt-1352.bak` 492 条 + `corrupt-1401.bak` 317 条 = 5,539 唯一代码（零重叠、零坏行、全部含 `revenue_breakdown`）；港股收入构成无可用数据源（东财无港股主营构成报表，已实测）。
+- Atlas 重建：75 条链（展示口径）/ 7,090 家带代码公司 / 公司索引 7,577 / F10 CN 5,539 + HK 2,806 + legacy 1,017；`industry-atlas.html` 约 20 MB（20,018,677 字节）自包含离线，同步 `data_control/industry/`（SHA256 与 reports 副本一致）；后端 `/industry-v2/` 实时读磁盘。
+- Android 同步包重建：`market-20260809-081649-141aff2e`（13,585,044 字节，ed25519+ecdsa 签名），zip 内 Atlas 哈希一致，后端 `/api/android-package` 实测 200 且下载哈希一致。
+- 子 Agent 与多余进程：`/root/f10_cn`、`/root/reports_retry` 已打断并通知收工；其擅自启动的 revenue 抓取/Gradle/pytest 进程已终止；后端 8765（PID 30108/35652）保留在线。
+
+### 12.2 未完成（如实记录，不声称完成）
+
+- 177 条原始子链去重/归并未完成（用户已指出半导体/半导体材料/半导体设备等重复）；Atlas 当前展示 75 条链的清洗口径，最终定义由用户人工确认。
+- 产业链环节、产品归属与公司定位需用户自行阅读研报 PDF 后人工校验；自动化提炼暂停。
+- 真机验收（Android 13+ 设备导入同步包显示图谱）仍未解除。

@@ -112,6 +112,15 @@ DEFAULT_DATASETS: tuple[DatasetDefinition, ...] = (
         "所有港股个股最小周期 K 线，大周期由本地聚合",
     ),
     DatasetDefinition(
+        "STOCK_F10", "A/H 股 F10 公司基础资料", "CN/HK", "STOCK", "DAILY",
+        "tencent/eastmoney-f10", "DAILY", ("code", "market"),
+        ("code", "market", "name", "org_name", "total_market_cap_yi", "float_market_cap_yi",
+         "pe", "pb", "industry_em", "industry_csrc", "org_profile", "business_scope",
+         "reg_capital_wan", "emp_num", "listing_info", "source", "fetched_at"),
+        "SYNC_SELECTED", "缺失字段保持 null；禁止 LLM 补全；记录 source 与 fetched_at",
+        "所有 A/H 股上市公司 F10：公司概况、行业、总/流通市值、主营业务与经营范围",
+    ),
+    DatasetDefinition(
         "CN_ETF_BAR", "A股场内基金K线", "CN", "ETF", "1m/5m/15m/30m/1d",
         "jqdata/tushare/akshare", "DAILY", ("instrument_id", "period", "bar_start"),
         BAR_FIELDS, "FILTERED", "OHLC 有界、质量 PASS、按主键去重",

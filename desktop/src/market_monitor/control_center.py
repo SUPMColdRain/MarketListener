@@ -177,7 +177,37 @@ def build_control_center_report(data_root: Path, *, now: datetime | None = None)
         "fetch_jobs": fetch_jobs,
         "android_package": latest_package_info(data_root),
         "coverage": _coverage_summary(data_root),
+        "f10": _f10_summary(data_root),
     }
+
+
+def _f10_summary(data_root: Path) -> dict[str, Any]:
+    """Summarize A/H F10 collection progress from local snapshots."""
+    result: dict[str, Any] = {"available": False, "markets": {}}
+    f10_root = Path(data_root) / "f10"
+    if not f10_root.is_dir():
+        return result
+    result["available"] = True
+    for market in ("cn", "hk"):
+        directory = f10_root / market
+        summary: dict[str, Any] = {}
+        summary_path = directory / "summary.json"
+        if summary_path.is_file():
+            try:
+                summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                summary = {}
+        record_count = 0
+        for path in sorted(directory.glob("details_*.jsonl")):
+            try:
+                record_count += sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+            except OSError:
+                continue
+        result["markets"][market.upper()] = {
+            "record_count": record_count,
+            "summary": summary,
+        }
+    return result
 
 
 def _coverage_summary(data_root: Path) -> dict[str, Any]:
@@ -294,6 +324,9 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         if parsed.path in {"/industry", "/industry/", "/industry/industry-map.html"}:
             self._send_industry_map()
             return
+        if parsed.path in {"/industry-v2", "/industry-v2/", "/industry-v2/industry-atlas.html"}:
+            self._send_industry_atlas()
+            return
         self._send_json({"error": "not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -350,6 +383,20 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
             except OSError:
                 continue
         self._send_json({"error": "industry map not built yet"}, status=404)
+
+    def _send_industry_atlas(self) -> None:
+        candidates = (
+            Path(self.data_root) / "industry" / "industry-atlas.html",
+            Path(self.data_root).parent / "reports" / "industry" / "industry-atlas.html",
+        )
+        for candidate in candidates:
+            try:
+                if candidate.is_file():
+                    self._send_html(candidate.read_text(encoding="utf-8"))
+                    return
+            except OSError:
+                continue
+        self._send_json({"error": "industry atlas not built yet"}, status=404)
 
 
 def make_handler(data_root: Path, *, quiet: bool = False) -> type[ControlCenterHandler]:
@@ -438,6 +485,7 @@ pre#plan-result { background: #0f1117; border: 1px solid #2a3040; border-radius:
   <h1>MarketListener 数据生产控制中心</h1>
   <span class="meta" id="generated-at">等待数据…</span>
   <a href="/industry/" style="color:#4a82f2;font-size:13px;text-decoration:none;">产业链图谱</a>
+  <a href="/industry-v2/" style="color:#4a82f2;font-size:13px;text-decoration:none;margin-left:14px;">产业链全景图（新版）</a>
   <div class="auto">
     <button id="refresh">立即刷新</button>
     <label style="display:inline-flex; align-items:center; gap:6px; margin:0 0 0 12px;">
@@ -466,6 +514,11 @@ pre#plan-result { background: #0f1117; border: 1px solid #2a3040; border-radius:
     <div class="muted" style="margin-top:10px;font-size:12px;">
       手机端“行情”页输入电脑局域网地址即可同步，例如 http://192.168.1.88:8765
     </div>
+  </section>
+  <section class="panel">
+    <h2>F10 基础资料采集（A/H 股）</h2>
+    <div class="muted" id="f10-panel" style="margin-bottom:8px;">正在加载...</div>
+    <div style="overflow-x:auto;"><table id="f10-table"></table></div>
   </section>
   <div class="grid2">
     <section class="panel">
@@ -611,6 +664,23 @@ function renderAndroidPackage(info) {
     `包 ${info.package_id}（${info.status}，${(info.package_bytes / 1024 / 1024).toFixed(1)} MB，构建于 ${info.built_at}）`;
   link.style.display = "inline-block";
 }
+function renderF10(f10) {
+  const panel = $("f10-panel");
+  if (!f10 || !f10.available) {
+    panel.textContent = "尚无 F10 采集数据。请运行 market_monitor f10 --market CN/HK 开始抓取。";
+    $("f10-table").innerHTML = "";
+    return;
+  }
+  const markets = Object.entries(f10.markets || {});
+  panel.textContent = "腾讯批量行情 + 东财 F10 公司概况（断点续抓、限速防封）。";
+  $("f10-table").innerHTML = `<tr><th>市场</th><th>已抓详情</th><th>最新状态</th><th>开始</th><th>完成</th><th>失败</th></tr>` +
+    markets.map(([market, item]) => {
+      const summary = item.summary || {};
+      return `<tr><td>${market}</td><td>${item.record_count}</td>` +
+        `<td>${badge(summary.status || "RUNNING")}</td>` +
+        `${cell(summary.started_at)}${cell(summary.completed_at)}${cell(summary.failed_codes)}</tr>`;
+    }).join("");
+}
 function renderMarkets() {
   $("market-checks").innerHTML = ["CN", "HK", "GLOBAL"].map((m) =>
     `<label><input type="checkbox" name="markets" value="${m}" checked> ${m}</label>`).join("");
@@ -627,6 +697,7 @@ async function loadHealth() {
     renderFetchJobs(report.fetch_jobs);
     renderAndroidPackage(report.android_package);
     renderCoverage(report.coverage);
+    renderF10(report.f10);
   } catch (error) {
     $("generated-at").textContent = "健康数据加载失败：" + error;
   }

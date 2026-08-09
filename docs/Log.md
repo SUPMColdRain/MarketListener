@@ -55,3 +55,50 @@
 - 终核验：`/industry/industry-map.html` 服务字节 9,628,645 = 本地新文件 9,647,124 − 18,479 处 CRLF（`read_text` 统一换行符所致），内容逐字节一致；同步包 zip 内图谱与本地原始文件 SHA256 均为 `785EF2FF0AC4C7709B915ED5A38EF0C1234A521B40CE927FCAB82786D1CAA5D1`；`/`、`/api/health`（48 标的 / 72,321 行）、`/industry/industry-map.html`、`/api/android-package` 实测 200。
 - 回归：桌面 `pytest desktop\tests -q` 507 项全部通过（新增 `/api/health` 真实 parquet 覆盖统计测试、研报聚合/规则核验/SVG 图谱生成测试 4 项）；Android `gradlew.bat testDebugUnitTest assembleDebug`（JDK 21）BUILD SUCCESSFUL，21 suites / 74 tests / 0 failures / 0 errors。
 - 文档更新：`STATUS.md`、`Plan_full.md`（5.8 补充）、`README.md`、`docs/deliveries/FULL-705.md` 与交付索引；工作区保持未提交（用户明确要求不 commit）。
+
+## 2026-08-09 - 研报补齐与 OCR 重试
+
+- 新增 `desktop/src/market_monitor/report_ocr.py`（PyMuPDF 渲染 + RapidOCR，扫描件自动补偿，延迟初始化/线程锁）；`report_pipeline.py` 增加 `force`/`ocr_fallback` 参数，文本过短时自动 OCR。
+- 新增 `scripts/retry_report_ocr.py`（幂等）：处理无 JSON 的 PDF、force 重跑 0 事实报告、标记源缺失，默认重建 chain_index 与 industry-map.html。
+- 补齐结果：财信证券 AI短剧 → 37 事实；银河证券光器件扫描件（原 0 事实）→ OCR 60 事实（`ocr_applied=true`）；中信期货量化 CTA（源 PDF 缺失）→ 保留 42 事实并标记 `source_missing`。
+- 重建后：`reports/industry/` 现有 721 个 `report_*.json` 全部 REVIEWED、33,193 条事实；`reports verify` 721/721 通过；`chain_index.json` 154 条链 / 721 报告 / 22,149 条链上事实；`industry-map.html` 重新生成（约 9.6 MB）。
+- 回归：桌面 `pytest desktop\tests -q` 571 项全部通过（新增 OCR 回退/force/禁用 3 项测试）；重试脚本二次运行零改动（幂等）。
+- 定位问题：全量 33,193 条事实中约 11,044 条未进入链上统计——抽取阶段 per-fact 链判定与报告级 top-5 链判定不一致；新版 `industry_atlas` 将直接按 `fact.chain` 分组（F10 完成后重跑 `reports atlas` 合并）。
+- 文档更新：`STATUS.md`、`deliveries/FULL-705.md`、`INDUSTRY_GRAPH_ARCHITECTURE.md`、`INDUSTRY_GRAPH_CURRENT_ANALYSIS.md`、`Plan_full.md`；工作区保持未提交（用户明确要求不 commit）。
+
+## 2026-08-09 - 链索引 per-fact 聚合生效与产业链全景图重建
+
+- `report_pipeline.py` `_aggregate_chains` 增加 Pass 2：事实自身 `chain` 不在文档 `primary_chain`/`related_chains` 时仍归入对应产业链（父任务实现，本子任务核验并补测试）。
+- 重建结果：`chain_index.json` 154→177 条链、链上事实 22,149→33,193（回收 11,044 条此前被丢弃的事实）、721 篇报告不变；`industry-map.html` 同步重建（约 9.6 MB）。
+- 新版全景重建：`market_monitor reports atlas --output-root reports/industry --data-root data_control` SUCCESS——`industry-atlas.json/html` 177 链 / 407 家带证券代码公司 / 公司索引 1,545 条 / F10 CN 609 + HK 659 + legacy 1017，HTML 约 4.66 MB 自包含离线（零 CDN），同步 `data_control/industry/industry-atlas.html`（逐字节一致）。
+- 回归：`test_report_pipeline.py` 新增 per-fact 链聚合用例（报告声明链外的事实正确归入新链并计入 report_count/fact_count）；全套桌面 `pytest desktop/tests -q` 521 项通过 / 0 失败（junit XML 记录）。
+- 文档更新：`STATUS.md`、`deliveries/FULL-705.md`、`INDUSTRY_GRAPH_ARCHITECTURE.md`、`INDUSTRY_GRAPH_CURRENT_ANALYSIS.md`（v1.2）、`Plan_full.md`；工作区保持未提交（用户明确要求不 commit）。
+
+## 2026-08-09 - F10 抓取与 Atlas v2 重建
+
+- F10 抓取完成：CN `data_control/f10/cn/details_20260809.jsonl` 5539 条（universe 5539、state done 5539 / failed 0）；HK `data_control/f10/hk/details_20260809.jsonl` 2806 条（state done 2784 / failed 0）。
+- 收入数据未补齐：CN `revenue_20260809.jsonl` 607 条 + `corrupt-1352.bak` 492 条 + `corrupt-1401.bak` 317 条，去重后约 900+ 唯一覆盖，仍不完整。
+- atlas F10 覆盖：CN 5539 + HK 2806 + legacy 1017，含 total_market_cap / industry / profile / main_business。
+- `industry_atlas.py` v2 新增 F10 匹配（step 3.5）：
+  - `_build_f10_text_index()`：F10 主营/产品/经营范围/简介/亮点/地位等字段建全文索引；
+  - `_build_f10_by_industry()`：F10 行业字段反向定位；
+  - step 3.5a：按产品名/关键词匹配；
+  - step 3.5b：用 F10 行业/主营/产品匹配；
+  - 新增 `_GENERIC_CARD_NAMES` 过滤通用卡片名、`_MARKET_BOARD_TERMS` 过滤创业板/科创板/北交所等市场板块词，修复“创业板当通信产品”误判；
+  - MAX_CHAIN_COMPANIES 从 120 提高到 200，提升 F10 覆盖。
+- 重建 Atlas v2：修复 `_is_market_board_name` 与多段 key 优先匹配后，不再把市场板块名当产品；atlas 现有 75 条链（展示口径）/ 7,095 家带代码公司 / 公司索引 7,582 条 / F10 CN 5539 + HK 2806 + legacy 1017；HTML 17.1 MB 完全离线（零 CDN），同步 `data_control/industry/industry-atlas.html`。
+- 说明：atlas v2 当前 75 条链为展示口径，`chain_index.json` 仍为 177 条原始子链；177 条去重/归并及产业链定义待用户人工确认。
+- 新增 `test_industry_atlas.py`（6 项：stages/cards/sub_chains/市场板块过滤/离线 HTML）；`pytest desktop/tests` 522 项通过 / 0 失败；不再把创业板/科创板/北交所等市场板块词当产品（0 误判）。
+- Android 同步包：先重建 `market-20260809-054754-bc5426cf`（72,321 bars + 25,545 gold_metrics + industry-atlas 约 9.35MB，ed25519+ecdsa 签名）；因 17.1MB atlas 过大，重建 `market-20260809-063402-e8546900`（72,321 bars + 25,545 gold_metrics，12,748,434 字节，ed25519+ecdsa 签名），`/api/android-package` 实测 200。
+- 后端实测：`/` 200、`/industry-v2/` 200、`/industry/` 200，`_send_industry_atlas` 供 Android 同步。
+- 文档更新：`STATUS.md`、`Log.md` 等；工作区保持未提交（用户明确要求不 commit）。
+
+
+## 2026-08-09 - 续抓完成：A 股收入构成补齐与 Atlas/同步包重建
+
+- F10 收入构成（revenue）续抓完成：`data_control/f10/cn/revenue_20260809.jsonl` 4,730 条 + `revenue_20260809.corrupt-1352.bak.jsonl` 492 条 + `revenue_20260809.corrupt-1401.bak.jsonl` 317 条 = 5,539 个唯一代码（零重叠、零坏行、全部含 `revenue_breakdown`；两个 bak 为旧中断现场备份，保留不删）。
+- F10 底表重新导出：`data_control/industry/f10/cn_f10.jsonl` 5,539 条（5,538 条含非空收入构成）、`hk_f10.jsonl` 2,806 条；港股收入构成无可用数据源（东财无港股主营构成报表，已实测三种传参均失败）。
+- Atlas 重建：75 条链 / 7,090 家带代码公司 / 公司索引 7,577 / F10 CN 5,539 + HK 2,806 + legacy 1,017；`industry-atlas.html` 20,018,677 字节（约 20 MB），`revenue_breakdown` 已内嵌（HTML 内 4,932 处），零 CDN（11 处 `https://` 均为公司简介正文官网文字）；`data_control/industry/industry-atlas.html` 与 `reports/industry/industry-atlas.html` SHA256 一致（CFD56983…）；后端 `/industry-v2/` 实测 200。
+- Android 同步包重建：`market-20260809-081649-141aff2e`（13,585,044 字节，ed25519+ecdsa 签名）；zip 内 `industry/industry-atlas.html` 与本地哈希一致；后端 `/api/android-package` 实测 200 且下载包哈希一致。
+- 回归：桌面 `pytest desktop/tests` 525 项通过 / 0 失败；`ruff check desktop/src desktop/tests` 通过；Android `testDebugUnitTest --rerun-tasks` BUILD SUCCESSFUL（21 suites / 74 tests / 0 failures），`assembleDebug` 成功。
+- 文档更新：`STATUS.md`、`Log.md`、`Plan_full.md`、`INDUSTRY_GRAPH_*.md`、`release/known-gaps.md`、`deliveries/FULL-705.md`、`README.md`；工作区保持未提交（用户明确要求不 commit）。

@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
     private var graphRepository by mutableStateOf<GraphRepository?>(null)
     private var graphState by mutableStateOf(GraphSearchState())
     private var industryMapFile by mutableStateOf<File?>(null)
+    private var industryAtlasFile by mutableStateOf<File?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,6 +138,7 @@ class MainActivity : ComponentActivity() {
                                     graphPicker.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
                                 },
                                 industryMapFile = industryMapFile,
+                                industryAtlasFile = industryAtlasFile,
                             )
                             else -> Unit
                         }
@@ -296,22 +298,30 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshIndustryHtml() {
         Thread {
-            val target = File(filesDir, "industry-map.html")
             val activePackageId = getSharedPreferences("market-package", MODE_PRIVATE).getString("active", null)
-            val source = activePackageId?.let {
-                File(DatabaseBoundary.coldDirectory(this), "packages/$it/industry/industry-map.html")
+            val packageRoot = activePackageId?.let {
+                File(DatabaseBoundary.coldDirectory(this), "packages/$it/industry")
             }
-            val copied = try {
-                if (source != null && source.isFile) {
-                    source.copyTo(target, overwrite = true)
-                    true
-                } else {
-                    false
+            fun copyAsset(name: String): File? {
+                val target = File(filesDir, name)
+                val source = packageRoot?.let { File(it, name) }
+                return try {
+                    if (source != null && source.isFile) {
+                        source.copyTo(target, overwrite = true)
+                        target
+                    } else {
+                        null
+                    }
+                } catch (_: Exception) {
+                    null
                 }
-            } catch (_: Exception) {
-                false
             }
-            runOnUiThread { industryMapFile = if (copied && target.isFile) target else null }
+            val mapFile = copyAsset("industry-map.html")
+            val atlasFile = copyAsset("industry-atlas.html")
+            runOnUiThread {
+                industryMapFile = mapFile
+                industryAtlasFile = atlasFile
+            }
         }.start()
     }
 }

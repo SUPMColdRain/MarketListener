@@ -12,6 +12,7 @@ from market_monitor.dataset_catalog import (
 EXPECTED_IDS = {
     "CN_STOCK_BAR",
     "HK_STOCK_BAR",
+    "STOCK_F10",
     "CN_ETF_BAR",
     "CN_INDEX_BAR",
     "HK_INDEX_BAR",

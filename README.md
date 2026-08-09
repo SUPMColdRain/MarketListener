@@ -74,7 +74,7 @@ desktop\.venv\Scripts\python -m market_monitor probe --config-file $env:USERPROF
 
 ## 研报知识库与产业链图谱
 
-电脑端后端启动后访问 `http://<电脑IP>:8765/industry/` 可查看 SVG 产业链图谱（155 条链，支持搜索公司/产品/原材料/环节与事实定位）。研报流水线全部本地执行，`行业产业链研报/` 不纳入 Git：
+电脑端后端启动后访问 `http://<电脑IP>:8765/industry/` 可查看 SVG 产业链图谱（177 条原始子链，支持搜索公司/产品/原材料/环节与事实定位）；访问 `http://<电脑IP>:8765/industry-v2/` 可查看新版券商研报式产业链全景图（浅色上游/中游/下游/服务分区、公司卡片密集、悬浮 F10、搜索/缩放/证据抽屉，完全离线零 CDN；当前展示口径 75 条链 / 7,090 家带代码公司 / F10 CN 5,539 + HK 2,806）。研报流水线全部本地执行，`行业产业链研报/` 不纳入 Git：
 
 ```powershell
 # 解析/切块/并发抽取（幂等，已处理自动跳过）
@@ -85,9 +85,11 @@ desktop\.venv\Scripts\python -m market_monitor reports status --output-root repo
 desktop\.venv\Scripts\python -m market_monitor reports verify --output-root reports\industry
 # 按产业链聚合并生成 industry-map.html（SVG 图谱）
 desktop\.venv\Scripts\python -m market_monitor reports chains --output-root reports\industry
+# 生成新版产业链全景图 industry-atlas.html/json（合并 F10 底表 + 旧快照）
+desktop\.venv\Scripts\python -m market_monitor reports atlas --output-root reports\industry --data-root data_control
 ```
 
-核验为脚本化规则核验；未做真实网络检索核验。当前 1 篇待复核（银河证券磷化铟报告，疑似扫描件，建议 OCR）。产物：`reports/industry/report_*.json`、`batch_summary.json`、`chain_index.json`、`industry-map.html`，快照同步 `data_control/industry/industry-map.html` 并随同步包下发。
+核验为脚本化规则核验；未做真实网络检索核验。当前 1 篇待复核（银河证券磷化铟报告，疑似扫描件，建议 OCR）。产物：`reports/industry/report_*.json`、`batch_summary.json`、`chain_index.json`、`industry-map.html`、`industry-atlas.html/json`，快照同步 `data_control/industry/` 并随同步包下发。F10 底表已抓取：A 股 5,539 / 港股 2,806 全市场限速入库 `data_control/industry/f10/`（A 股含收入构成 `revenue_breakdown`；港股无收入构成数据源），重跑 `reports atlas` 即自动合并进全景图。
 
 ## Day 0 历史状态（只读，2026-08-04）
 

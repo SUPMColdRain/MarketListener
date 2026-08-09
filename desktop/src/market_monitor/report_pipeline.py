@@ -24,7 +24,7 @@ import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 try:
     from pypdf import PdfReader
@@ -1232,8 +1232,15 @@ def _extract_report(
     return document, warnings
 
 
-def _process_one(pdf: Path, output_root: Path, version: int) -> dict[str, Any]:
-    """处理单个 PDF；已完成且版本一致的篇目直接跳过。"""
+def _process_one(
+    pdf: Path,
+    output_root: Path,
+    version: int,
+    *,
+    force: bool = False,
+    ocr_fallback: bool = True,
+) -> dict[str, Any]:
+    """处理单个 PDF；已完成且版本一致的篇目直接跳过（force=True 时忽略）。"""
 
     try:
         file_bytes = pdf.read_bytes()
@@ -1248,7 +1255,7 @@ def _process_one(pdf: Path, output_root: Path, version: int) -> dict[str, Any]:
         }
     report_id = f"report_{sha256[:16]}"
     output_path = output_root / f"{report_id}.json"
-    if output_path.is_file():
+    if output_path.is_file() and not force:
         try:
             previous = json.loads(output_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -1317,18 +1324,39 @@ def _process_one(pdf: Path, output_root: Path, version: int) -> dict[str, Any]:
             "error": str(error),
         }
 
+    ocr_applied = False
+    plain_chars = sum(len(page) for page in pages)
+    if ocr_fallback and plain_chars < MIN_TEXT_CHARS:
+        try:
+            from market_monitor.report_ocr import ocr_pdf_pages
+
+            ocr_pages = ocr_pdf_pages(pdf)
+            cleaned_ocr = [_clean_text(page) for page in ocr_pages]
+            cleaned_ocr = [page for page in cleaned_ocr if page]
+            ocr_chars = sum(len(page) for page in cleaned_ocr)
+            if cleaned_ocr and ocr_chars > plain_chars:
+                pages = cleaned_ocr
+                ocr_applied = True
+        except Exception:  # noqa: BLE001 - OCR 失败时保留原文本
+            ocr_applied = False
+            pages = pages
+
     title = pdf.stem
     title = re.sub(r"^\d{8}[-_]?", "", title)
     title = re.sub(r"^(.*?)-", r"\1", title, count=1)
     document, _ = _extract_report(report_id, title, pages, pdf.name)
     document["sha256"] = sha256
     document["version"] = version
+    document["ocr_applied"] = ocr_applied
+    if ocr_applied:
+        document["warnings"].append("扫描件已通过 OCR 补偿解析")
     output_path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
     return {
         "status": "processed",
         "file_name": pdf.name,
         "report_id": report_id,
         "facts": len(document["facts"]),
+        "ocr_applied": ocr_applied,
     }
 
 
@@ -1339,6 +1367,7 @@ def process_report_batch(
     workers: int = 4,
     limit: int = 0,
     version: int = 1,
+    ocr_fallback: bool = True,
 ) -> dict[str, Any]:
     """并发处理研报目录下所有 PDF，返回批次汇总。"""
 
@@ -1352,10 +1381,15 @@ def process_report_batch(
     start_seconds = time.monotonic()
 
     if workers <= 1:
-        results = [_process_one(pdf, output_root, version) for pdf in pdfs]
+        results = [_process_one(pdf, output_root, version, ocr_fallback=ocr_fallback) for pdf in pdfs]
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-            results = list(pool.map(lambda pdf: _process_one(pdf, output_root, version), pdfs))
+            results = list(
+                pool.map(
+                    lambda pdf: _process_one(pdf, output_root, version, ocr_fallback=ocr_fallback),
+                    pdfs,
+                )
+            )
 
     processed = [item for item in results if item["status"] == "processed"]
     skipped = [item for item in results if item["status"] == "skipped"]
@@ -1649,8 +1683,58 @@ def _aggregate_chains(output_root: Path, max_facts_per_chain: int) -> dict[str, 
                             "page": item.get("page"),
                             "report_id": document.get("report_id", ""),
                             "file_name": document.get("file_name", ""),
-                        }
-                    )
+                       }
+                   )
+    # Pass 2: include facts whose own chain field differs from
+    # the document-declared primary/related chains.
+    for document in report_documents:
+        for fact in document.get("facts", []):
+            fact_chain = str(fact.get("chain", ""))
+            if not fact_chain:
+                continue
+            declared = [str(document.get("primary_chain", "其他"))]
+            declared.extend(str(c) for c in document.get("related_chains", []))
+            if fact_chain in declared:
+                continue
+            chain_data = chains[fact_chain]
+            chain_data["chain"] = fact_chain
+            chain_data["report_count"] += 1
+            if fact_chain not in [r.get("report_id") for r in chain_data["reports"]]:
+                chain_data["reports"].append({
+                    "report_id": document.get("report_id", ""),
+                    "file_name": document.get("file_name", ""),
+                    "title": document.get("title", ""),
+                    "processed_at": document.get("processed_at", ""),
+                    "chars": document.get("chars", 0),
+                    "pages": document.get("pages", 0),
+                    "primary": False,
+                })
+            entity_type = str(fact.get("entity_type", ""))
+            entity = str(fact.get("entity", ""))
+            if entity_type == "COMPANY":
+                chain_data["companies"][entity] += 1
+            elif entity_type == "PRODUCT":
+                chain_data["products"][entity] += 1
+            elif entity_type == "RAW_MATERIAL":
+                chain_data["materials"][entity] += 1
+            elif entity_type == "SERVICE":
+                chain_data["services"][entity] += 1
+            segment = str(fact.get("segment", ""))
+            if segment:
+                chain_data["segments"][segment] += 1
+            chain_data["fact_count"] += 1
+            chain_data["facts"].append({
+                "entity": entity,
+                "entity_type": entity_type,
+                "chain": fact_chain,
+                "stage": str(fact.get("stage", "中游")),
+                "evidence": str(fact.get("evidence", ""))[:MAX_EVIDENCE_CHARS],
+                "page": fact.get("page"),
+                "confidence": float(fact.get("confidence", 0.5)),
+                "report_id": document.get("report_id", ""),
+                "file_name": document.get("file_name", ""),
+            })
+
 
     index_chains: list[dict[str, Any]] = []
     for chain, data in chains.items():
@@ -1760,7 +1844,6 @@ def _chain_graph(chain: Mapping[str, Any]) -> dict[str, Any]:
 
     material_ids = [add_node(item["name"], "RAW_MATERIAL") for item in chain.get("materials", [])]
     product_ids = [add_node(item["name"], "PRODUCT") for item in chain.get("products", [])]
-    service_ids = [add_node(item["name"], "SERVICE") for item in chain.get("services", [])]
     company_ids = [add_node(item["name"], "COMPANY") for item in chain.get("companies", [])]
 
     if not (upstream or midstream or downstream or product_ids or company_ids):

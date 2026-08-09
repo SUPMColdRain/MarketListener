@@ -11,6 +11,8 @@ from market_monitor import __version__
 from market_monitor.collector import run_fetch_session
 from market_monitor.configuration import ConfigurationError, load_local_configuration
 from market_monitor.control_center import serve_control_center
+from market_monitor.f10 import f10_status, run_f10_fetch, run_revenue_fetch
+from market_monitor.industry_atlas import build_atlas
 from market_monitor.package_builder import build_android_package
 from market_monitor.report_pipeline import (
     build_chain_index,
@@ -60,6 +62,17 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--limit-cn-stocks", type=int, default=5, help="number of CN stocks to fetch as samples")
     fetch.add_argument("--max-workers", type=int, default=4, help="concurrent fetch workers")
     fetch.add_argument("--task-timeout-seconds", type=float, default=90.0, help="per-task wall-clock timeout")
+    f10 = subcommands.add_parser("f10", help="fetch A/H share F10 basics (throttled, resumable)")
+    f10.add_argument("--data-root", type=Path, default=Path("data_control"))
+    f10.add_argument("--market", default="CN", choices=["CN", "HK"], help="CN or HK listed companies")
+    f10.add_argument("--limit-details", type=int, default=200, help="max per-stock F10 detail calls per run")
+    f10.add_argument("--detail-delay-seconds", type=float, default=1.2, help="pause between F10 detail calls")
+    f10.add_argument("--skip-quotes", action="store_true", help="skip the Tencent bulk quote refresh")
+    f10.add_argument("--force-details", action="store_true", help="refetch details even when already cached")
+    f10.add_argument("--status", action="store_true", help="print current collection status and exit")
+    f10.add_argument("--revenue-only", action="store_true", help="fetch BusinessAnalysis revenue breakdown for cached CN companies")
+    f10.add_argument("--revenue-limit", type=int, default=200, help="max revenue-breakdown calls per run")
+    f10.add_argument("--codes-file", type=Path, default=None, help="optional code list (one per line) for revenue fetch")
     package = subcommands.add_parser("package", help="build and sign an immutable Android sync package")
     package.add_argument("--data-root", type=Path, default=Path("data_control"))
     package.add_argument(
@@ -91,6 +104,12 @@ def build_parser() -> argparse.ArgumentParser:
     chains = report_subcommands.add_parser("chains", help="aggregate extracted facts into industry chains")
     chains.add_argument("--output-root", type=Path, default=Path("reports/industry"))
     chains.add_argument("--max-facts-per-chain", type=int, default=200)
+    atlas = report_subcommands.add_parser("atlas", help="build the new brokerage-style industry atlas HTML/JSON")
+    atlas.add_argument("--output-root", type=Path, default=Path("reports/industry"))
+    atlas.add_argument("--data-root", type=Path, default=Path("data_control"), help="data_control root for F10 and sync target")
+    atlas.add_argument("--chain-index", type=Path, default=None, help="chain_index.json path (default: <output-root>/chain_index.json)")
+    atlas.add_argument("--legacy-html", type=Path, default=None, help="legacy A股企业产业链精细定位.html path")
+    atlas.add_argument("--f10-dir", type=Path, default=None, help="F10 jsonl directory (default: <data-root>/industry/f10)")
     return parser
 
 
@@ -110,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             return _serve(args)
         if args.command == "fetch":
             return _fetch(args)
+        if args.command == "f10":
+            return _f10(args)
         if args.command == "package":
             return _package(args)
         if args.command == "reports":
@@ -189,6 +210,75 @@ def _fetch(args: argparse.Namespace) -> int:
     return exit_code
 
 
+def _f10(args: argparse.Namespace) -> int:
+    if args.limit_details < 0:
+        raise ValueError("--limit-details must be non-negative")
+    min_delay = 0.02
+    if args.detail_delay_seconds < min_delay:
+        raise ValueError(f"--detail-delay-seconds must be at least {min_delay}")
+    if args.status:
+        summary = f10_status(args.data_root, market=args.market)
+        _emit("SUCCESS", EXIT_SUCCESS, message=f"f10 {args.market}: {summary['record_count']} records")
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return EXIT_SUCCESS
+    if args.revenue_only:
+        codes = None
+        if args.codes_file:
+            path = Path(args.codes_file)
+            codes = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        summary = run_revenue_fetch(
+            args.data_root,
+            market=args.market,
+            limit=args.revenue_limit,
+            detail_delay_seconds=args.detail_delay_seconds,
+            codes=codes,
+        )
+        if summary.get("status") == "SKIPPED":
+            _emit(
+                "SKIPPED",
+                EXIT_SUCCESS,
+                message=summary.get("message", f"f10 {args.market} revenue skipped (lock held)"),
+            )
+            print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+            return EXIT_SUCCESS
+        exit_code = EXIT_SUCCESS if summary["status"] == "PASS" else EXIT_PARTIAL_FAILURE
+        _emit(
+            summary["status"],
+            exit_code,
+            message=f"f10 revenue: new {summary.get('new_revenue', 0)}, total {summary.get('total_revenue', 0)}",
+        )
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return exit_code
+    summary = run_f10_fetch(
+        args.data_root,
+        market=args.market,
+        limit_details=args.limit_details,
+        detail_delay_seconds=args.detail_delay_seconds,
+        skip_quotes=args.skip_quotes,
+        force_details=args.force_details,
+    )
+    if summary.get("status") == "SKIPPED":
+        _emit(
+            "SKIPPED",
+            EXIT_SUCCESS,
+            message=summary.get("message", f"f10 {args.market} skipped (lock held)"),
+        )
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return EXIT_SUCCESS
+    exit_code = EXIT_SUCCESS if summary["status"] == "PASS" else EXIT_PARTIAL_FAILURE
+    _emit(
+        summary["status"],
+        exit_code,
+        message=(
+            f"f10 {args.market}: universe {summary['universe_count']}, "
+            f"quotes {summary['quote_count']}, new details {summary['new_details']}, "
+            f"total details {summary['total_details']}"
+        ),
+    )
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    return exit_code
+
+
 def _package(args: argparse.Namespace) -> int:
     summary = build_android_package(
         args.data_root,
@@ -259,7 +349,25 @@ def _reports(args: argparse.Namespace) -> int:
         )
         print(json.dumps(index, ensure_ascii=False, sort_keys=True))
         return EXIT_SUCCESS
-    raise ValueError("missing reports subcommand (process|status|verify|chains)")
+    if args.report_command == "atlas":
+        summary = build_atlas(
+            args.output_root,
+            data_root=args.data_root,
+            chain_index_path=args.chain_index,
+            legacy_html_path=args.legacy_html,
+            f10_dir=args.f10_dir,
+        )
+        _emit(
+            "SUCCESS",
+            EXIT_SUCCESS,
+            message=(
+                f"industry atlas: {summary['chain_count']} chains, "
+                f"{summary['company_codes']} companies with codes"
+            ),
+        )
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return EXIT_SUCCESS
+    raise ValueError("missing reports subcommand (process|status|verify|chains|atlas)")
 
 
 def _emit(

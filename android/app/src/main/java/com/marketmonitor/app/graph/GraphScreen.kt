@@ -36,8 +36,17 @@ fun GraphTab(
     onSelectRelationship: (String) -> Unit,
     onImport: () -> Unit,
     industryMapFile: File?,
+    industryAtlasFile: File?,
 ) {
-    var viewMode by remember(industryMapFile) { mutableStateOf(if (industryMapFile != null) "map" else "search") }
+    var viewMode by remember(industryAtlasFile, industryMapFile) {
+        mutableStateOf(
+            when {
+                industryAtlasFile != null -> "atlas"
+                industryMapFile != null -> "map"
+                else -> "search"
+            }
+        )
+    }
     Column(
         modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -53,12 +62,17 @@ fun GraphTab(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (industryAtlasFile != null) {
+                TextButton(onClick = { viewMode = "atlas" }) { Text("产业链全景图") }
+            }
             if (industryMapFile != null) {
                 TextButton(onClick = { viewMode = "map" }) { Text("SVG 图谱") }
             }
             TextButton(onClick = { viewMode = "search" }) { Text("搜索/详情") }
         }
-        if (viewMode == "map" && industryMapFile != null) {
+        if (viewMode == "atlas" && industryAtlasFile != null) {
+            IndustryMapView(industryAtlasFile)
+        } else if (viewMode == "map" && industryMapFile != null) {
             IndustryMapView(industryMapFile)
         } else {
             OutlinedTextField(
