@@ -15,12 +15,13 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Mapping, Sequence
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 from uuid import uuid4
 
 from .dashboard import build_health_report
 from .dataset_catalog import dataset_index
 from .package_builder import latest_package_info
+from .industry_graph.f10 import CompanyRepository
 
 
 _MARKETS = ("CN", "HK", "GLOBAL")
@@ -290,6 +291,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
     server_version = "MarketMonitorControlCenter/0.1"
     data_root: Path
     quiet: bool = False
+    company_repository: CompanyRepository
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -298,6 +300,12 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/health":
             self._send_json(build_control_center_report(self.data_root))
+            return
+        if parsed.path == "/api/f10/companies":
+            self._send_f10_companies(parse_qs(parsed.query))
+            return
+        if parsed.path.startswith("/api/f10/companies/"):
+            self._send_f10_company(unquote(parsed.path.removeprefix("/api/f10/companies/")))
             return
         if parsed.path == "/api/datasets":
             self._send_json([definition.to_dict() for definition in dataset_index().values()])
@@ -384,6 +392,34 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 continue
         self._send_json({"error": "industry map not built yet"}, status=404)
 
+    def _send_f10_companies(self, params: Mapping[str, Sequence[str]]) -> None:
+        """Return a bounded, server-filtered company summary page."""
+
+        def first(name: str, default: str = "") -> str:
+            values = params.get(name)
+            return str(values[0]) if values else default
+
+        try:
+            page = self.company_repository.list_companies(
+                query=first("q"),
+                market=first("market") or None,
+                page=int(first("page", "1")),
+                page_size=int(first("page_size", "50")),
+                sort=first("sort", "name"),
+                descending=first("direction", "asc").lower() == "desc",
+            )
+        except (TypeError, ValueError) as error:
+            self._send_json({"error": str(error)}, status=400)
+            return
+        self._send_json(page.to_dict())
+
+    def _send_f10_company(self, instrument_key: str) -> None:
+        company = self.company_repository.company(instrument_key)
+        if company is None:
+            self._send_json({"error": "company not found"}, status=404)
+            return
+        self._send_json(company.to_dict())
+
     def _send_industry_atlas(self) -> None:
         candidates = (
             Path(self.data_root) / "industry" / "industry-atlas.html",
@@ -407,6 +443,7 @@ def make_handler(data_root: Path, *, quiet: bool = False) -> type[ControlCenterH
 
     _Handler.data_root = data_root
     _Handler.quiet = quiet
+    _Handler.company_repository = CompanyRepository(data_root)
     return _Handler
 
 

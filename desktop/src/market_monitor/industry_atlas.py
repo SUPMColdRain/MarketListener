@@ -33,6 +33,7 @@ from market_monitor.chain_taxonomy import (
     canonical_chain,
     clean_company_name,
 )
+from market_monitor.industry_graph.f10.repository import company_detail_from_record
 
 
 SCHEMA_VERSION = "atlas-v2"
@@ -1415,21 +1416,53 @@ def _chain_intro(parent: str, bucket: Mapping[str, Any]) -> str:
     return "。".join(parts)
 
 
-def _build_company_index(atlas_chains: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    index: dict[str, dict[str, Any]] = {}
+def _company_summary_index(records: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Create the one compact F10 index shared by all chain nodes."""
+
+    summaries: dict[str, dict[str, Any]] = {}
+    for record in records:
+        detail = company_detail_from_record(record)
+        if detail is None:
+            continue
+        summaries.setdefault(detail.summary.instrument_key, detail.summary.to_dict())
+    return summaries
+
+
+def _replace_companies_with_refs(
+    atlas_chains: Iterable[dict[str, Any]],
+    company_summaries: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Keep node payloads relational: only instrument keys, never F10 copies."""
+
+    key_by_market_code = {
+        (str(summary.get("market") or ""), str(summary.get("code") or "")): instrument_key
+        for instrument_key, summary in company_summaries.items()
+    }
     for chain in atlas_chains:
         for stage in chain.get("stages") or []:
             for card in stage.get("cards") or []:
-                for company in card.get("companies") or []:
-                    key = _norm_name(company.get("name"))
-                    if not key or key in index:
+                refs: list[str] = []
+                evidence_by_ref: dict[str, list[dict[str, Any]]] = {}
+                unresolved: list[str] = []
+                for company in card.pop("companies", []):
+                    company_refs = [
+                        key_by_market_code[(str(market), str(code))]
+                        for code, market in zip(company.get("codes") or [], company.get("markets") or [])
+                        if (str(market), str(code)) in key_by_market_code
+                    ]
+                    if not company_refs:
+                        name = str(company.get("name") or "").strip()
+                        if name:
+                            unresolved.append(name)
                         continue
-                    index[key] = {
-                        "name": company.get("name"),
-                        "codes": company.get("codes") or [],
-                        "markets": company.get("markets") or [],
-                    }
-    return index
+                    for instrument_key in company_refs:
+                        if instrument_key not in refs:
+                            refs.append(instrument_key)
+                        evidence_by_ref.setdefault(instrument_key, list(company.get("evidence") or []))
+                card["companyRefs"] = refs
+                card["companyEvidence"] = evidence_by_ref
+                if unresolved:
+                    card["unresolvedCompanyNames"] = sorted(set(unresolved))
 
 
 # ---------------------------------------------------------------------------
@@ -1470,7 +1503,6 @@ def build_atlas(
     f10_by_chain = _build_f10_by_chain(f10_records)
     buckets = _aggregate_chains(chains)
     atlas_chains: list[dict[str, Any]] = []
-    company_codes: set[str] = set()
 
     ordered = sorted(
         buckets.values(),
@@ -1486,10 +1518,6 @@ def build_atlas(
             bucket_name=bucket["name"],
         )
         counts = _chain_counts(stages)
-        for stage in stages:
-            for card in stage["cards"]:
-                for company in card["companies"]:
-                    company_codes.update(company.get("codes") or [])
         sub_chains = sorted(
             bucket["sub_chains"].values(),
             key=lambda sub: (-int(sub["fact_count"] or 0), sub["name"]),
@@ -1508,15 +1536,11 @@ def build_atlas(
             }
         )
 
-    # Global company table (code -> compact F10) shared by every tooltip.
-    company_table: dict[str, dict[str, Any]] = {}
-    for record in all_records:
-        code = str(record.get("code") or "")
-        if not code or code not in company_codes:
-            continue
-        company_table.setdefault(code, _compact_f10(record))
-
-    company_index = _build_company_index(atlas_chains)
+    # Chains reference a single CompanySummary index by canonical instrument.
+    # The original F10 JSONL remains the data master; this is a generated read
+    # model, not another company database.
+    company_summaries = _company_summary_index(all_records)
+    _replace_companies_with_refs(atlas_chains, company_summaries)
 
     generated_at = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
     payload = {
@@ -1530,8 +1554,7 @@ def build_atlas(
             "legacy": len(legacy_records),
             "meta": f10_meta,
         },
-        "company_index": company_index,
-        "companies": company_table,
+        "companySummaries": company_summaries,
         "chains": atlas_chains,
     }
 
@@ -1551,7 +1574,7 @@ def build_atlas(
         "html": str(html_path),
         "synced_html": str(sync_target),
         "chain_count": len(atlas_chains),
-        "company_codes": len(company_table),
+        "company_codes": len(company_summaries),
     }
 
 
@@ -1633,13 +1656,14 @@ main{flex:1;padding:18px 22px 90px;overflow:auto}
 .chip.no-code{opacity:.72;border-style:dashed}
 .tooltip{position:fixed;z-index:50;max-width:380px;min-width:260px;background:var(--panel);
   border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.22);
-  padding:12px 14px;pointer-events:none;display:none}
+  padding:12px 14px;pointer-events:auto;display:none}
 .tooltip h4{margin:0 0 6px;font-size:15px}
 .tooltip .code-line{color:var(--muted);font-size:12px;margin-bottom:8px}
 .tooltip .row{display:flex;gap:8px;margin:3px 0;font-size:12px}
 .tooltip .row .k{color:var(--muted);min-width:64px;flex-shrink:0}
 .tooltip .row .v{word-break:break-word}
 .tooltip .missing{color:var(--muted);font-style:italic}
+.tooltip .f10-link{display:inline-block;margin-top:10px;color:var(--accent);font-size:12px;text-decoration:none}
 .drawer{position:fixed;left:280px;right:0;bottom:0;max-height:44vh;overflow:auto;
   background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.18);
   padding:14px 18px;display:none;z-index:40}
@@ -1694,12 +1718,14 @@ main{flex:1;padding:18px 22px 90px;overflow:auto}
 <script>
 "use strict";
 const ATLAS = JSON.parse(document.getElementById("atlas-data").textContent);
-const COMPANIES = ATLAS.companies || {};
-const INDEX = ATLAS.company_index || {};
+const COMPANY_SUMMARIES = ATLAS.companySummaries || {};
 const CHAINS = ATLAS.chains || [];
 let activeChain = CHAINS[0] || null;
 let activeSub = null;
 let zoom = 1;
+let openTimer = null;
+let closeTimer = null;
+let activeChip = null;
 
 const chainList = document.getElementById("chain-list");
 const mainEl = document.getElementById("main");
@@ -1712,11 +1738,14 @@ function stageColor(stage){ return {"upstream":"#3d7fb8","midstream":"#7c6ee8","
 function stageLabel(stage){ return {"upstream":"上游","midstream":"中游","downstream":"下游","service":"服务与配套","related":"产业链相关"}[stage]||stage; }
 function kindLabel(kind){ return {"product":"产品","material":"材料","service":"服务","companies":"公司"}[kind]||kind||"环节"; }
 function marketName(m){ return m==="CN"?"A股":(m==="HK"?"港股":(m||"其他")); }
-function fmtCap(v){ if(v==null||isNaN(v)) return null; const n=Number(v); if(n>=1e12) return (n/1e12).toFixed(2)+" 万亿"; if(n>=1e8) return (n/1e8).toFixed(1)+" 亿"; if(n>=1e4) return (n/1e4).toFixed(1)+" 万"; return String(n); }
+function fmtCap(v){ if(v==null||isNaN(v)||Number(v)<=0) return null; const n=Number(v); if(n>=1e12) return (n/1e12).toFixed(2)+" 万亿"; if(n>=1e8) return (n/1e8).toFixed(1)+" 亿"; if(n>=1e4) return (n/1e4).toFixed(1)+" 万"; return String(n); }
 function fmtPct(v){ if(v==null||isNaN(v)) return null; return (Number(v)*100).toFixed(1)+"%"; }
-function displayCodes(codes, markets){
-  codes = codes||[]; markets = markets||[];
-  return codes.map((c,i)=> markets[i]==="HK" ? "HK:"+c : c).join(" · ");
+function displayCode(company){ return company && company.code ? (company.market==="HK" ? "HK:" : "")+company.code : ""; }
+function fmtMoney(snapshot){
+  if(!snapshot || !snapshot.asOf || !snapshot.currency) return null;
+  const value = fmtCap(snapshot.value); if(!value) return null;
+  const currency = snapshot.currency==="HKD" ? "港元" : snapshot.currency==="CNY" ? "元" : snapshot.currency;
+  return value+currency+" · 更新 "+snapshot.asOf;
 }
 
 function renderChainList(){
@@ -1736,10 +1765,11 @@ function renderChainList(){
   });
 }
 
-function chipHtml(company){
-  const code = displayCodes(company.codes, company.markets);
-  const cls = "chip company" + (code ? "" : " no-code");
-  return '<button class="'+cls+'" data-name="'+esc(company.name)+'" data-codes="'+esc(JSON.stringify(company.codes||[]))+'" data-markets="'+esc(JSON.stringify(company.markets||[]))+'">'
+function chipHtml(instrumentKey, stage, node){
+  const company = COMPANY_SUMMARIES[instrumentKey];
+  if(!company) return "";
+  const code = displayCode(company);
+  return '<button class="chip company" data-instrument-key="'+esc(instrumentKey)+'" data-stage="'+esc(stage)+'" data-node="'+esc(node)+'">'
     + esc(company.name) + (code ? '<span class="code">'+esc(code)+'</span>' : "")
     + '</button>';
 }
@@ -1779,7 +1809,8 @@ function renderChain(){
         + '<span class="kind-tag">'+esc(kindLabel(card.kind))+'</span>'
         + '<span class="card-count">'+card.count+' 次</span></div>';
       if(card.intro) html += '<div class="card-intro">'+esc(card.intro)+'</div>';
-      html += '<div class="chips">'+(card.companies||[]).map(chipHtml).join("")+'</div>';
+      html += '<div class="chips">'+(card.companyRefs||[]).map(ref=>chipHtml(ref, stage.stage, card.name)).join("")
+        + (card.unresolvedCompanyNames||[]).map(name=>'<span class="chip no-code">'+esc(name)+'</span>').join("")+'</div>';
       html += '</div>';
     });
     html += '</div></div>';
@@ -1800,82 +1831,76 @@ function bindSubTabs(){
 
 function bindChips(){
   mainEl.querySelectorAll(".chip.company").forEach(chip=>{
-    chip.addEventListener("mouseenter", ev=>{
-      const codes = JSON.parse(chip.dataset.codes||"[]");
-      const markets = JSON.parse(chip.dataset.markets||"[]");
-      const rec = codes.map(c=>COMPANIES[c]).find(r=>r);
-      if(!rec){ tooltip.innerHTML = '<h4>'+esc(chip.dataset.name)+'</h4><div class="missing">非 A/H 上市或暂无 F10 数据</div>'; }
-      else{
-        const rows = [
-          ["证券代码", displayCodes([rec.code],[rec.market])],
-          ["市场", marketName(rec.market)],
-          ["总市值", rec.total_market_cap!=null?fmtCap(rec.total_market_cap):null],
-          ["流通市值", rec.float_market_cap!=null?fmtCap(rec.float_market_cap):null],
-          ["数据更新", rec.fetched_at],
-          ["所属行业", rec.industry],
-          ["证监会行业", rec.csrc_industry],
-          ["主营构成", (rec.revenue_breakdown||[]).slice(0,4).map(x=>(x.item||"")+(x.ratio!=null?" "+fmtPct(x.ratio):"")).join("、")],
-          ["公司简介", (rec.profile||"").slice(0,240)],
-          ["主营业务", (rec.main_business||"").slice(0,240)],
-        ].filter(r=>r[1]!=null && r[1]!=="");
-        tooltip.innerHTML = '<h4>'+esc(rec.name||chip.dataset.name)+'</h4>'
-          + '<div class="code-line">'+rows.filter(r=>r[0]==="证券代码"||r[0]==="市场").map(r=>esc(r[0])+" "+esc(r[1])).join(" · ")
-          + (rec.source? ' · 来源：'+esc(rec.source) : "") + '</div>'
-          + rows.filter(r=>r[0]!=="证券代码"&&r[0]!=="市场").map(r=>'<div class="row"><span class="k">'+esc(r[0])+'</span><span class="v">'+esc(r[1])+'</span></div>').join("")
-          + (rows.length<=2?'<div class="missing">暂无更多 F10 字段</div>':"");
-      }
-      tooltip.style.display="block";
-      positionTooltip(ev);
-    });
-    chip.addEventListener("mousemove", positionTooltip);
-    chip.addEventListener("mouseleave", ()=>{ tooltip.style.display="none"; });
+    chip.addEventListener("mouseenter", ()=>schedulePopover(chip));
+    chip.addEventListener("mouseleave", scheduleClosePopover);
     chip.addEventListener("click", ()=>{
-      openDrawer(chip.dataset.name, JSON.parse(chip.dataset.codes||"[]"));
+      hidePopover();
+      openDrawer(chip.dataset.instrumentKey, chip.dataset.stage, chip.dataset.node);
     });
   });
 }
 
-function positionTooltip(ev){
+function schedulePopover(chip){
+  clearTimeout(closeTimer); clearTimeout(openTimer); activeChip=chip;
+  openTimer=setTimeout(()=>showPopover(chip), 200);
+}
+function scheduleClosePopover(){
+  clearTimeout(openTimer); clearTimeout(closeTimer);
+  closeTimer=setTimeout(hidePopover, 180);
+}
+function hidePopover(){ clearTimeout(openTimer); clearTimeout(closeTimer); tooltip.style.display="none"; activeChip=null; }
+function showPopover(chip){
+  const rec=COMPANY_SUMMARIES[chip.dataset.instrumentKey]; if(!rec) return;
+  const top=rec.topRevenueSegment||{};
+  const rows=[
+    ["证券代码",displayCode(rec)], ["市场",marketName(rec.market)], ["公司亮点",rec.companyHighlight],
+    ["总市值",fmtMoney(rec.totalMarketCap)], ["流通市值",fmtMoney(rec.floatMarketCap)],
+    ["所属行业",rec.industry||rec.csrcIndustry], ["主营业务",rec.mainBusiness],
+    ["最赚钱业务",top.name ? top.name+(top.ratio!=null?" "+fmtPct(top.ratio):"") : null],
+    ["主要产品",(rec.products||[]).slice(0,4).join("、")], ["当前定位",activeChain.name+" / "+chip.dataset.stage+" / "+chip.dataset.node],
+    ["公司简介",(rec.companyIntro||"").slice(0,240)]
+  ].filter(row=>row[1]!=null&&row[1]!=="");
+  tooltip.innerHTML='<h4>'+esc(rec.name)+'</h4><div class="code-line">'+esc(displayCode(rec))+(rec.source?' · 来源：'+esc(rec.source):'')+'</div>'
+    + rows.filter(row=>row[0]!=="证券代码"&&row[0]!=="市场").map(row=>'<div class="row"><span class="k">'+esc(row[0])+'</span><span class="v">'+esc(row[1])+'</span></div>').join("")
+    + (rows.length<=2?'<div class="missing">暂无更多 F10 数据</div>':"")
+    + '<a class="f10-link" href="/f10/company/'+encodeURIComponent(rec.instrumentKey)+'">查看完整 F10</a>';
+  tooltip.style.display="block"; positionPopover(chip);
+}
+function positionPopover(chip){
+  const rect=chip.getBoundingClientRect();
   const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-  let x = ev.clientX + 14, y = ev.clientY + 14;
-  if(x + w > window.innerWidth - 8) x = ev.clientX - w - 10;
-  if(y + h > window.innerHeight - 8) y = ev.clientY - h - 10;
+  let x = rect.left, y = rect.bottom + 10;
+  if(x + w > window.innerWidth - 8) x = rect.right - w;
+  if(y + h > window.innerHeight - 8) y = rect.top - h - 10;
   tooltip.style.left = Math.max(6,x)+"px";
   tooltip.style.top = Math.max(6,y)+"px";
 }
 
-function openDrawer(name, codes){
-  const rec = codes.map(c=>COMPANIES[c]).find(r=>r);
+tooltip.addEventListener("mouseenter", ()=>clearTimeout(closeTimer));
+tooltip.addEventListener("mouseleave", scheduleClosePopover);
+
+function openDrawer(instrumentKey, stage, node){
+  const rec = COMPANY_SUMMARIES[instrumentKey]; if(!rec) return;
   drawer.style.display="block";
-  document.getElementById("drawer-title").textContent = name + (rec && rec.code ? "（"+displayCodes([rec.code],[rec.market])+"）" : "");
+  document.getElementById("drawer-title").textContent = rec.name+"（"+displayCode(rec)+"）";
   const body = document.getElementById("drawer-body");
   body.innerHTML = "";
-  if(rec){
-    const rows = [
-      ["公司名称", rec.full_name||rec.name],
-      ["市场", marketName(rec.market)],
-      ["总市值", rec.total_market_cap!=null?fmtCap(rec.total_market_cap):null],
-      ["流通市值", rec.float_market_cap!=null?fmtCap(rec.float_market_cap):null],
-      ["数据更新", rec.fetched_at],
-      ["所属行业", rec.industry],
-      ["证监会行业", rec.csrc_industry],
-      ["公司简介", rec.profile],
-      ["主营业务", rec.main_business],
-      ["主营构成", (rec.revenue_breakdown||[]).map(x=>(x.item||"")+(x.amount!=null?" "+fmtCap(x.amount):"")+(x.ratio!=null?"（"+fmtPct(x.ratio)+"）":"")).join("；")],
-    ].filter(r=>r[1]!=null && r[1]!=="");
-    rows.forEach(r=>{
+  const rows=[["公司亮点",rec.companyHighlight],["总市值",fmtMoney(rec.totalMarketCap)],
+    ["流通市值",fmtMoney(rec.floatMarketCap)],["所属行业",rec.industry],["证监会行业",rec.csrcIndustry],
+    ["公司简介",rec.companyIntro],["主营业务",rec.mainBusiness],["主要产品",(rec.products||[]).join("、")],
+    ["产业链定位",activeChain.name+" / "+stage+" / "+node],
+    ["收入构成",rec.topRevenueSegment&&rec.topRevenueSegment.name ? rec.topRevenueSegment.name+(rec.topRevenueSegment.ratio!=null?"（"+fmtPct(rec.topRevenueSegment.ratio)+"）":"") : null]
+  ].filter(row=>row[1]!=null&&row[1]!=="");
+  rows.forEach(r=>{
       const div=document.createElement("div"); div.className="ev";
       div.innerHTML = '<div><b>'+esc(r[0])+'：</b></div><div class="src">'+esc(r[1])+'</div>';
       body.appendChild(div);
-    });
-    if(!rows.length) body.innerHTML = '<div class="empty">暂无 F10 详情</div>';
-  }
+  });
+  if(!rows.length) body.innerHTML = '<div class="empty">暂无 F10 详情</div>';
   const h = document.createElement("h4"); h.textContent="研报证据"; body.appendChild(h);
   const chain = activeChain;
   const items = [];
-  (chain.stages||[]).forEach(st=>(st.cards||[]).forEach(c=>(c.companies||[]).forEach(co=>{
-    if(co.name===name) items.push(...(co.evidence||[]));
-  })));
+  (chain.stages||[]).forEach(st=>(st.cards||[]).forEach(c=>items.push(...((c.companyEvidence||{})[instrumentKey]||[]))));
   const uniq = [];
   const seen = new Set();
   items.forEach(e=>{ const k=e.t+e.p; if(!seen.has(k)){ seen.add(k); uniq.push(e); } });
@@ -1889,20 +1914,21 @@ function openDrawer(name, codes){
   });
 }
 
-function setZoom(v){ zoom = Math.min(2, Math.max(0.6, v)); mainEl.style.fontSize = (zoom*100)+"%"; }
+function setZoom(v){ hidePopover(); zoom = Math.min(1.5, Math.max(0.5, v)); mainEl.style.fontSize = (zoom*100)+"%"; }
 
 function globalSearch(q){
   q = (q||"").trim();
   if(!q){ globalResults.style.display="none"; return; }
   const hits=[];
-  Object.keys(INDEX).forEach(key=>{
-    if(INDEX[key].name.toLowerCase().includes(q.toLowerCase())) hits.push(INDEX[key]);
+  Object.keys(COMPANY_SUMMARIES).forEach(key=>{
+    const company=COMPANY_SUMMARIES[key];
+    if((company.name||"").toLowerCase().includes(q.toLowerCase()) || (company.code||"").toLowerCase().includes(q.toLowerCase())) hits.push(company);
   });
   if(hits.length<40) CHAINS.forEach(c=>{ if((c.name||"").toLowerCase().includes(q.toLowerCase())) hits.push({name:c.name+"（产业链）",chain:c.id}); });
   globalResults.innerHTML = "";
   hits.slice(0,30).forEach(hit=>{
     const row=document.createElement("div"); row.className="hit";
-    row.innerHTML = '<div>'+esc(hit.name)+'</div><div class="s">'+esc(displayCodes(hit.codes, hit.markets))+'</div>';
+    row.innerHTML = '<div>'+esc(hit.name)+'</div><div class="s">'+esc(displayCode(hit))+'</div>';
     row.addEventListener("click", ()=>{
       globalResults.style.display="none";
       if(hit.chain){
@@ -1912,14 +1938,14 @@ function globalSearch(q){
       let target=null;
       CHAINS.forEach(c=>{
         if(target) return;
-        (c.stages||[]).forEach(st=>(st.cards||[]).forEach(card=>(card.companies||[]).forEach(co=>{
-          if(!target && co.name===hit.name) target={chain:c, name:co.name};
+        (c.stages||[]).forEach(st=>(st.cards||[]).forEach(card=>(card.companyRefs||[]).forEach(ref=>{
+          if(!target && ref===hit.instrumentKey) target={chain:c, instrumentKey:ref};
         })));
       });
       if(!target) return;
       activeChain=target.chain; activeSub=null; renderChainList(); renderChain();
       setTimeout(()=>{
-        const chip=[...mainEl.querySelectorAll(".chip.company")].find(c=>c.dataset.name===target.name);
+        const chip=[...mainEl.querySelectorAll(".chip.company")].find(c=>c.dataset.instrumentKey===target.instrumentKey);
         if(chip){ chip.scrollIntoView({behavior:"smooth",block:"center"}); chip.style.outline="2px solid var(--accent)"; setTimeout(()=>chip.style.outline="",1600); }
       },60);
     });
@@ -1931,6 +1957,7 @@ function globalSearch(q){
 document.getElementById("chain-filter").addEventListener("input", renderChainList);
 document.getElementById("global-search").addEventListener("input", ev=>globalSearch(ev.target.value));
 document.addEventListener("click", ev=>{ if(!ev.target.closest("#global-search")&&!ev.target.closest("#global-results")) globalResults.style.display="none"; });
+mainEl.addEventListener("pointerdown", hidePopover);
 document.getElementById("zoom-in").addEventListener("click", ()=>setZoom(zoom+0.15));
 document.getElementById("zoom-out").addEventListener("click", ()=>setZoom(zoom-0.15));
 document.getElementById("theme-toggle").addEventListener("click", ()=>{

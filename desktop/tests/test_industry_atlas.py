@@ -335,14 +335,18 @@ def test_build_atlas_emits_offline_html_and_counts(tmp_path: Path) -> None:
     stages = chain["stages"]
     assert len(stages) > 0
 
-    # cards have companies directly
-    has_card_with_companies = False
+    # Nodes retain only canonical company references; F10 lives in the shared
+    # CompanySummary index and is never duplicated into every card.
+    summaries = payload["companySummaries"]
+    has_card_with_company_refs = False
     for stage in stages:
         for card in stage.get("cards") or []:
-            assert "companies" in card
-            if card["companies"]:
-                has_card_with_companies = True
-    assert has_card_with_companies
+            assert "companies" not in card
+            assert "companyRefs" in card
+            if card["companyRefs"]:
+                has_card_with_company_refs = True
+                assert all(reference in summaries for reference in card["companyRefs"])
+    assert has_card_with_company_refs
 
     # intro exists
     assert chain.get("intro")
@@ -354,7 +358,7 @@ def test_build_atlas_emits_offline_html_and_counts(tmp_path: Path) -> None:
     board_cards: list[str] = []
     for stage in stages:
         for card in stage.get("cards") or []:
-            names = [c["name"] for c in card.get("companies") or []]
+            names = [summaries[reference]["name"] for reference in card.get("companyRefs") or []]
             if card.get("name") == "CMOS":
                 cmos_companies.extend(names)
             if card.get("name") == "其他相关公司":
@@ -375,3 +379,11 @@ def test_build_atlas_emits_offline_html_and_counts(tmp_path: Path) -> None:
     if data_block:
         assert "</script" not in data_block.group(1)
     assert "产业链" in html
+    # Hover is a real body-level interactive overlay, not an HTML title.
+    assert 'id="tooltip"' in html
+    assert "pointer-events:auto" in html
+    assert "setTimeout(()=>showPopover(chip), 200)" in html
+    assert "tooltip.addEventListener(\"mouseenter\"" in html
+    assert "function positionPopover(chip)" in html
+    assert 'data-instrument-key="' in html
+    assert "data-codes" not in html
