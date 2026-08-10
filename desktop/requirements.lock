@@ -2,6 +2,9 @@
 # Install with: python -m pip install -c requirements.lock -e ".[dev]"
 # The editable project itself and bootstrap tools (pip/setuptools) are intentionally excluded.
 akshare==1.18.81
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
 attrs==26.1.0
 baostock==0.8.9
 beautifulsoup4==4.15.0
@@ -14,9 +17,13 @@ cryptography==45.0.7
 curl_cffi==0.16.0
 decorator==5.3.1
 duckdb==1.5.5
+fastapi==0.141.1
 et_xmlfile==2.0.0
 greenlet==3.5.4
+h11==0.16.0
 html5lib==1.1
+httpcore2==2.10.0
+httpx2==2.10.0
 idna==3.18
 iniconfig==2.3.0
 jqdatasdk==1.9.8
@@ -32,6 +39,8 @@ packaging==26.2
 pandas==3.0.5
 pluggy==1.6.0
 ply==3.11
+pydantic==2.13.4
+pydantic-core==2.46.4
 pycparser==3.0
 pypdf==6.14.2
 Pygments==2.20.0
@@ -46,14 +55,18 @@ ruff==0.12.11
 six==1.17.0
 simplejson==4.1.1
 soupsieve==2.9.1
+starlette==1.6.0
 SQLAlchemy==2.0.51
 tabulate==0.10.0
 thriftpy2==0.4.20
 tqdm==4.70.0
 tushare==1.4.29
 typing_extensions==4.16.0
+typing-inspection==0.4.2
+truststore==0.10.4
 tzdata==2026.3
 urllib3==2.7.0
+uvicorn==0.52.1
 webencodings==0.5.1
 websocket-client==1.9.0
 xlrd==2.0.2

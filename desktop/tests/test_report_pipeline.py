@@ -10,7 +10,6 @@ from pathlib import Path
 from market_monitor.report_pipeline import (
     _process_one,
     build_chain_index,
-    build_industry_map_html,
     verify_report_batch,
 )
 
@@ -91,7 +90,7 @@ def test_build_chain_index_aggregates_facts_and_writes_artifacts(tmp_path: Path)
     assert by_name["锂电池"]["fact_count"] == 3
     assert by_name["光伏"]["report_count"] == 1
     assert (output_root / "chain_index.json").is_file()
-    assert (output_root / "industry-map.html").is_file()
+    assert not (output_root / "industry-map.html").exists()
 
 
 def test_build_chain_index_includes_per_fact_chains_outside_declared(tmp_path: Path) -> None:
@@ -119,34 +118,6 @@ def test_build_chain_index_includes_per_fact_chains_outside_declared(tmp_path: P
     assert by_name["算力芯片"]["reports"][0]["primary"] is False
     assert any(fact["entity"] == "英伟达" for fact in by_name["算力芯片"]["facts"])
 
-
-def test_industry_map_html_contains_svg_and_snapshot(tmp_path: Path) -> None:
-    output_root = tmp_path / "industry"
-    output_root.mkdir()
-    _write_report(
-        output_root,
-        "e5f6",
-        primary_chain="锂电池",
-        related_chains=[],
-        facts=[
-            _fact("宁德时代", "COMPANY", "锂电池"),
-            _fact("磷酸铁锂", "PRODUCT", "锂电池"),
-        ],
-    )
-    index = build_chain_index(output_root)
-    target = tmp_path / "industry-map.html"
-    snapshot = tmp_path / "snapshots" / "industry-map.html"
-
-    written = build_industry_map_html(output_root, html_path=target, snapshot_path=snapshot, index=index)
-
-    assert written == target
-    html = target.read_text(encoding="utf-8")
-    assert "<svg" in html
-    assert "锂电池" in html
-    assert "宁德时代" in html
-    assert "window.INDEX" in html
-    assert "产业链图谱 · 研报知识库" in html
-    assert snapshot.read_text(encoding="utf-8") == html
 
 
 def test_verify_report_batch_flags_empty_or_warning_heavy_report(tmp_path: Path) -> None:

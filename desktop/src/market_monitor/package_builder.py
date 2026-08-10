@@ -119,9 +119,6 @@ def build_android_package(
     package_id = f"market-{(now or datetime.now(timezone.utc)).strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
     report = QualityReport("ANDROID-SYNC-ALL", [])
     extra_files: list[tuple[str, Path]] = []
-    industry_map = data_root / "industry" / "industry-map.html"
-    if industry_map.is_file():
-        extra_files.append(("industry/industry-map.html", industry_map))
     industry_atlas = data_root / "industry" / "industry-atlas.html"
     if industry_atlas.is_file():
         extra_files.append(("industry/industry-atlas.html", industry_atlas))
@@ -153,7 +150,6 @@ def build_android_package(
         "source_runs": len(source_run_summaries),
         "signature": "ed25519+ecdsa" if ecdsa_private_key is not None else "ed25519",
         "ledger": str(ledger_path),
-        "industry_map": str(industry_map) if industry_map.is_file() else None,
         "industry_atlas": str(industry_atlas) if industry_atlas.is_file() else None,
     }
 

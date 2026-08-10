@@ -10,7 +10,6 @@ from pathlib import Path
 from market_monitor import __version__
 from market_monitor.collector import run_fetch_session
 from market_monitor.configuration import ConfigurationError, load_local_configuration
-from market_monitor.control_center import serve_control_center
 from market_monitor.f10 import f10_status, run_f10_fetch, run_revenue_fetch
 from market_monitor.industry_atlas import build_atlas
 from market_monitor.package_builder import build_android_package
@@ -23,6 +22,7 @@ from market_monitor.report_pipeline import (
 from market_monitor.providers.comparison import compare_daily_bars, write_comparison
 from market_monitor.providers.registry import registered_providers
 from market_monitor.providers.runner import ProbeRunner, redact_secrets
+from market_monitor.web_app import serve_web_app
 
 
 EXIT_SUCCESS = 0
@@ -50,7 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     probe.add_argument("--timeout-seconds", type=float, default=45.0, help="maximum wall-clock time per provider invocation")
     compare = subcommands.add_parser("compare-sources", help="compare registered source data without blending rows")
     compare.add_argument("--report-dir", type=Path, default=Path("reports"))
-    serve = subcommands.add_parser("serve", help="serve the local HTML control center")
+    serve = subcommands.add_parser("serve", help="serve the local investment research terminal")
     serve.add_argument("--data-root", type=Path, default=Path("data"))
     serve.add_argument("--host", default="127.0.0.1", help="bind address (default 127.0.0.1)")
     serve.add_argument("--port", type=int, default=8765, help="bind port (0 picks a free port)")
@@ -170,7 +170,7 @@ def _serve(args: argparse.Namespace) -> int:
     if args.timeout_seconds is not None and args.timeout_seconds <= 0:
         raise ValueError("--timeout-seconds must be positive")
     try:
-        host, port = serve_control_center(
+        host, port = serve_web_app(
             args.data_root,
             host=args.host,
             port=args.port,
@@ -180,7 +180,7 @@ def _serve(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         _emit("SUCCESS", EXIT_SUCCESS, message="control center stopped by user")
         return EXIT_SUCCESS
-    _emit("SUCCESS", EXIT_SUCCESS, message=f"control center served at http://{host}:{port}/")
+    _emit("SUCCESS", EXIT_SUCCESS, message=f"local research terminal served at http://{host}:{port}/")
     return EXIT_SUCCESS
 
 

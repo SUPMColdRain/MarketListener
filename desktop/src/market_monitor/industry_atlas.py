@@ -1465,6 +1465,16 @@ def _replace_companies_with_refs(
                     card["unresolvedCompanyNames"] = sorted(set(unresolved))
 
 
+def _referenced_company_keys(atlas_chains: Iterable[Mapping[str, Any]]) -> set[str]:
+    return {
+        str(reference)
+        for chain in atlas_chains
+        for stage in chain.get("stages") or []
+        for card in stage.get("cards") or []
+        for reference in card.get("companyRefs") or []
+    }
+
+
 # ---------------------------------------------------------------------------
 # Build entry point
 # ---------------------------------------------------------------------------
@@ -1541,6 +1551,12 @@ def build_atlas(
     # model, not another company database.
     company_summaries = _company_summary_index(all_records)
     _replace_companies_with_refs(atlas_chains, company_summaries)
+    referenced_company_keys = _referenced_company_keys(atlas_chains)
+    company_summaries = {
+        instrument_key: summary
+        for instrument_key, summary in company_summaries.items()
+        if instrument_key in referenced_company_keys
+    }
 
     generated_at = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
     payload = {
@@ -1863,7 +1879,7 @@ function showPopover(chip){
   tooltip.innerHTML='<h4>'+esc(rec.name)+'</h4><div class="code-line">'+esc(displayCode(rec))+(rec.source?' · 来源：'+esc(rec.source):'')+'</div>'
     + rows.filter(row=>row[0]!=="证券代码"&&row[0]!=="市场").map(row=>'<div class="row"><span class="k">'+esc(row[0])+'</span><span class="v">'+esc(row[1])+'</span></div>').join("")
     + (rows.length<=2?'<div class="missing">暂无更多 F10 数据</div>':"")
-    + '<a class="f10-link" href="/f10/company/'+encodeURIComponent(rec.instrumentKey)+'">查看完整 F10</a>';
+    + '<a class="f10-link" target="_top" href="/f10/company/'+encodeURIComponent(rec.instrumentKey)+'">查看完整 F10</a>';
   tooltip.style.display="block"; positionPopover(chip);
 }
 function positionPopover(chip){

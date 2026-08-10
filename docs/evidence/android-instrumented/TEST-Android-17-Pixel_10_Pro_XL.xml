@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.marketmonitor.app.MarketListenerAppSmokeTest" tests="7" failures="0" errors="0" skipped="0" time="13.841" timestamp="2026-08-09T18:10:37" hostname="localhost">
+  <properties>
+    <property name="device" value="Pixel_10_Pro_XL(AVD) - 17" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="appShellOpensSettingsAndPersistsDarkChoice" classname="com.marketmonitor.app.MarketListenerAppSmokeTest" time="5.403" />
+  <testcase name="missingMarketDataShowsGuidanceInsteadOfZero" classname="com.marketmonitor.app.ui.DataScreenEmptyStateTest" time="1.289" />
+  <testcase name="allFiveSectionsAreReachableFromBottomNavigation" classname="com.marketmonitor.app.ui.app.AppScaffoldNavigationTest" time="1.754" />
+  <testcase name="echartsWebViewIsComposed" classname="com.marketmonitor.app.ui.chart.ChartSurfaceRenderTest" time="2.164" />
+  <testcase name="tradingChartWebViewIsComposed" classname="com.marketmonitor.app.ui.chart.ChartSurfaceRenderTest" time="1.077" />
+  <testcase name="systemLightDarkOptionsAreSelectable" classname="com.marketmonitor.app.ui.settings.SettingsDialogTest" time="1.477" />
+  <testcase name="themeChoicePersistsAcrossRepositoryInstances" classname="com.marketmonitor.app.ui.theme.ThemeRepositoryInstrumentedTest" time="0.045" />
+</testsuite>

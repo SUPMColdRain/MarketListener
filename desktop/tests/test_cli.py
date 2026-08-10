@@ -116,7 +116,7 @@ def test_cli_redacts_registered_short_secret_when_it_appears_as_a_report_path_to
 
 def test_cli_serve_emits_machine_readable_result(monkeypatch, tmp_path, capsys) -> None:
     monkeypatch.setattr(
-        "market_monitor.cli.serve_control_center",
+        "market_monitor.cli.serve_web_app",
         lambda *args, **kwargs: ("127.0.0.1", 9876),
     )
 

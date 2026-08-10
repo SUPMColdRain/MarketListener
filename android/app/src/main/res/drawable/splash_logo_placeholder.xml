@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral candlestick placeholder until the official MarketListener logo asset is provided. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <path
+        android:fillColor="#FF0B0E14"
+        android:pathData="M0,0 h240 v240 h-240 z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M92,126 h12 v42 h-12 z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M98,114 v12 M98,168 v12" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M120,102 h12 v48 h-12 z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M126,90 v12 M126,150 v12" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M148,138 h12 v36 h-12 z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M154,126 v12 M154,174 v12" />
+    <path
+        android:strokeColor="#FF2962FF"
+        android:strokeWidth="7"
+        android:pathData="M80,172 L122,146 L154,164 L182,124" />
+</vector>

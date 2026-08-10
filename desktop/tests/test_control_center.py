@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+import zipfile
 from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -80,6 +81,23 @@ def _write_package_root(data_root: Path) -> None:
     public_key = data_root / "keys" / "test-public.pem"
     generate_development_key(private_key, public_key)
     build_android_package(data_root, private_key)
+
+
+def test_android_package_contains_only_new_industry_atlas(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    _write_package_root(data_root)
+    industry = data_root / "industry"
+    industry.mkdir(parents=True)
+    (industry / "industry-map.html").write_text("obsolete", encoding="utf-8")
+    (industry / "industry-atlas.html").write_text("atlas", encoding="utf-8")
+    private_key = data_root / "keys" / "test-private.pem"
+
+    package = build_android_package(data_root, private_key)
+
+    with zipfile.ZipFile(package["package_path"]) as archive:
+        names = archive.namelist()
+    assert "industry/industry-atlas.html" in names
+    assert "industry/industry-map.html" not in names
 
 
 def _write_store(data_root: Path) -> None:

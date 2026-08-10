@@ -329,11 +329,13 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/android-package":
             self._send_android_package()
             return
-        if parsed.path in {"/industry", "/industry/", "/industry/industry-map.html"}:
-            self._send_industry_map()
-            return
-        if parsed.path in {"/industry-v2", "/industry-v2/", "/industry-v2/industry-atlas.html"}:
+        if parsed.path in {"/industry", "/industry/"}:
             self._send_industry_atlas()
+            return
+        if parsed.path in {"/industry-v2", "/industry-v2/"}:
+            self.send_response(307)
+            self.send_header("Location", "/industry/")
+            self.end_headers()
             return
         self._send_json({"error": "not found"}, status=404)
 
@@ -377,20 +379,6 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
-
-    def _send_industry_map(self) -> None:
-        candidates = (
-            Path(self.data_root) / "industry" / "industry-map.html",
-            Path(self.data_root).parent / "reports" / "industry" / "industry-map.html",
-        )
-        for candidate in candidates:
-            try:
-                if candidate.is_file():
-                    self._send_html(candidate.read_text(encoding="utf-8"))
-                    return
-            except OSError:
-                continue
-        self._send_json({"error": "industry map not built yet"}, status=404)
 
     def _send_f10_companies(self, params: Mapping[str, Sequence[str]]) -> None:
         """Return a bounded, server-filtered company summary page."""
@@ -522,7 +510,6 @@ pre#plan-result { background: #0f1117; border: 1px solid #2a3040; border-radius:
   <h1>MarketListener 数据生产控制中心</h1>
   <span class="meta" id="generated-at">等待数据…</span>
   <a href="/industry/" style="color:#4a82f2;font-size:13px;text-decoration:none;">产业链图谱</a>
-  <a href="/industry-v2/" style="color:#4a82f2;font-size:13px;text-decoration:none;margin-left:14px;">产业链全景图（新版）</a>
   <div class="auto">
     <button id="refresh">立即刷新</button>
     <label style="display:inline-flex; align-items:center; gap:6px; margin:0 0 0 12px;">

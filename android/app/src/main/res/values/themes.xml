@@ -1,3 +1,12 @@
 <resources>
-    <style name="Theme.MarketMonitor" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.MarketMonitor" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo_placeholder</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.MarketMonitor.Main</item>
+    </style>
+
+    <style name="Theme.MarketMonitor.Main" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
 </resources>

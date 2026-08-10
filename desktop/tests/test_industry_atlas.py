@@ -385,5 +385,6 @@ def test_build_atlas_emits_offline_html_and_counts(tmp_path: Path) -> None:
     assert "setTimeout(()=>showPopover(chip), 200)" in html
     assert "tooltip.addEventListener(\"mouseenter\"" in html
     assert "function positionPopover(chip)" in html
+    assert 'target="_top"' in html
     assert 'data-instrument-key="' in html
     assert "data-codes" not in html

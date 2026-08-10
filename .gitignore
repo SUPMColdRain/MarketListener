@@ -7,7 +7,6 @@ __pycache__/
 artifacts/
 reports/
 data/
-行业产业链研报/
 
 # Local environment and secrets
 .env
@@ -52,3 +51,26 @@ data_control_old_20260808/
 desktop/*.log
 android/gradle_build_*.log
 android/gradle_build_*.err.log
+android/gradle_final_*.log
+android/gradle_jdk21_*.log
+
+# Node / frontend dependencies and build output
+desktop/web/node_modules/
+desktop/web/test-results/
+desktop/web/playwright-report/
+desktop/web/playwright/.cache/
+*.tsbuildinfo
+desktop/src/market_monitor/web_dist/
+
+# Python tool caches
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+
+# Local temporary files
+_ba_test.bin
+_hkex_list.xlsx
+_final_docs_update.py
+
+# JVM heap dumps
+*.hprof
