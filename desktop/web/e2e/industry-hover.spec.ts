@@ -12,6 +12,7 @@ test("industry company name/code hover remains open on its data card", async ({ 
   await expect(tooltip).toBeVisible({ timeout: 1_000 });
   await expect(tooltip).toContainText("总市值");
   await expect(tooltip).not.toContainText("undefined");
+  await expect(tooltip).not.toContainText("null");
   await expect(tooltip).not.toContainText("Invalid Date");
   await expect(tooltip.evaluate((node) => {
     const chip = document.querySelector('[data-instrument-key^="CN."]')?.getBoundingClientRect();

@@ -68,6 +68,7 @@ desktop/src/market_monitor/web_dist/
 .hypothesis/
 
 # Local temporary files
+.agents/
 _ba_test.bin
 _hkex_list.xlsx
 _final_docs_update.py

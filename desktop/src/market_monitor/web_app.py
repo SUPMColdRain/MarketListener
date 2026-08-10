@@ -26,9 +26,14 @@ from .event_log import EventLog
 from .industry_graph.f10 import CompanyRepository
 from .package_builder import latest_package_info
 from .operations import OperationKind, OperationManager
+from .web_api import dashboard as dashboard_api
+from .web_api import market as market_api
+from .web_api import stats as stats_api
+from .web_api import strategy as strategy_api
+from .web_api import watchlist as watchlist_api
 
 
-_WEB_ROUTES = {"/", "/data/", "/f10/", "/industry/", "/logs/"}
+_WEB_ROUTES = {"/", "/market/", "/data/", "/strategy/", "/stats/", "/f10/", "/industry/", "/logs/"}
 _LOOPBACK_HOSTS = {"127.0.0.1", "::1"}
 
 
@@ -51,6 +56,13 @@ def create_web_app(
     events = EventLog(root)
     operations = operation_manager or OperationManager(root, _operation_handlers(root), event_sink=events.append)
     app = FastAPI(title="MarketListener Local Research Terminal", docs_url=None, redoc_url=None)
+    app.state.data_root = root
+    app.include_router(market_api.router)
+    app.include_router(watchlist_api.router)
+    app.include_router(strategy_api.router)
+    app.include_router(stats_api.router)
+    app.include_router(dashboard_api.dashboard_router)
+    app.include_router(dashboard_api.metrics_router)
 
     @app.middleware("http")
     async def loopback_mutations_only(request: Request, call_next):
@@ -272,7 +284,7 @@ def _gold_rows(root: Path) -> list[dict[str, Any]]:
     try:
         import duckdb
 
-        connection = duckdb.connect(str(catalog), read_only=True)
+        connection = duckdb.connect(str(catalog))
         try:
             cursor = connection.execute("SELECT * FROM gold_metrics ORDER BY timestamp DESC LIMIT 500")
             columns = [item[0] for item in cursor.description]
