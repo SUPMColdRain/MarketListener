@@ -69,9 +69,12 @@ desktop/src/market_monitor/web_dist/
 
 # Local temporary files
 .agents/
+.agent/
 _ba_test.bin
 _hkex_list.xlsx
 _final_docs_update.py
+ths_*.txt
+hk_enriched.txt
 
 # JVM heap dumps
 *.hprof

@@ -1,0 +1,1826 @@
+<!DOCTYPE HTML>
+<html>
+<head id="head">
+		    <title>长鑫科技(688825) 经营分析_F10_同花顺金融服务网</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7;IE=9"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=gbk"/>
+	<meta name="keywords" content="长鑫科技最新动态,长鑫科技公司概况,长鑫科技财务分析,长鑫科技股东研究,长鑫科技股本结构,长鑫科技公司大事,长鑫科技分红融资"/>
+	<meta name="description" content="暂无"/>
+	<!-- 券商url参数添加，落地只落broker-pcf10.html -->
+	
+	<script type="text/javascript" src="//s.thsi.cn/js/chameleon/chameleon.min.1786382.js"></script> <script>
+    function getUrlParams(key, url) {
+        var href = url ? url : window.location.href;
+        if (href.indexOf("?") < 0 && href.indexOf("#") < 0) {
+            return false;
+        }
+        var hrefStr = href.replace(/#/g, "&");
+        hrefStr = hrefStr.replace(/\?/g, "&");
+        var paramsObj= {};
+        hrefStr.split("&").forEach(function(i) {
+            if (i.indexOf("=") > -1) {
+                paramsObj[i.split("=")[0]] = i.split("=")[1];
+            }
+        });
+        if (key) {
+            return paramsObj[key] || false;
+        } else {
+            return paramsObj;
+        }
+    }
+
+    function addParam(url, obj) {
+        var str = "",res;
+        for (var key in obj) {
+            str += (key + "=" + obj[key]);
+        }
+        if (url.indexOf("?") > -1) {
+            res = url.split('?').join('?' + str + '&');
+        } else if (url.indexOf("#") > -1) {
+            res = url.replace(/#/g, "?" + str + "#");
+        } else {
+            res = url + "?" + str;
+        }
+        return res;
+    }
+
+    var historyUrl = document.referrer;
+    if (historyUrl) {
+        var broker = getUrlParams('broker', historyUrl);
+        if (broker && window.history) {
+            var url = window.location.href;
+            url = addParam(url, broker ? {broker: broker} : {});
+            window.history.pushState('', '', url);
+        }
+    }
+</script>
+	<!-- f10工具箱，工具函数修改，落地只落utils.html -->
+	
+	<script type="text/javascript" src="//s.thsi.cn/js/chameleon/chameleon.min.1786382.js"></script> <script type="text/javascript" charset="utf-8" src="//s.thsi.cn/cb?cd/website-thsc-f10-utils/1.4.8/f10-polyfill.js" crossorigin></script>
+<script type="text/javascript" charset="utf-8" src="//s.thsi.cn/cd/kernel-thslc-component-materials-container/F10/static/css-vars-ponyfill.js" ></script>
+<script type="text/javascript" charset="utf-8" src="//s.thsi.cn/cb?cd/website-thsc-f10-utils/1.6.0/thsc-f10-utils.js" crossorigin></script>
+<script>
+    function isIEInClient(){
+        return !!(window.external && 'getUserPath' in window.external && 'createObject' in window.external);
+    }
+
+    function isInTongYiClient(){
+      return !!(window.external && 'createObject' in window.external);
+    }
+
+    function isInYuanHangClient(){
+        return !!(window.HevoCef && 'IsHevoCef' in window.HevoCef);
+    }
+    
+    function isInIEEnv(){
+        var ua = window.navigator.userAgent.toLowerCase();
+        return ua.indexOf('msie') > -1 || ua.indexOf('trident/') > -1;
+    }
+
+    function isChromeOlderThan50(){
+        var userAgent = navigator.userAgent.toLowerCase();
+        var match = userAgent.match(/chrome\/(\d+)./);
+        if (match && parseInt(match[1]) <= 49) {
+           return true;
+        }
+        return false;
+    }
+
+</script>
+<style>
+.kamis-loading {
+	min-height: 600px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: #437EB7;
+	background-color: rgba(255,255,255,0.8);
+	gap: 4px;
+	font-size: 14px;
+}
+.dark .kamis-loading, .black .kamis-loading {
+	background-color: #171D25;
+	color: #FEB302;
+}
+.kamis-loading svg {
+	width: 20px;
+	height: 20px;
+}
+.arco-icon-spin {
+  animation: spin 1s linear infinite;
+}
+.kamis-nodata {
+  min-height: 300px;
+  background-color: #fff;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  color: #333;
+  padding: 10px 14px;
+}
+.dark .kamis-nodata, .black .kamis-nodata {
+  color: #999;
+  background-color: #0b1016;
+  border-color:#1e2b38;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+		<script type="text/javascript" src="//s.thsi.cn/js/chameleon/chameleon.min.1786382.js"></script> <script src="//s.thsi.cn/js/m/common/bridge.js" type="text/javascript"  crossorigin></script>
+	<script type="text/javascript"  crossorigin  src="//s.thsi.cn/js/jquery-1.8.3.min.js"></script>
+	<script charset="utf-8" src="//s.thsi.cn/cb?webprivate/lib/axios.min.js;hxapp/m/base/js/vue.2.7.16.min.js" crossorigin="anonymous"></script>
+	<!-- kamis 渲染器 -->
+	<script charset="utf-8" src="//s.thsi.cn/hxapp/m/pkgs/amis-2c/sdk/v1-3/2c-sdk-register.1.3.6.js"></script>
+	<!-- 新版埋点cdn -->
+	<script crossorigin src="//s.thsi.cn/cb?cd/weblog/0.0.1-alpha.27/weblog.js"></script>
+		<script>
+		var xhrProto = XMLHttpRequest.prototype;
+		var origOpen = xhrProto.open;
+		xhrProto.open = function (method, url) {
+			if (location.host.indexOf('0033.cn') > -1 && arguments[1] !== undefined && arguments[1].indexOf('10jqka.com.cn') > -1) {
+				arguments[1] = arguments[1].replace('10jqka.com.cn', '0033.cn');
+			}
+			return origOpen.apply(this, arguments);
+		};
+	</script>
+	<script>
+		var originCreateElement =  document.createElement;
+		document.createElement = function(tagName){
+			const element = originCreateElement.apply(document,arguments);
+			if(tagName.toLowerCase() === 'script'){
+				element.setAttribute('charset','utf-8');
+			}
+			return element;
+		}
+	</script>
+	<script id="monitor-script" api_key="ths_f10" src="//s.thsi.cn/cb?cd/website-thsc-f10-utils/1.6.40/monitor.js" crossorigin></script>
+	<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/common/cefapi/1.5.5/cefApi.min.js;js/basic/stock/newPcJs/common.js"></script>
+	<script>
+		try{
+			feMonitor.setConfig(
+				{
+				slientDev:false,//开发环境(localhost)是否发送报错请求，默认不发送为true
+				sampleRate:0.1, //采样率,可设置0-1之间，越小采集的频率越低
+				isCollectPerformance:true, //是否采集性能
+				title:'pc-F10'
+				}
+			);
+		}catch(e){
+
+		}
+	</script>
+	<style>
+        .wencaibs{color:#008BFF!important;cursor:pointer;}
+        .wd-tb .ptxt { word-break: break-word;}
+        .comment-chart-head{color: #89a;}
+        .comment-chart-head span{float: right;}
+        .comment-chart-head span i{vertical-align: middle; display: inline-block; width: 20px; height: 20px;margin: 0 2px 0 6px; border-radius: 20px; overflow: hidden;}
+        .comment-chart-head .imp-news{background: #da2e1f;}
+        .comment-chart-head .yidong-news{background: #e3bf1a;}
+
+        #ckg_table1 tr td{text-align:center}
+        #ckg_table2 tr td{text-align:center}
+        #ckg_table3 tr td{text-align:center}
+        #ckg_table4 tr td{text-align:center}
+        #ckg_table5 tr td{text-align:center}
+		li{list-style-type:none;
+			list-style-position:outside;}
+		#jpjl-input:focus { outline: none; }
+		.black.inClient .clientJump {
+			cursor: pointer;
+			color: #0199fa;
+			text-decoration: underline;
+		}
+		.white.inClient .clientJump {
+			color: #07519a;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+		.managelist .name a {    color: #0199fa;
+			margin: 0 3px 2px;
+			text-decoration: underline;
+			border-bottom: none !important;
+		}
+	</style>
+	<!--统计页面加载时间-->
+	<script type="text/javascript">
+		var loadTimer= new Date().getTime();
+	</script>
+    <style>
+        #search_cyter{
+            display: block !important;
+        }
+		#profile .tickLabels .tickLabel{
+			padding-right:12px;
+			box-sizing:border-box;
+		}
+	  .a_cursor {
+		pointer: cursor;
+	}
+    </style>
+</head>
+<script type="text/javascript">
+
+//cookie设置
+function setReviewJumpState(state) {
+	document.cookie = 'reviewJump='
+					+ state
+					+ ';path=/;domain='
+					+ window.location.host;
+}
+//取得对应名字cookie
+function getCookie(name) {
+	var cookieValue = "";
+	var search = name + "=";
+	if (document.cookie.length > 0) {
+	    offset = document.cookie.indexOf(search);
+	    if (offset != -1)    {
+	        offset += search.length;
+	        end = document.cookie.indexOf(";", offset);
+	        if (end == -1) end = document.cookie.length;
+	        cookieValue = unescape(document.cookie.substring(offset, end))
+	    }
+	}
+	return cookieValue;
+}
+//栏目提前跳转
+var reviewJumpState = getCookie('reviewJump');
+if (!!reviewJumpState && reviewJumpState != 'nojump') {
+	setReviewJumpState('nojump');
+	window.location.href = unescape(reviewJumpState);
+} else {
+	setReviewJumpState('nojump');
+}
+//动态添加link-同步-会阻塞
+function addCssByLink(url){
+    document.write('<link rel="stylesheet" type="text/css"');
+    document.write(' href="' + url + '">');
+}
+function isMac() {
+        return /macintosh|mac os x/i.test(navigator.userAgent);
+};
+ var hash = window.location.hash.substring(1);
+hashArray = hash.split('=');
+if (hashArray[0] == 'stockpage') {
+    var STOCK_SKIN = 'white';
+} else {
+    var STOCK_SKIN = getCookie('skin_color');
+}
+//肤色与客户端同步
+function syncClientSkin(){
+	try {//取得客户端肤色
+		if (isMac()) {
+			return 'white';
+		}
+		return 'black';
+	} catch(e) {}
+}
+if (!STOCK_SKIN) {
+	STOCK_SKIN = syncClientSkin();
+}
+document.documentElement.setAttribute("class",STOCK_SKIN);
+if (STOCK_SKIN == 'white') {
+	// addCssByLink('/f10/css/company-compare.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/company-compare-202006082100.css');
+ 
+    addCssByLink('//s.thsi.cn/cb?css/basic/stock/white/20200604153837/style_v4-2.css;css/basic/stock/white/20200604153837/chart_v2.min.20180110.css;css/basic/stock/white/20200604153837/dupont.css;css/basic/stock/white/20200604153837/black_v2-4.20190711.css;css/basic/stock/white/custom.min.css;css/basic/stock/white/20200604153837/operations.css;css/basic/stock/white/20200604153837/writecsskzd.min.css');
+	addCssByLink('//s.thsi.cn/cb?css/basic/stock/20200604153837/survey-w.css;css/basic/stock/20200604153837/wxgcl_mod.css;css/basic/stock/provider-w_v2.css;css/basic/stock/20200604153837/searchbar-w_v2.css;css/basic/stock/20200604153837/wccept.css;css/basic/stock/wtgfx.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/fschool/20200604153837/f_school_w.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/white/wsplpager.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/wchartsdom.css');
+	addCssByLink('//s.thsi.cn/cb?css/basic/stock/white/20200604153837/industrydata.css;css/basic/stock/white/20200604153837/main_v1-2.css;css/basic/stock/white/20200604153837/xgcl.css;css/basic/stock/white/20200604153837/courier.css;css/basic/stock/white/20200604153837/recommend.css;css/basic/stock/white/20200604153837/housedata.css;css/basic/stock/white/202005071600/20200604153837/longhu.css;css/basic/stock/white/20200604153837/operate_white.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/white/remind_white.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/index_v1.css');
+	addCssByLink('//s.thsi.cn/js/home/v5/thirdpart/scrollbar/jquery.mCustomScrollbar.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/20200604153837/instition_white_v2.css');
+	if (!!window.ActiveXObject&&!window.XMLHttpRequest) {
+		addCssByLink('//s.thsi.cn/css/basic/stock/white/20200604153837/expression.css');
+	}
+					addCssByLink("//s.thsi.cn/css/basic/common/white/title.css")
+} else {
+	// addCssByLink('/f10/css/company-compare.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/company-compare-202006082100.css');
+ 	addCssByLink('//s.thsi.cn/cb?css/basic/stock/black/20200604153837/style_v3-5.min.20200426.css;css/basic/stock/black/20200604153837/chart_v2.min.20190410.css;css/basic/stock/black/20200604153837/black_v2-4.20190711.css;css/basic/stock/black/custom.min.css;css/basic/stock/black/20200604153837/operations.css;css/basic/stock/black/20200604153837/csskzd.min.20150608.css;/css/basic/stock/20200604153837/survey.20150929.css;/css/basic/stock/provider_v2.css;/css/basic/stock/20200604153837/searchbar_v2.css;/css/basic/stock/20200604153837/ccept.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/fschool/20200604153837/f_school.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/black/splpager.20170504.css');
+	addCssByLink('//s.thsi.cn/cb?css/basic/stock/chartsdom.css;css/basic/stock/20200604153837/xgcl_mod.css;/css/basic/stock/tgfx.css');
+	addCssByLink('//s.thsi.cn/cb?css/basic/stock/black/20200604153837/industrydata.css;css/basic/stock/black/20200604153837/main_v1-2.css;css/basic/stock/black/20200604153837/xgcl.css;css/basic/stock/black/20200604153837/courier.css;css/basic/stock/black/20200604153837/funcRecommend.css;css/basic/stock/black/20200604153837/dupont.css;css/basic/stock/black/202005071600/20200604153837/longhu.css;css/basic/stock/black/20200604153837/operate.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/black/remind_black.css');
+	addCssByLink('//s.thsi.cn/js/home/v5/thirdpart/scrollbar/jquery.mCustomScrollbar.css');
+
+	addCssByLink('//s.thsi.cn/css/basic/stock/index_v1.css');
+	addCssByLink('//s.thsi.cn/css/basic/stock/20200604153837/instition_black_v2.css');
+	if (!!window.ActiveXObject&&!window.XMLHttpRequest) {
+		addCssByLink('//s.thsi.cn/css/basic/stock/black/20200604153837/expression.min.20140801.css');
+	}
+					addCssByLink("//s.thsi.cn/css/basic/common/black/title.css")
+}
+/*calendar*/
+function  minDate(){
+ 	var data = $('#inte_json').text();
+	var datajson =new Object();
+	if (data) {
+		data = eval('('+data+')');
+	}
+	for (var x in data) {
+		datajson = data[x];
+	}
+	var minDate = datajson.year+'-'+datajson.month+'-'+datajson.day;
+	return minDate;
+ }
+ Date.prototype.Format = function(fmt)
+{ //author: meizz
+  var o = {
+    "M+" : this.getMonth()+1,                 //月份
+    "d+" : this.getDate(),                    //日
+    "h+" : this.getHours(),                   //小时
+    "m+" : this.getMinutes(),                 //分
+    "s+" : this.getSeconds(),                 //秒
+    "q+" : Math.floor((this.getMonth()+3)/3), //季度
+    "S"  : this.getMilliseconds()             //毫
+  };
+  if(/(y+)/.test(fmt))
+    fmt=fmt.replace(RegExp.$1, (this.getFullYear()+"").substr(4 - RegExp.$1.length));
+  for(var k in o)
+    if(new RegExp("("+ k +")").test(fmt))
+  fmt = fmt.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+  return fmt;
+}
+ function  displayDate(){
+ 	var data = $('#inte_json').text();
+ 	var date =new Array();
+	var datajson =new Object();
+	var i=0;
+	if (data) {
+		data = eval('('+data+')');
+	}
+	for (var x in data) {
+		datajson[x] = data[x];
+		dates = datajson[x].year+'-'+datajson[x].month+'-'+datajson[x].day;
+		if (x==0|| date[i-1] != dates) {
+			date[i] = dates;
+			i++;
+		}
+	}
+	var count =date.length;
+	var date2 = new Date();
+	var month =date2.getMonth()+1;
+	var day =date2.getDate();
+	if ((date2.getMonth()+1)>9) {
+	} else {
+	 	var month ="0"+month;
+	}
+	if (date2.getDate()>9) {
+	} else {
+	 	var day ="0"+day;
+	}
+	year = date2.getFullYear();
+	date2 = year+'-'+month+'-'+day;
+	var result = "['";
+	for (i=0;i<count;i++) {
+		if (date2 == date[i]) {
+			dateArr = date2.split('-');
+			newdate = new Date(new Date(dateArr[0], dateArr[1]-1,  dateArr[2])-24*60*60*1000);
+			date2 = newdate.Format("yyyy-MM-dd");
+		} else {
+			result +=date2+"',";
+			dateArr = date2.split('-');
+			newdate = new Date(new Date(dateArr[0], dateArr[1]-1,  dateArr[2])-24*60*60*1000);
+			date2 = newdate.Format("yyyy-MM-dd");
+			i--;
+		}
+	}
+	result = result.substr(0,result.length-1)+']';
+	return result;
+ }
+    function showDatePicker1(color) {
+        WdatePicker({
+            selfCssUrl:'//s.thsi.cn/css/basic/stock/'+STOCK_SKIN+'/mydatepicker.css',
+            eCont:'WdateDiv1',
+            vel:'elDate1',
+            minDate:minDate(),
+            maxDate:'%y-%M-%d',
+            onpicked:function(dp){
+                $('#elDate1').text(dp.cal.getNewDateStr());
+                var invalider = $(".J_calendar").find("iframe").contents().find(".WinvalidDay");
+            },
+            Mchanged:function(dp){
+                var invalider = $(".J_calendar").find("iframe").contents().find(".WinvalidDay");
+            }
+        });
+    }
+    function showDatePicker2(color) {
+
+        WdatePicker({
+            selfCssUrl:'//s.thsi.cn/css/basic/stock/'+STOCK_SKIN+'/mydatepicker.css',
+            eCont:'WdateDiv2',
+            vel:'elDate2',
+            maxDate:'%y-%M-%d',
+            onpicked:function(dp){
+                $('#elDate2').text(dp.cal.getNewDateStr());
+                var invalider = $(".J_calendar").find("iframe").contents().find(".WinvalidDay");
+            },
+            Mchanged:function(dp){
+                var invalider = $(".J_calendar").find("iframe").contents().find(".WinvalidDay");
+            }
+        });
+    }
+  function isIE() {
+	// 判断IE浏览器及其版本
+	if(document.documentMode) {
+		return document.documentMode;
+	}
+	var userAgent = navigator.userAgent.toLowerCase();
+	if (userAgent.indexOf('edge') > -1) {
+		return 'edge';
+	}
+	return false;
+  }
+	 // 初始化财务
+	 var initFinance = window.localStorage.getItem('initFinance');
+	 if (!initFinance) {
+		 window.localStorage.setItem('initFinance', 'init');
+		 window.localStorage.setItem('memoryPage', 'old');
+	  }
+	  // 跳转地址
+    function jumpToUrl(url, name, anchor, conceptName) {
+	  if (!url || !name) {
+			return;
+		}
+		// 新老地址切换
+		var oldPage = {
+			'financen': true
+		}
+		var pageLocation = window.localStorage.getItem('memoryPage');
+      //在IE环境中
+      if (isInIEEnv() || (pageLocation && pageLocation == 'old' && oldPage[name])) {
+        location.href = url;
+	    return;
+     }
+     var code = $('#stockCode').val();
+	 var codeName = $('#stockName').val();
+	 var marketid = $('#marketId').val();
+	 var pageAnchor = anchor ? '&anchor=' + anchor : '';
+	 var host = window.location.host;
+	 var targetUrl = '//' + host + '/astockpc/astockmain/index.html#/' + name + '?code=' + code + '&marketid=' + marketid + '&code_name=' + codeName + pageAnchor;
+	 if (conceptName) {
+		 targetUrl += "&cname=" + conceptName;
+	 }
+     location.href = targetUrl;
+    }
+	// 跳转新地址
+	function jumpToNew() {
+       var code = $('#stockCode').val();
+	   var codeName = $('#stockName').val();
+	   var marketid = $('#marketId').val();
+	   var url = window.location.href;
+	   var module = url.match(/\/(\w+).html?/);
+	   var moduleName = '';
+	   var host = window.location.host;
+	   if (module && module[1]) {
+		   moduleName = module[1];
+		   if (module[1] == 'finance') {
+			   moduleName = 'financen';
+		   }
+	   }
+	   window.TA.log('F10hs_cwfx.tyxbb.click');
+	   window.localStorage.setItem('memoryPage', 'new');
+	   setTimeout(function (){
+		  location.href = '//' + host + '/astockpc/astockmain/index.html#/' + moduleName + '?code=' + code + '&marketid=' + marketid + '&code_name=' + codeName;
+	   }, 10)
+	}
+</script>
+    <script type="text/javascript" charset="utf-8" src="//s.thsi.cn/js/basic/stockph_v2/qdc_ad-510a70.js"></script>
+	<link href="//s.thsi.cn/css/basic/stockph/qdc_ad-6e8683.css" rel="stylesheet" type="text/css">
+ 
+<body>
+<div class="votepopbox votesuccess" style="display: none">
+		<div class="vpopicon"></div>
+		<p class="vpoptxt fz18">谢谢您的宝贵意见</p>
+		<p class="vpoptxt">您的支持是我们最大的动力</p>
+	</div>
+	<div class="votepopbox voteinfo" style="display: none">
+		<div class="vpopicon"></div>
+		<p class="vpoptxt fz18">谢谢您的支持</p>
+		<p class="vpoptxt"></p>
+	</div>
+    <div class="wrapper">
+<!-- F10 Header Start -->
+		<div class="header">
+		    <div class="hd">
+		        <div class="logo fl" id="logo_self"><a title="同花顺F10">同花顺F10</a></div>
+
+															<div onclick="sendTalog('f10_click_quot')" style="width:260px; margin-left:60px; font-size:14px;cursor:pointer;margin-right:10px;display:none;text-align:center" class="fl tip " id="quotedata">
+							<div  class="fl">最新价： <span style="width:40px" class="upcolor" id="zxj">--</span></div>
+							<div  class="fr">涨跌幅： <span style="width:40px;" class="upcolor" id="zdf">--</span></div>
+						</div>
+											        <span class="fr skin-change"><a href="###">换肤</a></span>
+		        <div class="search fr" id="search_cyter">
+		            <div id="updownchange" type="once" class="codeChange fl" style="display: none;">
+		                <a href="javascript:void(0)" class="per">上一个股</a>
+		                <a href="javascript:void(0)" class="next">下一个股</a>
+		            </div>
+		            <div class="fl searchbar">
+			            <div class="text fl">
+			                <input type="text" id="jpjl-input" value="输入股票名称或代码" /><!--文本框获得焦点给.searchbar添加hover类-->
+			             </div>
+		                <input type="button" value="搜索" class="btn" id="submit"/>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="bd clear">
+		        <div class="code fl">
+					<div><h1 style="margin:3px 0px 0px 0px">
+												长鑫科技</h1></div>
+					<div>
+						<a href="interactive.html" tid="wdm" posid="r1c1" class="iwen" onclick="TA.log({'id':'F10_review','nj':1})">i问董秘</a>
+						<style>
+							.qiyehao {
+								display:none;
+								float:left;
+								cursor:pointer;
+								margin: 4px 0 0 17px;
+								width:50px;
+								text-align:center;
+								font-size:12px;
+								padding: 2px  0 4px 0;
+								line-height:12px;
+							    border-radius:6px;
+								color: white;
+                                background-color:#437eb7;
+							}
+							.black  .qiyehao {
+								background-color: #b60006;
+							}
+						</style>
+						<div class="qiyehao">企业号</div>
+						<h1 style="margin:3px 0px 0px 0px">
+						688825						</h1>
+						<script>
+							 $(document).ready(function(){
+								//获取市场代码
+                                var market = $('#marketId').val();
+								//获取股票代码
+								var code = $('#stockCode').val();
+								//判断是否是B股
+								var isBStock = function () {
+									var flag = market == '18' || market == '34' || market == '105';
+									return flag;
+								}
+								
+								//在B股和Ie浏览器中不展示企业号入口
+								if(isBStock() || isInIEEnv()){
+									return ;
+								}
+								isThsClient(function(){
+                                   //隐藏董秘问答入口
+								   $('.iwen').hide();
+                                   //展示企业号入口
+								   $('.qiyehao').show();
+								   $(document).on ('click','.qiyehao',function(){
+                                      var url = 'https://board.10jqka.com.cn/fe/board/qyh.html#/qyh/homepage?thscode=' + code  + '&marketid=' + market + '&from=f10';
+									    window.API.use({
+										  method: "Util.openURL2",
+										  data:{
+											url: url,
+											mode: 1,
+											useCef: true,
+										  }
+									    })
+								    })
+								})
+							 })
+						</script>
+					</div>
+		        </div>
+		        <div class="nav">
+		            <ul>
+		                <li><a href="./"              target="_self" tid="zxdt" posid="r1c3" >最新动态</a></li>
+		                <li><a href="javascript:void(0)" onclick="jumpToUrl('./company.html', 'company', '');return false;"   target="_self" tid="gszl" posid="r1c4" > 公司资料</a></li>
+		                <li><a href="./holder.html"   target="_self" tid="gdyj" posid="r1c5" >股东研究</a></li>
+						<li><a href="javascript:void(0)" onclick="jumpToUrl('./operate.html', 'operate', '');return false;" target="_self" tid="jyfx" posid="r1c6"  class="cur"> 经营分析</a></li>
+		                <li><a href="./equity.html"   target="_self" tid="gbjg" posid="r1c7" >股本结构</a></li>
+		                <li><a href="./capital.html"  target="_self" tid="zbyz" posid="r1c8" > 资本运作</a></li>
+		                <li><a href="./worth.html"    target="_self" tid="ylyc" posid="r1c9"  >盈利预测</a></li>
+		                <li><a href="./news.html"     target="_self" tid="xwgg" posid="r2c3" >新闻公告</a></li>
+						<li><a  href="javascript:void(0)"  onclick="jumpToUrl('./concept.html', 'concept', '');return false;"target="_self" tid="gntc" posid="r2c4" >概念题材</a></li>
+		                <li><a  href="javascript:void(0)"  onclick="jumpToUrl('./position.html', 'position', '');return false;"target="_self" tid="zlcc" posid="r2c5" >主力持仓</a></li>
+		                <li><a href="javascript:void(0)"  onclick="jumpToUrl('./finance.html', 'financen', '');return false;" target="_self" tid="cwgk" posid="r2c6" > 财务分析</a></li>
+						<li><a href="javascript:void(0)"  onclick="jumpToUrl('./bonus.html', 'bonus', '');return false;" target="_self" tid="fhrz" posid="r2c7" >分红融资</a></li>
+						<li><a href="./event.html"    target="_self" tid="gsds" posid="r2c8" >公司大事</a></li>
+		                <li><a href="./field.html"    target="_self" tid="hydb" posid="r2c9" >行业对比</a></li>
+		            </ul>
+		        </div>
+		        <div class="subnav">
+					<ul>
+					   						<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="bjprice" taid="f10_click_bjprice" name="operate.html#bjprice" href="###">白酒价格							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="intro" taid="f10_click_intro" name="operate.html#intro" href="###">主营介绍							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="invest" taid="f10_click_invest" name="operate.html#invest" href="###">运营业务数据							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="analysis" taid="f10_click_analysis" name="operate.html#analysis" href="###">主营构成分析							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="provider" taid="f10_click_provider" name="operate.html#provider" href="###">主要客户及供应商							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="price" taid="f10_click_price" name="operate.html#price" href="###">产品价格							</a>
+						</li>
+												<li>
+							<a style="position:relative;height:25px;" class="skipto" type="" nav="observe" taid="f10_click_observe" name="operate.html#observe" href="###">董事会经营评述							</a>
+						</li>
+								            </ul>
+		        </div>
+		    </div>
+		</div>
+<!-- F10 Header End -->
+<!-- F10 Content Start -->
+		<style>
+		.iwc_searchbar{display: none;}
+	</style>
+		<div class="iwc_searchbar clearfix" style="">
+    <div class="tips-box" style="display: none;">
+        <div class="t-hd"></div>
+        <div class="t-bd">
+            <div class="info">
+                <p>F10 功能找不到？在搜索框里直接输入您想要的功能！比如输入“龙虎榜”，赶快试一下哦！</p>
+                <div class="btn">
+                    <a href="###" class="a-left close">跳过</a>
+                    <a href="###" class="a-right next">下一步</a>
+                </div>
+            </div>
+            <div class="info" style="display: none;">
+                <p>选股选不好？可以直接输入你想要的问句啦，比如输入“近一周涨幅超过30%的股票”赶紧行动吧！</p>
+                <div class="btn">
+                    <a href="###" class="a-left prev">上一步</a>
+                    <a href="###" class="a-right close">完成</a>
+                </div>
+            </div>
+        </div>
+        <div class="t-ft"></div>
+   	 </div>
+     <div class="searchfx">
+        <input id="search_input" x-webkit-speech="" x-webkit-grammar="builtin:search" lang="zh_CN" class="fillbox" autocomplete="off" type="text" value="输入问句，你想知道的都在这里">
+        <input class="action_btn" id="search_submit" type="button" value="搜索">
+        <span  class="tips-icon"></span>
+     </div>
+	</div>
+	<div class="content page_event_content" >	
+<style type="text/css">
+    .ls-tags-wrap{
+        display: inline-block;
+        width: 100px;
+        font-weight: 400;
+    }
+    .ls-tags{
+        font-size: 12px;
+        color: #fff;
+        border-radius: 3px;
+        background: #f10f10;
+        padding: 0 3px;
+        margin: 0 5px;
+        height: 18px;
+        line-height: 17px;
+        display: inline-block;
+    }
+    .lp-price-chart{
+        height: 250px;
+        width: 866px;
+    }
+    .lcomment-pic{
+        margin-top: 2px;
+        width: 71px;
+        height: 44px;
+        float: left;
+        margin-right: 20px;
+    }
+    .lp-data-list{
+        overflow: hidden;
+        zoom: 1;
+    }
+    .lp-data-list li{
+        padding-left: 20px;
+        background: url(//i.thsi.cn/images/basic/stock/lp-data-icon.png) no-repeat 0 50%;
+    }
+    .lp-data-table td{
+        text-align: center;
+    }
+    .lp-data-table th{
+        font-size: 14px;
+    }
+    .lp-data-table .m_select .text{
+        font-size: 12px;
+    }
+    .lp-desc{
+        padding: 15px;
+        border: 1px solid #1e2b38;
+        border-bottom: none;
+        position: relative;
+        min-height: 35px;
+    }
+    .lp-box .m_tab_content2{
+        padding-top: 0;
+    }
+    .lp-box .m_select{
+        font-size: 12px;
+    }
+    .lp-sale-type, .lp-area-type{
+        display: none;
+        height: 100%;
+    }
+    .lp-city-area li{
+        float: left;
+        height: 28px;
+        line-height: 28px;
+        padding: 0 28px;
+        font-size: 14px;
+        color: #999;
+        margin-right: 1px;
+    }
+    .lp-city-chart{
+        height: 244px;
+        border: 1px solid #344459;
+    }
+    .lp-city-trend-chart, .lp-city-money-chart{
+        height: 244px;
+        float: left;
+        width: 431px;;
+    }
+    .lp-city-trend-chart{
+        border-right: 1px solid #344459;
+    }
+    .lp-box .pager li a{
+        width: auto;
+        padding: 0 5px;
+    }
+    .lp-box .m_select .list{
+        z-index: 9
+    }
+</style>
+
+<!-- 主营介绍 -->
+<div class="m_box main_intro i_hover_box" id="intro" stat="operate_intro" itag='0'>
+	<div class="hd">
+		<h2>主营介绍</h2>
+	</div>
+	<div class="bd pt5">
+		<div class="mt15">
+			<!--<div class="threecate pd5 clearfix"><p class="fl">导出excel样式</p><a class="fr export_excel" href="#"><s></s>导出EXCEL</a></div>
+			--><ul class="main_intro_list">
+				<li><span class="hltip f12">主营业务：</span><p>DRAM产品的研发、设计、生产及销售。</p></li>
+				<li><span class="hltip f12">产品类型：</span><p>DRAM芯片、DRAM模组、DRAM晶圆</p></li>
+				<li><span class="hltip f12">产品名称：</span><p>
+																    					DDR4												    、					DDR5												    、					LPDDR4X												    、					LPDDR5/5X												    、					RDIMM												    、					MRDIMM												    、					UDIMM												    、					CUDIMM												    、					SODIMM												    、					CSODIMM												    、					LPCAMM												    、					DRAM晶圆																</p></li>
+				<li><span class="hltip f12">经营范围：</span><p>集成电路设计、制造、加工；电子产品销售并提供相关售后服务及技术服务；研发、设计、委托加工、销售半导体集成电路芯片；计算机软硬件及网络软硬件产品的设计、开发；计算机软硬件及辅助设备、电子元器件、通讯设备的销售；集成电路的技术开发、技术转让、技术咨询、技术服务、技术培训及技术检测；设备、房屋租赁；自营和代理各类商品和技术的进出口业务（但国家限定企业经营或禁止进出口的商品和技术除外）。（依法须经批准的项目，经相关部门批准后方可开展经营活动）</p></li>
+			</ul>
+		</div>
+	</div>
+	<div class="ft"></div>
+</div>
+
+<!-- 运营业务数据 -->
+<div class="m_box gqtz i_hover_box" id="invest" stat="operate_invest" itag='1'>
+	<div class="hd">
+		<h2>运营业务数据</h2>
+	</div>
+		<div class="bd pt5">
+			<div class="clearfix">
+				<div class="m_tab mt15 clearfix">
+					<ul>
+					    					    						<li class="cur"><a href="javascript:void(0)" class="operateTab" tag="0">累计值</a></li>
+																		<li ><a href="javascript:void(0)" class="operateTab" tag="1">当季值</a></li>
+																	</ul>
+					<div class="fr">最新公告日期：<span class="tip">2026-07-09　</span></div>
+				</div>
+																<div class="m_tab_content"  >
+					<table class="m_table m_hl" id="operate_table">
+						<thead>
+							<tr>
+								<th width="170px">业务名称</th>
+																<th>2025-12-31</th>
+																<th>2024-12-31</th>
+																<th>2023-12-31</th>
+															</tr>
+						</thead>
+						<tbody>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">采购均价:电(元/度)</td>
+																<td>0.60</td>
+																<td>0.61</td>
+																<td>0.63</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">采购均价:水(元/吨)</td>
+																<td>4.42</td>
+																<td>4.44</td>
+																<td>4.16</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">采购量:水(吨)</td>
+																<td>3354.77万</td>
+																<td>2420.19万</td>
+																<td>1532.14万</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">采购量:电(度)</td>
+																<td>46.50亿</td>
+																<td>32.75亿</td>
+																<td>20.15亿</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">产销率:DRAM产品(%)</td>
+																<td>90.67</td>
+																<td>97.94</td>
+																<td>99.45</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">产能利用率:12英寸晶圆制造生产线(%)</td>
+																<td>95.73</td>
+																<td>92.46</td>
+																<td>87.06</td>
+															</tr>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">核心技术产品营业收入(元)</td>
+																<td>612.75亿</td>
+																<td>239.29亿</td>
+																<td>90.63亿</td>
+															</tr>
+													</tbody>
+					</table>
+					<div class="pager clearfix">
+														</div>
+				</div>
+																<div class="m_tab_content"  style="display:none;">
+					<table class="m_table m_hl" id="operate_table1">
+						<thead>
+							<tr>
+								<th width="170px">业务名称</th>
+																<th>2025-12-31</th>
+															</tr>
+						</thead>
+						<tbody>
+														<tr>
+								<td style="text-align:left;font-size:12px" class="tl f12">市场占有率:DRAM业务(%)</td>
+																<td>7.67</td>
+															</tr>
+													</tbody>
+					</table>
+					<div class="pager clearfix">
+														</div>
+				</div>
+															</div>
+	</div>				
+<div class="ft"></div>
+</div>
+
+<!-- 主营构成分析 -->
+<style>
+	.date-show-icon {
+		width: 20px;
+		height: 20px;
+		background-repeat: no-repeat;
+		background-position: center center;
+		background-size: cover;
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.img/m/atom/79176f26-b101-42db-be07-037d99804f4f.png')
+	}
+	.white .date-show-icon {
+		background-image: url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.img/m/atom/2a7d35c8-c727-4a97-81a8-e5945a54de7a.png')
+	}
+	.date-left-icon {
+		width: 20px;
+		height: 20px;
+		background-repeat: no-repeat;
+		background-position: center center;
+		background-size: cover;
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/b00ef51b-af88-4bff-8b2c-9d00edf67c3f.svg')
+	}
+	.date-left-icon.off {
+		cursor: no-drop;		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/c139ceb6-3275-403f-9b43-d28384bf6d58.svg');
+	}
+	.white .date-left-icon {
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/e760b470-fb28-4bb3-ad65-7febf598384c.svg')
+	}
+	.white .date-left-icon.off {
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/fb941308-c46b-4144-aa2d-2afdab25e399.svg');
+		cursor: no-drop;
+	}
+	.date-right-icon {
+		width: 20px;
+		height: 20px;
+		background-repeat: no-repeat;
+		background-position: center center;
+		background-size: cover;
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/b00ef51b-af88-4bff-8b2c-9d00edf67c3f.svg');
+		transform: rotate(180deg);
+	}
+	.date-right-icon.off {
+		cursor: no-drop;		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/c139ceb6-3275-403f-9b43-d28384bf6d58.svg');
+	}
+	.white .date-right-icon {
+		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/e760b470-fb28-4bb3-ad65-7febf598384c.svg')
+	}
+	.white .date-right-icon.off {
+		cursor: no-drop;		background-image:url('//i.thsi.cn/staticS3/mobileweb-upload-static-server.file/m/atom/fb941308-c46b-4144-aa2d-2afdab25e399.svg');
+	}
+	.date-ul {
+		display: flex;
+		gap: 1px;
+		cursor: pointer;
+		position: relative;
+	}
+	.date-list {
+		display: flex;
+		gap: 1px;
+		max-width: 873px;
+		overflow-y:clip;
+	}
+	.date-show-select {
+		background-color: #324054;
+		display: flex;
+		width: 27px;
+		height: 27px;
+		justify-content: center;
+		align-items: center;
+	}
+	.white .date-show-select {
+		background-color: #ebebeb;
+	}
+	.swiper-wrapper {
+		height: 27px;
+		font-size: 12px;
+	}
+	.date-li {
+		background-color: #324054;
+		align-items: center;
+		display: flex;
+		justify-content: center;
+		font-weight: 700;
+		max-width: 91px;
+	}
+	.white .date-li{
+		background-color: #ebebeb;
+		color: #666;
+		
+	}
+	.date-li.selected {
+		color: #ffb400;
+		background-position: 100% -316px;
+		background:#314156 url(//i.thsi.cn/images/basic/stock/nav_tab_bg.png) no-repeat 0 0;
+	}
+	.white .date-li.selected {
+		color: #333;
+		background: #ddd url(//i.thsi.cn/images/stockpage/new/nav_tab_bg.png) no-repeat 100% 0;
+	}
+	.swiper-container-dates {
+		width: 100%;
+		overflow: hidden;
+		z-index: 1;
+	}
+	#zyjg-dates-container {
+		height: 27px;
+	}
+	.charttit-nodata {
+	    color: #8294a6;
+		font-weight: 700;
+		position: absolute;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+	.chartit-center {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+	.m_select .list li {
+		border-right: none;
+	}
+</style>
+<div class="m_box i_hover_box" id="analysis" stat="operate_analysis" itag='2'>
+	<div class="hd">
+		<h2>主营构成分析</h2>
+	</div>
+	<div class="bd pt5">
+		<div class="chart_nav clearfix mt15">
+			<ul id="chartNav" class="nav_tab fl">
+				<li class="current"><a href="javascript:void(0)" data-type="YYSR">营业收入</a></li>
+				<li><a href="javascript:void(0)" data-type="YYCB">营业成本</a></li>
+				<li><a href="javascript:void(0)" data-type="LRBL">利润比例</a></li>
+				<!--<li><a href="javascript:void(0)" data-type="MLL">毛利率</a></li>-->
+			</ul>
+			<div id="periodSelect" class="field_date">
+				<div class="m_select">
+					<div class="text"><s></s><span>报告期</span></div>
+					<ul class="list none" style="border:1px solid #292e34; height: 132px;overflow-y:auto;">
+					</ul>
+				</div>
+				报告期
+			</div>
+		</div>
+		<div class="clearfix" style="padding-bottom: 24px;">
+			<table class="m_table m_hl">
+				<tbody>
+					<tr id="chartWrapContains" style="padding:0px;height:255px;width:100%;boder:1px solid #344459;">
+						<td class="tc" id="chartWrapkey+" style="padding:0px;height:255px;width:296px;">
+						   <div style="width: 295px;margin: 0 auto;overflow: hidden;height: 255px;position:relative;">
+						       <p class="charttit"></p>
+							   <p class="charttit-nodata chartit-center">加载中...</p>
+						       <div class="chartmain fl" style="width: 165px;height:170px;margin-top: 22px"></div>
+						       <div class="chartinfo fl" style="width: 130px;"></div>
+					        </div>
+				        </td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="rp_tipBox none">
+				<p class="rp_tipTitle_box">
+					<strong class="rp_tipTitle">营业收入</strong>
+					<span class="close">X</span>
+				</p>
+				<div class="rp-select">
+					<div class="rp-select-item">
+						<input class="rp-input" type="checkbox" checked="checked" name="SRBL" id="rp_srbl" >
+						<label>收入比例</label>
+					</div>
+					<div class="rp-select-item">
+						<input class="rp-input" type="checkbox" name="YYSR" id="rp_yysr" >
+						<label>营业收入</label>
+					</div>
+				</div>
+				<div class="rp-unit">
+					<span class="rp-unit-left">单位（%）</span>
+					<span class="rp-unit-right">单位（万元）</span>
+				</div>
+				<div id="rp_hightChart" style="width: 540px;height: 260px;"></div>
+			</div>
+		</div>
+		
+		<div class="date-ul" id="table-date-list" style="display:none;">
+			<div id="periodSelect_v2" class="date-show-select">
+				<div class="m_select" style="position:absolute;z-index: 100;width: 100px;top:28px;left:0px;">
+					<ul class="list none" style="border:1px solid #292e34;height: 132px;overflow-y:auto;">
+					</ul>
+				</div>
+				<div class="date-show-icon" src=""></div>
+			</div>
+			
+			<div id="zyjg-dates-pre" class="date-show-select"><div class="date-left-icon off" src=""></div></div>
+			<div class="swiper-container-dates" id="zyjg-dates-container">
+				<div class="swiper-wrapper" id="swiper-date-line">
+				</div>
+			</div>
+			<div id="zyjg-dates-next" class="date-show-select"><div class="date-right-icon" src=""></div></div>	
+		</div>
+		<div class="m_tab_content">
+			<table class="m_table m_hl">
+				<thead>
+					<tr>
+						<th colspan="2">业务名称</th>
+						<th>营业收入(元)</th>
+						<th>收入比例</th>
+						<th>营业成本(元)</th>
+						<th>成本比例</th>
+						<th>主营利润(元)</th>
+						<th>利润比例</th>
+						<th>毛利率</th>
+					</tr>
+				</thead>
+				<tbody id="table_zygc">
+				    <tr>
+						<th rowspan="1" colspan="9" style="position:relative;height:150px;">
+					        <div class="charttit-nodata">加载中...</div>
+					    </th>
+				    </tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="fr">注：<span class="tip">通常在中报、年报时披露　</span></div>
+	</div>
+	
+	<div class="ft"></div>
+</div>
+<!-- 主要客户及供应商 -->
+<div class="m_box" id="provider" stat="operate_provider" >
+<div class="hd">
+    <h2>主要客户及供应商</h2>
+    <div class="opinion_opts_wraper fr evaluate" tag="provider">
+	    <b class="oow_left fl"></b>
+	    <div class="oow_cont fl"><span>您对此栏目的评价：</span><a class="opinion_up" tag="support" href="javascript:void(0)"> 有用 <span class="opi_up">
+	    </span></a><a class="opinion_down" tag="opposition" href="javascript:void(0)"> 没用 <span class="opi_down"></span></a>
+	    <span class="btn_idea" onclick="sendTalog('f10_stock_advice')"><a onclick="$('.f10_append_advice').click();" title="我要提建议" href="javascript:void(0)">提建议</a></span></div><b class="oow_right fl"></b>
+	</div>
+</div>
+<div class="bd pt5" >
+<div class="m_tab mt15">
+    <ul>
+                        <li class="cur"><a href="javascript:void(0);" class="operateTab" tag="0">2025-12-31</a></li>
+                        <li class=""><a href="javascript:void(0);" class="operateTab" tag="1">2024-12-31</a></li>
+                        <li class=""><a href="javascript:void(0);" class="operateTab" tag="2">2023-12-31</a></li>
+                    </ul>
+</div>
+  	<!--第一页-->
+  	 	 		<div class="m_tab_content clearfix ">
+			      <div class="m_tab_content clearfix ">
+	      	  <!--两栏 左边 客户-->
+            <div class="m_charts_box">
+            	                <div class="m_charts_tit">              
+                	 前2大客户：共销售了<i>417.17亿</i>元,占营业收入的<i>68.08%</i>
+                 </div>    
+                            
+                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-0"></div>
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon" ></i>客户J</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon" ></i>客户D</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>客户名称</th>
+                        <th>销售额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                                        	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户J</div></td>
+		                <td class="tc">61.15亿</td>
+		                <td class="tc">9.98%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户D</div></td>
+		                <td class="tc">41.36亿</td>
+		                <td class="tc">6.75%</td>
+		           	 </tr>
+   					               
+                    </tbody>
+                </table>
+                            </div>
+            
+            <!--两栏 右边 供货商-->
+            <div class="m_charts_box">
+                                <div class="m_charts_tit">
+                	前5大供应商：共采购了<i>27.59亿</i>元,占总采购额的<i>21.82%</i>
+                </div>
+                                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-1"></div>                    
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon"></i>供应商A</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon"></i>供应商B</li>
+                                                                                            	                        <li><i class="charts_icon3 charts_icon"></i>供应商T</li>
+                                                                                            	                        <li><i class="charts_icon4 charts_icon"></i>供应商C</li>
+                                                                                            	                        <li><i class="charts_icon5 charts_icon"></i>供应商I</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>   
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>供应商名称</th>
+                        <th>采购额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+   					                    	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商A</div></td>
+		                <td class="tc">8.43亿</td>
+		                <td class="tc">6.67%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商B</div></td>
+		                <td class="tc">6.79亿</td>
+		                <td class="tc">5.37%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商T</div></td>
+		                <td class="tc">4.53亿</td>
+		                <td class="tc">3.58%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商C</div></td>
+		                <td class="tc">4.02亿</td>
+		                <td class="tc">3.18%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商I</div></td>
+		                <td class="tc">3.82亿</td>
+		                <td class="tc">3.02%</td>
+		           	 </tr>
+   					                   
+                    </tbody>
+                </table>
+                            </div>
+            <div class="clearfix"></div>
+        </div>
+	   	</div>
+			<div class="m_tab_content clearfix none">
+			      <div class="m_tab_content clearfix ">
+	      	  <!--两栏 左边 客户-->
+            <div class="m_charts_box">
+            	                <div class="m_charts_tit">              
+                	 前5大客户：共销售了<i>161.04亿</i>元,占营业收入的<i>67.29%</i>
+                 </div>    
+                            
+                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-2"></div>
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon" ></i>客户F</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon" ></i>客户G</li>
+                                                                                            	                        <li><i class="charts_icon3 charts_icon" ></i>客户B</li>
+                                                                                            	                        <li><i class="charts_icon4 charts_icon" ></i>客户H</li>
+                                                                                            	                        <li><i class="charts_icon5 charts_icon" ></i>客户E</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>客户名称</th>
+                        <th>销售额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                                        	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户F</div></td>
+		                <td class="tc">54.75亿</td>
+		                <td class="tc">22.88%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户G</div></td>
+		                <td class="tc">45.43亿</td>
+		                <td class="tc">18.98%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户B</div></td>
+		                <td class="tc">25.02亿</td>
+		                <td class="tc">10.46%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户H</div></td>
+		                <td class="tc">18.08亿</td>
+		                <td class="tc">7.55%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户E</div></td>
+		                <td class="tc">17.75亿</td>
+		                <td class="tc">7.42%</td>
+		           	 </tr>
+   					               
+                    </tbody>
+                </table>
+                            </div>
+            
+            <!--两栏 右边 供货商-->
+            <div class="m_charts_box">
+                                <div class="m_charts_tit">
+                	前5大供应商：共采购了<i>38.28亿</i>元,占总采购额的<i>31.39%</i>
+                </div>
+                                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-3"></div>                    
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon"></i>供应商F</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon"></i>供应商A</li>
+                                                                                            	                        <li><i class="charts_icon3 charts_icon"></i>供应商G</li>
+                                                                                            	                        <li><i class="charts_icon4 charts_icon"></i>供应商B</li>
+                                                                                            	                        <li><i class="charts_icon5 charts_icon"></i>供应商C</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>   
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>供应商名称</th>
+                        <th>采购额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+   					                    	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商F</div></td>
+		                <td class="tc">10.11亿</td>
+		                <td class="tc">8.29%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商A</div></td>
+		                <td class="tc">8.98亿</td>
+		                <td class="tc">7.37%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商G</div></td>
+		                <td class="tc">8.18亿</td>
+		                <td class="tc">6.71%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商B</div></td>
+		                <td class="tc">5.87亿</td>
+		                <td class="tc">4.82%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商C</div></td>
+		                <td class="tc">5.13亿</td>
+		                <td class="tc">4.21%</td>
+		           	 </tr>
+   					                   
+                    </tbody>
+                </table>
+                            </div>
+            <div class="clearfix"></div>
+        </div>
+	   	</div>
+			<div class="m_tab_content clearfix none">
+			      <div class="m_tab_content clearfix ">
+	      	  <!--两栏 左边 客户-->
+            <div class="m_charts_box">
+            	                <div class="m_charts_tit">              
+                	 前5大客户：共销售了<i>67.18亿</i>元,占营业收入的<i>74.12%</i>
+                 </div>    
+                            
+                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-4"></div>
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon" ></i>客户G</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon" ></i>客户F</li>
+                                                                                            	                        <li><i class="charts_icon3 charts_icon" ></i>兆易创新科技集团股份有限公司与合肥格易集</li>
+                                                                                            	                        <li><i class="charts_icon4 charts_icon" ></i>客户J</li>
+                                                                                            	                        <li><i class="charts_icon5 charts_icon" ></i>客户B</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>客户名称</th>
+                        <th>销售额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                                        	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户G</div></td>
+		                <td class="tc">22.99亿</td>
+		                <td class="tc">25.37%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户F</div></td>
+		                <td class="tc">22.56亿</td>
+		                <td class="tc">24.89%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">兆易创新科技集团股份有限公司与合肥格易集</div></td>
+		                <td class="tc">7.64亿</td>
+		                <td class="tc">8.43%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户J</div></td>
+		                <td class="tc">7.25亿</td>
+		                <td class="tc">8.00%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">客户B</div></td>
+		                <td class="tc">6.73亿</td>
+		                <td class="tc">7.43%</td>
+		           	 </tr>
+   					               
+                    </tbody>
+                </table>
+                            </div>
+            
+            <!--两栏 右边 供货商-->
+            <div class="m_charts_box">
+                                <div class="m_charts_tit">
+                	前5大供应商：共采购了<i>23.25亿</i>元,占总采购额的<i>25.65%</i>
+                </div>
+                                <div class="m_charts_cont">
+                    <div class="m_charts_pie" id="charts-5"></div>                    
+                    <ul class="m_charts_info">
+                                                                    	                        <li><i class="charts_icon1 charts_icon"></i>供应商C</li>
+                                                                                            	                        <li><i class="charts_icon2 charts_icon"></i>供应商B</li>
+                                                                                            	                        <li><i class="charts_icon3 charts_icon"></i>供应商A</li>
+                                                                                            	                        <li><i class="charts_icon4 charts_icon"></i>供应商H</li>
+                                                                                            	                        <li><i class="charts_icon5 charts_icon"></i>供应商I</li>
+                                                                                                <li><i class="charts_icon6 charts_icon"></i>其他</li>   
+                    </ul>
+                </div>
+                <table class="m_table m_hl ">
+                    <thead>
+                    <tr>
+                        <th>供应商名称</th>
+                        <th>采购额（元）</th>
+                        <th>占比</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+   					                    	                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商C</div></td>
+		                <td class="tc">6.42亿</td>
+		                <td class="tc">7.08%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商B</div></td>
+		                <td class="tc">4.93亿</td>
+		                <td class="tc">5.44%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商A</div></td>
+		                <td class="tc">4.71亿</td>
+		                <td class="tc">5.20%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商H</div></td>
+		                <td class="tc">3.97亿</td>
+		                <td class="tc">4.38%</td>
+		           	 </tr>
+   						                 <tr class="">
+      
+	                	<td class="tc"> <div class="clientname">供应商I</div></td>
+		                <td class="tc">3.22亿</td>
+		                <td class="tc">3.55%</td>
+		           	 </tr>
+   					                   
+                    </tbody>
+                </table>
+                            </div>
+            <div class="clearfix"></div>
+        </div>
+	   	</div>
+		   	<div style="display:none" id = "providerflash">{"2025-12-31":{"customer":[{"name":"\u5ba2\u6237J","y":611528.21},{"name":"\u5ba2\u6237D","y":413608.76},{"name":"\u5176\u4ed6","y":1955932.9}],"supplier":[{"name":"\u4f9b\u5e94\u5546A","y":84323.56},{"name":"\u4f9b\u5e94\u5546B","y":67913.03},{"name":"\u4f9b\u5e94\u5546T","y":45271.19},{"name":"\u4f9b\u5e94\u5546C","y":40206.76},{"name":"\u4f9b\u5e94\u5546I","y":38228.75},{"name":"\u5176\u4ed6","y":988691.4}]},"2024-12-31":{"customer":[{"name":"\u5ba2\u6237F","y":547537.98},{"name":"\u5ba2\u6237G","y":454254.49},{"name":"\u5ba2\u6237B","y":250237.61},{"name":"\u5ba2\u6237H","y":180775.24},{"name":"\u5ba2\u6237E","y":177548.19},{"name":"\u5176\u4ed6","y":782800.76}],"supplier":[{"name":"\u4f9b\u5e94\u5546F","y":101128.83},{"name":"\u4f9b\u5e94\u5546A","y":89825.92},{"name":"\u4f9b\u5e94\u5546G","y":81789.22},{"name":"\u4f9b\u5e94\u5546B","y":58745.48},{"name":"\u4f9b\u5e94\u5546C","y":51315.37},{"name":"\u5176\u4ed6","y":836707.21}]},"2023-12-31":{"customer":[{"name":"\u5ba2\u6237G","y":229943.48},{"name":"\u5ba2\u6237F","y":225614.31},{"name":"\u5146\u6613\u521b\u65b0\u79d1\u6280\u96c6\u56e2\u80a1\u4efd\u6709\u9650\u516c\u53f8\u4e0e\u5408\u80a5\u683c\u6613\u96c6","y":76364.47},{"name":"\u5ba2\u6237J","y":72517.04},{"name":"\u5ba2\u6237B","y":67314.23},{"name":"\u5176\u4ed6","y":234551.83}],"supplier":[{"name":"\u4f9b\u5e94\u5546C","y":64152.95},{"name":"\u4f9b\u5e94\u5546B","y":49332.28},{"name":"\u4f9b\u5e94\u5546A","y":47095.08},{"name":"\u4f9b\u5e94\u5546H","y":39694.08},{"name":"\u4f9b\u5e94\u5546I","y":32212.85},{"name":"\u5176\u4ed6","y":673895.76}]}}</div>
+	</div>
+  <div class="ft"></div>
+</div>
+
+<!-- 董事会经营评述 -->
+<div class="m_box" id="observe" stat="operate_observe">
+	<div class="hd">
+		<h2>董事会经营评述</h2>
+	</div>
+	<div class="bd">
+		<div class="m_tab">
+			<ul>
+												<li class="cur"><a href="javascript:void(0);" tag="0" class="operateTab">2025-12-31</a></li>
+												<li ><a onclick="TA.log({'id':'f10_jyfx_jyps','nj':1})"href="javascript:void(0);" tag="1" class="operateTab">2025-12-31</a></li>
+												<li ><a onclick="TA.log({'id':'f10_jyfx_jyps','nj':1})"href="javascript:void(0);" tag="2" class="operateTab">2025-06-30</a></li>
+											</ul>
+		</div>
+						<div class="m_tab_content m_tab_content2" >
+			<p class="f14 pr">
+				　　（一）营业收入构成分析<br />　　1、营业收入构成及变动<br />　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为99.74%、98.97%和99.15%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元，2023年至2025年复合增长率为160.02%，呈高速增长趋势。<br />　　（1）公司产能建设以及工艺迭代等带来公司产出及销量迅速增加<br />　　报告期...								<span style="display: inline-block;width: 70px;"></span>
+				<a class="more fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">查看全部▼</a>
+							</p>
+			<p class="f14 none clearfix pr">
+				　　（一）营业收入构成分析<br />　　1、营业收入构成及变动<br />　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为99.74%、98.97%和99.15%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元，2023年至2025年复合增长率为160.02%，呈高速增长趋势。<br />　　（1）公司产能建设以及工艺迭代等带来公司产出及销量迅速增加<br />　　报告期内，为实现产能及市场份额的快速提升，公司始终处于产能扩建及释放阶段，产能的迅速爬坡带来产出及销量的增长是公司报告期内收入提升的最主要因素。同时，公司通过长期的技术投入和自主创新，陆续搭建了第一代、第三代、第四代并持续迭代的工艺技术平台，由此带来单片晶圆产出持续增加。<br />　　产能规模、工艺水平的快速提升为公司产品销量增长提供了可靠保障。报告期内，公司产品销量迅速增长，2023年至2025年主要DRAM产品销量的年均复合增长率高达83.98%，实现快速增长，总体呈供不应求的市场状态。<br />　　（2）DRAM产品应用领域广泛，随着新兴领域的快速发展叠加中国市场的广阔前景，公司产品市场需求旺盛<br />　　DRAM产品是现代存储器的重要组成部分，一方面，下游服务器、手机、个人电脑等主流终端市场以及智能汽车、智能可穿戴设备等新兴终端市场的快速发展显著提升了对DRAM的需求。另一方面，中国是全球主要的DRAM需求大国之一，三星电子、SK海力士和美光科技三家国际厂商占据绝大部分市场份额，国内厂商发展前景广阔。DRAM行业在2023年上半年经历深度下行周期后，于2023年下半年起快速回暖，2024年产品市场价格整体回升。2025年度，得益于下半年以来全球算力需求的快速增长和全球主要厂商产能调配等因素影响，全球DRAM产品供不应求，价格呈现大幅上涨趋势。报告期内，公司抓住独特的行业机遇，通过持续研发投入及技术突破，产品得到市场的广泛认可，已成为我国规模最大、技术最先进、布局最全的DRAM研发设计制造一体化企业。<br />　　（3）公司顺应市场及产品需求，持续进行产品结构优化，提升行业头部客户粘性及销售增量<br />　　报告期内，公司持续拓展与下游客户的深度合作，与下游服务器、手机和个人电脑的各类型厂商建立了长期稳定的合作关系，成功进入阿里云、字节跳动、腾讯、联想、小米、传音、荣耀、OPPO、vivo等行业头部客户的供应链，客户基础不断扩大。同时，公司持续优化产品结构，加快进行更高代际产品的开发和市场拓展，以不断满足下游客户多样化应用的需求。报告期内，公司LPDDR5、DDR5和LPDDR5X产品分别于2023年、2024年和2025年量产，在中高端市场的渗透率快速提高。更多品类、更高代际的产品确保了公司能够持续满足市场及客户需求，增加客户粘性并带来新的业务增量。<br />　　2、按业务类别划分的主营业务收入<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元。公司主要DRAM产品包括DDR系列、LPDDR系列产品，各期主要DRAM产品收入占主营业务收入比例分别为94.70%、96.00%和98.30%，是公司收入的主要来源。<br />　　报告期各期，公司其他产品及服务销售收入占主营业务收入比例分别为5.30%、4.00%和1.70%，主要为提供技术及研发服务、晶圆代工及配套光罩销售收入等。<br />　　报告期内，公司LPDDR系列产品销售占比较高，主要原因为LPDDR系列产品主要应用于智能手机和平板电脑等领域，公司在报告期内迅速拓展了相关领域的下游终端客户，客户对公司产品认可度较高，需求旺盛且增长迅速。2024年，LPDDR系列产品收入占比提升，主要由于公司LPDDR5产品于2023年开始量产，2024年收入迅速增长，带动LPDDR系列产品销售占比提升。2024年底，公司DDR5产品量产，并于2025年开始迅速放量，带动DDR系列产品的收入占比提升。<br />　　3、主要产品价格及销量变化情况分析<br />　　报告期各期，公司主要DRAM产品的单位价格及销量（按容量）变动幅度情况具体如下：<br />　　销量方面，报告期内，公司产能处于持续建设状态，DRAM产品销量快速增长，DDR系列和LPDDR系列的销量复合增长率分别高达107.16%和76.93%，均呈现快速上升趋势。<br />　　单价方面，DRAM行业在2023年上半年深度下行，随着行业逐步回暖及公司产品结构优化，2024年公司产品均价整体回升。2025年，随着公司单价较高的DDR5和LPDDR5X产品快速放量及收入占比迅速提升，同时得益于2025年下半年以来全球算力需求的快速增长和全球主要厂商产能调配导致的DRAM供给紧张，公司DDR系列和LPDDR系列产品单价进一步显著上升。<br />　　4、按地区分布划分的主营业务收入<br />　　报告期内，公司境外收入占比分别为79.95%、70.66%和57.21%。报告期内，公司主营业务收入大部分来自中国香港，主要由于中国香港是半导体产品国际贸易集散地，在外汇结算方面存在诸多便利，公司大部分客户倾向于在中国香港以美元计价开展交易。2025年，公司境内收入占比大幅提升，主要由于部分经销客户出于融资便利及安全性等因素考虑由境内主体使用人民币交易的规模大量增加，以及公司对境内直销客户的销售规模大幅增加。<br />　　5、按销售模式划分的主营业务收入<br />　　公司产品销售采用经销和直销相结合的方式。报告期各期，公司经销模式收入占主营业务收入比例分别为84.69%、85.91%和85.38%，经销模式收入占比较高。<br />　　6、按季度划分的主营业务收入<br />　　报告期内，公司不存在明显的收入季节性特征，各季度的收入及占比变动主要受公司产销量持续增加及行业周期引起价格波动等因素影响。随着公司产销量持续、快速增加及市场逐步回暖等，公司主营业务收入从一季度到四季度呈现逐季度增长趋势。				<span style="display: inline-block;width: 42px;"></span>
+				<a class="less fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">收起▲</a>
+			</p>
+		</div>
+						<div class="m_tab_content m_tab_content2" style="display:none;">
+			<p class="f14 pr">
+				　　（一）营业收入构成分析<br />　　1、营业收入构成及变动<br />　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为99.74%、98.97%和99.15%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元，2023年至2025年复合增长率为160.02%，呈高速增长趋势。<br />　　（1）公司产能建设以及工艺迭代等带来公司产出及销量迅速增加<br />　　报告期...								<span style="display: inline-block;width: 70px;"></span>
+				<a class="more fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">查看全部▼</a>
+							</p>
+			<p class="f14 none clearfix pr">
+				　　（一）营业收入构成分析<br />　　1、营业收入构成及变动<br />　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为99.74%、98.97%和99.15%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元，2023年至2025年复合增长率为160.02%，呈高速增长趋势。<br />　　（1）公司产能建设以及工艺迭代等带来公司产出及销量迅速增加<br />　　报告期内，为实现产能及市场份额的快速提升，公司始终处于产能扩建及释放阶段，产能的迅速爬坡带来产出及销量的增长是公司报告期内收入提升的最主要因素。同时，公司通过长期的技术投入和自主创新，陆续搭建了第一代、第三代、第四代并持续迭代的工艺技术平台，由此带来单片晶圆产出持续增加。<br />　　产能规模、工艺水平的快速提升为公司产品销量增长提供了可靠保障。报告期内，公司产品销量迅速增长，2023年至2025年主要DRAM产品销量的年均复合增长率高达83.98%，实现快速增长，总体呈供不应求的市场状态。<br />　　（2）DRAM产品应用领域广泛，随着新兴领域的快速发展叠加中国市场的广阔前景，公司产品市场需求旺盛<br />　　DRAM产品是现代存储器的重要组成部分，一方面，下游服务器、手机、个人电脑等主流终端市场以及智能汽车、智能可穿戴设备等新兴终端市场的快速发展显著提升了对DRAM的需求。另一方面，中国是全球主要的DRAM需求大国之一，三星电子、SK海力士和美光科技三家国际厂商占据绝大部分市场份额，国内厂商发展前景广阔。DRAM行业在2023年上半年经历深度下行周期后，于2023年下半年起快速回暖，2024年产品市场价格整体回升。2025年度，得益于下半年以来全球算力需求的快速增长和全球主要厂商产能调配等因素影响，全球DRAM产品供不应求，价格呈现大幅上涨趋势。报告期内，公司抓住独特的行业机遇，通过持续研发投入及技术突破，产品得到市场的广泛认可，已成为我国规模最大、技术最先进、布局最全的DRAM研发设计制造一体化企业。<br />　　（3）公司顺应市场及产品需求，持续进行产品结构优化，提升行业头部客户粘性及销售增量<br />　　报告期内，公司持续拓展与下游客户的深度合作，与下游服务器、手机和个人电脑的各类型厂商建立了长期稳定的合作关系，成功进入阿里云、字节跳动、腾讯、联想、小米、传音、荣耀、OPPO、vivo等行业头部客户的供应链，客户基础不断扩大。同时，公司持续优化产品结构，加快进行更高代际产品的开发和市场拓展，以不断满足下游客户多样化应用的需求。报告期内，公司LPDDR5、DDR5和LPDDR5X产品分别于2023年、2024年和2025年量产，在中高端市场的渗透率快速提高。更多品类、更高代际的产品确保了公司能够持续满足市场及客户需求，增加客户粘性并带来新的业务增量。<br />　　2、按业务类别划分的主营业务收入<br />　　报告期各期，公司主营业务收入分别为906,314.37万元、2,392,875.14万元和6,127,537.21万元。公司主要DRAM产品包括DDR系列、LPDDR系列产品，各期主要DRAM产品收入占主营业务收入比例分别为94.70%、96.00%和98.30%，是公司收入的主要来源。<br />　　报告期各期，公司其他产品及服务销售收入占主营业务收入比例分别为5.30%、4.00%和1.70%，主要为提供技术及研发服务、晶圆代工及配套光罩销售收入等。<br />　　报告期内，公司LPDDR系列产品销售占比较高，主要原因为LPDDR系列产品主要应用于智能手机和平板电脑等领域，公司在报告期内迅速拓展了相关领域的下游终端客户，客户对公司产品认可度较高，需求旺盛且增长迅速。2024年，LPDDR系列产品收入占比提升，主要由于公司LPDDR5产品于2023年开始量产，2024年收入迅速增长，带动LPDDR系列产品销售占比提升。2024年底，公司DDR5产品量产，并于2025年开始迅速放量，带动DDR系列产品的收入占比提升。<br />　　报告期内，公司DRAM产品主要应用于移动设备、服务器及个人电脑领域，受益于数据中心等基础设施建设需求持续快速增长，公司把握行业发展趋势于2024年底推出DDR5等更新代际产品并快速实现客户导入，应用于服务器领城的DRAM产品收入实现快速增长，年均复合增长率高达536.24%。报告期内，公司应用于人工智能算力服务器的DRAN产品收入占比仍旧较低，随着人工智能下游需求的持续增长和公司服务器领域产品的持续放量，来自相关领域的产品收入及占比有望持续上升。<br />　　3、主要产品价格及销量变化情况分析<br />　　报告期各期，公司主要DRAM产品的单位价格及销量（按容量）变动幅度情况具体如下：<br />　　销量方面，报告期内，公司产能处于持续建设状态，DRAM产品销量快速增长，DDR系列和LPDDR系列的销量复合增长率分别高达107.16%和76.93%，均呈现快速上升趋势。<br />　　单价方面，DRAM行业在2023年上半年深度下行，随着行业逐步回暖及公司产品结构优化，2024年公司产品均价整体回升。2025年，随着公司单价较高的DDR5和LPDDR5X产品快速放量及收入占比迅速提升，同时得益于2025年下半年以来全球算力需求的快速增长和全球主要厂商产能调配导致的DRAM供给紧张，公司DDR系列和LPDDR系列产品单价进一步显著上升。<br />　　4、按地区分布划分的主营业务收入<br />　　报告期内，公司境外收入占比分别为79.95%、70.66%和57.21%。报告期内，公司主营业务收入大部分来自中国香港，主要由于中国香港是半导体产品国际贸易集散地，在外汇结算方面存在诸多便利，公司大部分客户倾向于在中国香港以美元计价开展交易。2025年，公司境内收入占比大幅提升，主要由于部分经销客户出于融资便利及安全性等因素考虑由境内主体使用人民币交易的规模大量增加，以及公司对境内直销客户的销售规模大幅增加。<br />　　5、按销售模式划分的主营业务收入<br />　　公司产品销售采用经销和直销相结合的方式。报告期各期，公司经销模式收入占主营业务收入比例分别为84.69%、85.91%和85.38%，经销模式收入占比较高。<br />　　6、按季度划分的主营业务收入<br />　　报告期内，公司不存在明显的收入季节性特征，各季度的收入及占比变动主要受公司产销量持续增加及行业周期引起价格波动等因素影响。随着公司产销量持续、快速增加及市场逐步回暖等，公司主营业务收入从一季度到四季度呈现逐季度增长趋势。				<span style="display: inline-block;width: 42px;"></span>
+				<a class="less fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">收起▲</a>
+			</p>
+		</div>
+						<div class="m_tab_content m_tab_content2" style="display:none;">
+			<p class="f14 pr">
+				　　（一）营业收入构成分析　　1、营业收入构成及变动　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为97.56%、99.74%、98.97%和98.61%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。　　报告期各期，公司主营业务收入分别为808,449.13万元、906,314.37万元、2,392,875.14万元和1,522,375.99万元，2022年至2024年复合增长率为72.04%，呈高速增长趋势。　　（1）公司产能建设以及工艺迭代等带来公司...								<span style="display: inline-block;width: 70px;"></span>
+				<a class="more fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">查看全部▼</a>
+							</p>
+			<p class="f14 none clearfix pr">
+				　　（一）营业收入构成分析<br />　　1、营业收入构成及变动<br />　　报告期各期，公司主营业务突出，主营业务收入占当期营业收入的比例分别为97.56%、99.74%、98.97%和98.61%，其中最主要来自DDR和LPDDR系列产品销售收入。公司其他业务收入主要包括废弃物处置收入、向员工销售房产收入、咨询服务及手续费和租金收入等，占营业收入的比例较小。<br />　　报告期各期，公司主营业务收入分别为808,449.13万元、906,314.37万元、2,392,875.14万元和1,522,375.99万元，2022年至2024年复合增长率为72.04%，呈高速增长趋势。<br />　　（1）公司产能建设以及工艺迭代等带来公司产出及销量迅速增加<br />　　报告期内，为实现产能及市场份额的快速提升，公司始终处于产能扩建及释放阶段，产能的迅速爬坡带来产出及销量的增长是公司报告期内收入提升的最主要因素。同时，公司通过长期的技术投入和自主创新，陆续搭建了第一代、第三代、第四代并持续迭代的工艺技术平台，由此带来单片晶圆产出持续增加。<br />　　产能规模、工艺水平的快速提升为公司产品销量增长提供了可靠保障。报告期内，公司产品销量迅速增长，2022年至2024年主要DRAM产品销量的年均复合增长率高达82.34%，实现快速增长，总体呈供不应求的市场状态。2023年，凭借销量的迅速提升，公司在DRAM行业周期下行、产品价格大幅波动的情况下实现了收入增长。<br />　　（2）DRAM产品应用领域广泛，随着新兴领域的快速发展叠加中国市场的广阔前景，公司产品市场需求旺盛<br />　　DRAM产品是现代存储器的重要组成部分，一方面，下游服务器、手机、个人电脑等主流终端市场以及智能汽车、智能可穿戴设备等新兴终端市场的快速发展显著提升了对DRAM的需求。另一方面，中国是全球主要的DRAM需求大国之一，三星电子、SK海力士和美光科技三家国际厂商占据绝大部分市场份额，国内厂商发展前景广阔。报告期内，公司抓住独特的行业机遇，通过持续研发投入及技术突破，产品得到市场的广泛认可，已成为我国规模最大、技术最先进、布局最全的DRAM研发设计制造一体化企业。<br />　　（3）公司顺应市场及产品需求，持续进行产品结构优化，提升行业头部客户粘性及销售增量<br />　　报告期内，公司持续拓展与下游客户的深度合作，与下游服务器、手机和个人电脑的各类型厂商建立了长期稳定的合作关系，成功进入阿里云、字节跳动、腾讯、联想、小米、传音、荣耀、OPPO、vivo等行业头部客户的供应链，客户基础不断扩大。同时，公司持续优化产品结构，加快进行更高代际产品的开发和市场拓展，以不断满足下游客户多样化应用的需求。报告期内，公司LPDDR5、DDR5和LPDDR5X产品分别于2023年、2024年和2025年上半年量产，在中高端市场的渗透率快速提高。更多品类、更高代际的产品确保了公司能够持续满足市场及客户需求，增加客户粘性并带来新的业务增量。<br />　　2、按业务类别划分的主营业务收入<br />　　报告期各期，公司主营业务收入分别为808,449.13万元、906,314.37万元、2,392,875.14万元和1,522,375.99万元。公司主要DRAM产品包括DDR系列、LPDDR系列产品，各期主要DRAM产品收入占主营业务收入比例分别为97.61%、94.70%、96.00%和97.56%，是公司收入的主要来源。<br />　　报告期各期，公司其他产品及服务销售收入占主营业务收入比例分别为2.39%、5.30%、4.00%和2.44%，主要为提供技术及研发服务、晶圆代工及配套光罩销售收入等。<br />　　报告期内，公司LPDDR系列产品销售占比较高，主要原因为LPDDR系列产品主要应用于智能手机和平板电脑等领域，公司在报告期内迅速拓展了相关领域的下游终端客户，客户对公司产品认可度较高，需求旺盛且增长迅速。2024年，LPDDR系列产品收入占比进一步提升，主要由于公司LPDDR5产品于2023年开始量产，2024年收入迅速增长，带动LPDDR系列产品销售占比提升。2024年底，公司DDR5产品量产，并于2025年开始迅速放量，带动DDR系列产品的收入占比提升。<br />　　3、主要产品价格及销量变化情况分析<br />　　报告期各期，公司主要DRAM产品的单位价格及销量（按容量）变动幅度情况具<br />　　报告期内，公司产能处于持续建设状态，DRAM产品销量快速增长，但产品单位价格在宏观经济、行业周期性波动及公司自身产品结构优化等因素的影响下存在大幅波动。<br />　　单价方面，受2022年下半年至2023年上半年DRAM行业进入历史罕见的下行周期影响，2023年公司主要DRAM产品单价大幅下降，随着行业逐步回暖及公司产品结构优化，2024年公司产品均价回升。2024年下半年以来，由于DRAM产品供给恢复但下游需求尚未完全恢复，公司主要产品销售单价略有下滑，但随着单价较高的DDR5产品在2025年上半年快速放量及收入占比迅速提升，DDR系列产品单价显著上升。<br />　　销量方面，报告期内，公司销量随着公司产能建设而迅速增加，其中，2022年至2024年，DDR系列和LPDDR系列的销量复合增长率分别高达61.41%和86.67%，2025年上半年，公司主要产品销量进一步增加，随着DDR5产品的快速放量，DDR系列的产品销量已超过2024年全年。<br />　　4、按地区分布划分的主营业务收入<br />　　报告期内，公司境外收入占比分别为85.84%、79.95%、70.66%和36.88%。2022年至2024年，公司主营业务收入大部分来自中国香港，主要由于中国香港是半导体产品国际贸易集散地，在外汇结算方面存在诸多便利，公司大部分客户倾向于在中国香港以美元计价开展交易。2025年上半年，公司境内收入占比大幅提升，主要由于部分经销客户出于融资便利及安全性等因素考虑由境内主体使用人民币交易的规模大量增加，以及公司对境内直销客户的销售规模大幅增加。<br />　　5、按销售模式划分的主营业务收入<br />　　公司产品销售采用经销和直销相结合的方式。报告期各期，公司经销模式收入占主营业务收入比例分别为87.78%、84.69%、85.91%和73.21%，经销模式收入占比较高。2025年上半年，随着公司对客户D、客户C等直销客户销售规模增加，公司直销模式收入占比有所提升。<br />　　6、按季度划分的主营业务收入<br />　　报告期内，公司不存在明显的收入季节性特征，各季度的收入及占比变动主要受公司产销量持续增加及行业周期引起价格波动等因素影响。<br />　　2022年第三季度和第四季度的收入金额及占比低于前两个季度，主要由于2022年下半年开始公司DRAM产品单价受行业周期影响大幅下降，使得虽然销量较上半年显著增加，但收入及占比下降。2023年和2024年，伴随着公司产销量持续、快速增加及市场逐步回暖等，公司主营业务收入从一季度到四季度呈现逐季度增长趋势。				<span style="display: inline-block;width: 42px;"></span>
+				<a class="less fr" href="javascript:void(0)" style="position:absolute;right:0;bottom:0;">收起▲</a>
+			</p>
+		</div>
+					</div>
+	<div class="ft"></div>
+</div>
+
+<!-- 产品价格 -->
+	
+
+</div>
+		<!-- F10 Content End -->
+<!-- F10 Footer Start -->
+		<div class="footer">
+		<div class="links">
+		    <a href="http://stockpage.10jqka.com.cn" target="_blank" onclick="clickTalogStat('jptostock');">同花顺个股页面</a> |
+		    <a href="http://moni.10jqka.com.cn/" target="_blank">模拟炒股</a> |
+		    <a href="http://www.10jqka.com.cn/school/" target="_blank">股民学校</a> |
+		    <a href="http://mobile.10jqka.com.cn/?req=pcf10" target="_blank">手机炒股</a>|
+		    <a target="_blank" href=" http://wpa.qq.com/msgrd?v=3&amp;uin=2270716061&amp;site=qq&amp;menu=yes">联系我们</a>
+		</div>
+		<p>免责声明:本信息由同花顺金融研究中心提供，仅供参考，同花顺金融研究中心力求但不保证数据的完全准确，如有错漏请以中国证监会指定上市公司信息披露媒体为准，同花顺金融研究中心不对因该资料全部或部分内容而引致的盈亏承担任何责任。用户个人对服务的使用承担风险。同花顺对此不作任何类型的担保。同花顺不担保服务一定能满足用户的要求，也不担保服务不会受中断，对服务的及时性，安全性，出错发生都不作担保。同花顺对在同花顺上得到的任何信息服务或交易进程不作担保。同花顺提供的包括同花顺理财的所有文章，数据，不构成任何的投资建议，用户查看或依据这些内容所进行的任何行为造成的风险和结果都自行负责，与同花顺无关。 </p>
+		</div>
+<!-- F10 Footer End -->
+    </div>
+    <div class="r-go-top" id="r-go-top"></div>
+</body>
+<input id="stockCode" type="hidden" value="688825">
+<input id="F001" type="hidden" value="A">
+<input id="F002" type="hidden" value="上海证券交易所">
+<input id="F004" type="hidden" value="1">
+<input id="stockName" type="hidden" value="长鑫科技">
+<input id="marketId" type="hidden" value="17">
+<input id="cateName"  type="hidden" value="经营分析">
+<input id="catecode"  type="hidden" value="operate">
+<input id="fcatecode"  type="hidden" value="operate">
+<input id="sid" type="hidden" value="F10new_jyfx">
+<input id="fid" type="hidden" value="F10,F10master,F10main,F10new">
+<input id="qid" type="hidden" value="14585179">
+<div style="display:none" id="wordraddom">
+</div>
+<!-- title 容器 -->
+	<div class="titleBox" id="altlayer" style="display:none; width: 260px;">
+		<div class="tipbox_bd p0_5"><span style="line-height:24px;" class="tip f14">
+		<span id="altlayer_content"></span>
+		</div>
+	</div>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/common/cefapi/1.5.5/cefApi.min.js;js/basic/stock/newPcJs/common.js"></script>
+<script>
+try {
+    external.createObject('Util');
+    //document.getElementById("updownchange").style.display = "block";
+} catch (e) {}
+</script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/jquery-1.8.3.min.js;js/basic/common/inheritance.js;js/basic/stock/popWin.js;js/basic/common/Model_v2.js;js/basic/stock/20200604153837/index.js;js/basic/stock/20200604153837/po_v2.js;js/basic/stock/scrollBind.js"></script>
+<script type="text/javascript" crossorigin charset="utf-8" src="//s.thsi.cn/js/basic/stockph_v2/stock/common_v3-2-a58b25.js"></script>
+<!--[if IE ]><script type="text/javascript"  crossorigin src="//s.thsi.cn/js/excanvas.min.js"></script><![endif]-->
+<!--[if IE 6]>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/DD_belatedPNG_0.0.8a-min.js"></script>
+<script type="text/javascript">DD_belatedPNG.fix('.company_logo,.btn-gnjx-left, .btn-gnjx-right, .concept_hot_icons,.iwc_searchbar,.iwc_searchbar .tips-icon,#autocomplete_search_input dd .icona,#autocomplete_search_input dd .iconb');</script>
+<![endif]-->
+<script type="text/javascript" crossorigin src="//s.thsi.cn/js/basic/jquery.pos-fixed.js"></script>
+<script type="text/javascript" crossorigin src="//s.thsi.cn/cb?js/ta.min.js;js/pa.min.js;js/basic/stock/StatLoad.js;js/basic/stock/20200605135220/xgcl_mod.js"></script>
+<script type="text/javascript" crossorigin src="//s.thsi.cn/js/basic/stock/tongji.min.js"></script>
+<!-- 统计 -->
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/home/ths_core.min.js;js/home/ths_quote.min.js;js/home/tongji.min.js" charset="utf-8"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/commonLog_v3.js" charset="utf-8"></script>
+<!--F10运营位脚本-->
+<script type="text/javascript" crossorigin charset="utf-8" src="//s.thsi.cn/js/basic/stockph_v2/stock/append-960857.js"></script>
+<script type="text/javascript" crossorigin charset="utf-8" src="//s.thsi.cn/js/basic/stockph_v2/stock/f10widget_v3-5ec039.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?/js/navigation/jquery.bgiframe.min.js;/js/navigation/jquery.ui.position.min.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/basic/stock/json2.js"></script>
+<script type="text/javascript" charset="utf-8" src="//s.thsi.cn/js/basic/stockph_v2/stock/search_v3-fec53c.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/basic/stock/jquery.flot3.min.js;js/basic/stock/jquery.flot.time.min.js;js/basic/stock/jquery.flot.tooltip.min.js;js/basic/stock/tableSorter_v3.js;js/basic/stock/pagescroll.js;js/basic/stock/operatetablepage.20150910.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/operate-5537c0.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/website/datacenter/rzrq/thscharts.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/providerchart-c86241.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/userevaluate.20140318.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/cb?js/basic/stock/tableSorter_v3-2.20160725.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/xgcl-8719c5.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/jquery.flotcp.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/jquery.flot.tooltipcp.20151209.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/operatecp-2c0e89.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/opevaluate.js"></script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/20200604153837/click.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/cd/website-thsc-f10-utils/1.6.4/swiper.min.js"></script>
+<link href="//s.thsi.cn/cd/website-thsc-f10-utils/1.6.4/swiper.min.css" rel="stylesheet" type="text/css">
+<script>
+	if ($(".i_sideBar .i_list li").length>0) {
+		sendTalog('f10_stock_fdckf_operate_count#f10_stock_fdckf_total_count');
+	}
+</script>
+<script>
+//---------------自定义title弹窗 start----------
+var tempalt='';//临时存储title
+document.body.onmousemove = function(event) {
+	if(altlayer.style.display==''){
+		$("#altlayer").css({
+			left: event.pageX,
+			top: event.pageY+10
+		});
+	}
+};
+document.body.onmouseover = function(event) {
+	if (event.srcElement.className !== 'titleIcon') {
+		return false;
+	}
+	if(event.srcElement.title && (event.srcElement.title!='' || (event.srcElement.title=='' && tempalt!=''))){
+		$("#altlayer").css({
+			left: event.pageX,
+			top: event.pageY+20,
+			display: ''
+		});
+		$("#altlayer_content").html(event.srcElement.title)
+		tempalt = event.srcElement.title;
+		event.srcElement.title='';
+	}
+};
+document.body.onmouseout = function(event) {
+	if (tempalt != '') {
+		event.srcElement.title = tempalt;	
+	}
+	tempalt = '';
+	$("#altlayer").hide();
+};
+//---------------自定义title弹窗 end----------
+//F10客户端结点设置
+function setClientCacheData() {
+    try { //判断是否在客户端，存入结点
+        external.createObject('Util');
+        window.API.use({
+            method: 'Util.getHxVer',
+            success: function(data) {
+                var hexinVer = getVersionStr(data);
+                var pathname = window.location.pathname
+                pathname = pathname.replace(/\/\d{2,3}\//, '/%4/');
+                pathname = pathname.replace(/\/[\d|A]\d{5}\//, '/%6/');
+                //dalert(hexinVer);//上线注意，测试版版本86080  正式版 86090 请注意
+                if (hexinVer >= 86080) {
+                    window.API.use({
+                        method: 'Info.cacheInfoData',
+                        data: ['f10_client_node', 'http://basic.10jqka.com.cn' + pathname],
+                        success: function() {
+                        }
+                    })
+                } else {
+                    window.API.use({
+                        method: 'Info.cacheInfoData',
+                        data: ['', 'http://basic.10jqka.com.cn/' + pathname],
+                        success: function() {
+                        }
+                    })
+                }
+            }
+        })
+        document.getElementById("updownchange").style.display = "block";
+    } catch (e) {
+        //远航版隐藏header
+        $("#quotedata").empty()
+        $("#updownchange").empty()
+    }
+	try {
+		callNativeHandler('getMacVer', {}, function(data){
+			if (data.plaform == 'mac' && data.version>='1.3.0' ) {
+				var pathname = window.location.pathname
+                pathname = pathname.replace(/\/\d{2,3}\//, '/%4/');
+                pathname = pathname.replace(/\/[\d|A]\d{5}\//, '/%6/');
+				callNativeHandler('cache_info_Data', {
+					'f10_client_node': 'http://basic.10jqka.com.cn' + pathname
+				}, function(data){
+				});
+			}
+		});
+	} catch (e) {
+    }
+}
+setClientCacheData();
+</script>
+<script type="text/javascript"  crossorigin src="//s.thsi.cn/js/basic/stock/20200604153837/stockpage_v3.20190506.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin id="ths-parser-script" app_key="f10_astockpc_config" src="//s.thsi.cn/cd/website-thsc-f10-utils/1.4.39/parser.js"></script>
+<script type="text/javascript">
+var sid = 'F10new_jyfx';
+var fid = 'F10,F10master,F10main,F10new';
+var stockcode = '688825';
+if (window.location.href.indexOf('interactive')<0
+		&&window.location.href.indexOf('dupont')<0) {
+    $(".subnav .skipto").each(function(){
+    	sonnav = $(this).attr('nav');
+    	if ($("#"+sonnav).length>0 || $("[idchange='"+sonnav+"']").length>0) {
+    	} else {
+    		$(this).hide();
+    	}
+    })
+}
+if (stockcode.substr(0,2) == '43' || stockcode.substr(0,2) == '83') {
+	var third_sid = sid+'_thirdboard';
+	var third_fid = fid+'_thirdboard';
+    PA.setStartTime(loadTimer);
+	PA.init({'id':third_sid, 'fid':third_fid, 'stockcode':stockcode});
+}
+$(document).ready(function(){
+var hash = window.location.hash.substring(1);
+var hashArray = hash.split('-');
+if(hashArray[0]  == 'position'){
+	$("#sortNav li").eq(hashArray[1]).find("a").click();
+}
+});
+try {
+    external.createObject('Util');
+    window.API.use({
+        method: 'Passport.get',
+        data: ['m_qs'],
+        success: function(data) {
+            var qsid = data
+            if (qsid == '114') {
+                $("#f10_top_ad").hide();
+                $("#r-go-top").hide();
+            }
+        }
+    })
+} catch (e) {}
+if (!isIE6()) {
+    $(".m_box").statload();
+}
+try {
+    external.createObject('Util');
+    window.API.use({
+        method: 'Passport.get',
+        data: 'm_qs',
+        success: function(data) {
+            var qsid = data
+            if (qsid < 800) {
+                fid += ',f10new_qs';
+            } else {
+                fid += ',f10new_fqs';
+            }
+            PA.setStartTime(loadTimer);
+            setTimeout(function(){
+                PA.init({
+                    'id': sid,
+                    'fid': fid,
+                    'stockcode': stockcode,
+                    'qsid': qsid
+                });
+            },100)
+        }
+    })
+} catch (e) {
+    PA.setStartTime(loadTimer);
+    PA.init({
+        'id': sid,
+        'fid': fid,
+        'stockcode': stockcode
+    });
+}
+try {
+    external.createObject('Util');
+    var externalSessionId = window.API.createSessionId('external');
+    window.API.use({
+        method: 'external.registerEvent',
+        data: 'onshow',
+        sessionId: externalSessionId,
+        persistent: true,
+        callbackName: 'onshow',
+        success: function(data) {
+            if (!data) {
+                 PA.setStartTime(loadTimer);
+                 PA.init({
+                    'id': sid,
+                    'fid': fid,
+                    'stockcode': stockcode,
+                    'hide': 1,
+                    'nj': 1,
+                    _sid: "__ths_onshow"
+                });
+            }
+        }
+    })
+} catch (e) {}
+</script>
+<div style="display:none"><script type="text/javascript">
+// 在客户端内，html做个区分，解决端内的一些特性
+if ((window.external && 'createObject' in window.external) || (window.HevoCef && "IsHevoCef" in window.HevoCef)) {
+	$('html').addClass("inClient");
+}
+(function(){
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F78c58f01938e4d85eaf619eae71b4ed1' type='text/javascript'%3E%3C/script%3E"));
+});
+</script>
+
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/f10hq_v4-5-576b58.js"></script>
+<script type="text/javascript" charset="utf-8" crossorigin src="//s.thsi.cn/js/basic/stockph_v2/stock/onlyBAuthorize-4a6ce9.js"></script>
+</div>
+<!--F10头部广告-->
+
+<!--<div id="f10_top_ad" class="f10_ad_top none"><script type="text/javascript">CNZZ_SLOT_RENDER('297563');</script></div>-->
+</html>
+	

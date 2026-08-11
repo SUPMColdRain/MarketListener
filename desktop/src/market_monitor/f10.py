@@ -24,6 +24,8 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 from threading import Lock
 
+from .industry_graph.f10.market_caps import derive_market_caps
+from .industry_graph.f10.segments import largest_revenue_segment, migrate_revenue_rows
 from .storage import MarketStore
 
 _CURL = "curl.exe"
@@ -92,8 +94,20 @@ def _num(value: Any, default: float | None = None) -> float | None:
         return default
 
 
-def _get(url: str, *, timeout: float = 15.0, encoding: str = "utf-8") -> str:
+def _get(
+    url: str,
+    *,
+    timeout: float = 15.0,
+    encoding: str = "utf-8",
+    headers: Mapping[str, str] | Sequence[tuple[str, str]] | None = None,
+) -> str:
     """Fetch a URL via curl.exe and return the decoded body."""
+    extra_headers: list[str] = []
+    if headers:
+        if isinstance(headers, Mapping):
+            extra_headers = [f"{key}: {value}" for key, value in headers.items()]
+        else:
+            extra_headers = [f"{key}: {value}" for key, value in headers]
     command = [
         _CURL,
         "-sS",
@@ -104,8 +118,10 @@ def _get(url: str, *, timeout: float = 15.0, encoding: str = "utf-8") -> str:
         f"User-Agent: {_UA}",
         "-H",
         f"Referer: {_REFERER}",
-        url,
     ]
+    for header in extra_headers:
+        command.extend(["-H", header])
+    command.append(url)
     result = subprocess.run(command, capture_output=True, timeout=timeout + 10)
     if result.returncode != 0:
         detail = result.stderr.decode("utf-8", errors="replace").strip()
@@ -159,6 +175,23 @@ def _retry_get(url: str, *, attempts: int = 3, timeout: float = 15.0, encoding: 
             if attempt + 1 < attempts:
                 time.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f"fetch failed after {attempts} attempts: {last}")
+
+
+def _governed_fetch(
+    url: str,
+    *,
+    timeout: float = 18.0,
+    encoding: str = "utf-8",
+    provider: str = "eastmoney",
+) -> str:
+    """Fetch an F10 page through the shared provider governance limiter.
+
+    The provider package is imported lazily so this module stays importable
+    on its own (governance imports back into :mod:`market_monitor.f10`).
+    """
+    from .industry_graph.f10.providers.governance import governed_get
+
+    return governed_get(url, provider=provider, timeout=timeout, encoding=encoding)
 
 
 # ---------------------------------------------------------------------------
@@ -331,8 +364,7 @@ def fetch_hk_company_profile(code: str, *, quote: TencentQuote | None = None) ->
         "v": "04748497219912483",
     }
     url = "https://datacenter.eastmoney.com/securities/api/data/v1/get?" + urllib.parse.urlencode(params)
-    _throttle_f10(_THROTTLE_SECONDS)
-    body = _retry_get(url, timeout=18.0, encoding="utf-8")
+    body = _governed_fetch(url, timeout=18.0, encoding="utf-8")
     try:
         payload = json.loads(body)
     except json.JSONDecodeError as error:
@@ -468,8 +500,7 @@ def fetch_company_survey(
     if market.upper() == "HK":
         return fetch_hk_company_profile(code, quote=quote)
     url = f"https://emweb.securities.eastmoney.com/PC_HSF10/CompanySurvey/PageAjax?code={_eastmoney_code(code)}"
-    _throttle_f10(_THROTTLE_SECONDS)
-    body = _retry_get(url, timeout=18.0, encoding="utf-8")
+    body = _governed_fetch(url, timeout=18.0, encoding="utf-8")
     try:
         payload = json.loads(body)
     except json.JSONDecodeError as error:
@@ -481,29 +512,68 @@ def fetch_company_survey(
 
 
 def parse_business_analysis(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
-    """Extract a compact revenue breakdown from the BusinessAnalysis payload."""
+    """Extract a structured revenue breakdown from the BusinessAnalysis payload.
+
+    Every row keeps its report period, raw Eastmoney type and all available
+    cost / gross-profit fields.  The canonical percentage is 0-100
+    (``revenue_share_pct``); the original 0-1 ratio is preserved as ``ratio``
+    so legacy consumers keep working.  No fixed ``[:20]`` truncation is
+    applied: the full provider payload is retained.
+    """
     rows = payload.get("zygcfx") or []
     breakdown: list[dict[str, Any]] = []
     for row in rows:
-        item = str(row.get("ITEM_NAME") or "").strip()
+        item = str(row.get("ITEM_NAME") or row.get("item_name") or "").strip()
         if not item:
             continue
+        ratio = _num(row.get("MBI_RATIO") or row.get("ratio"))
+        income = _num(row.get("MAIN_BUSINESS_INCOME") or row.get("revenue"))
+        cost = _num(row.get("MAIN_BUSINESS_COST") or row.get("cost"))
+        gross_profit = _num(row.get("MAIN_BUSINESS_RPOFIT") or row.get("gross_profit"))
+        gross_margin = _num(row.get("GROSS_RPOFIT_RATIO") or row.get("gross_margin_pct"))
+        classification = _classification_from_type(str(row.get("MAINOP_TYPE") or "").strip())
         breakdown.append(
             {
                 "type": str(row.get("MAINOP_TYPE") or "").strip(),
                 "item": item,
-                "income": _num(row.get("MAIN_BUSINESS_INCOME")),
-                "ratio": _num(row.get("MBI_RATIO")),
+                "item_name": item,
+                "income": income,
+                "revenue": income,
+                "currency": "CNY",
+                "revenue_share_pct": (ratio * 100.0) if ratio is not None else None,
+                "ratio": ratio,
+                "cost": cost,
+                "gross_profit": gross_profit,
+                "gross_margin_pct": (gross_margin * 100.0) if gross_margin is not None else None,
+                "period": str(row.get("REPORT_DATE") or "").strip() or None,
+                "source": "eastmoney_f10",
+                "classification": classification[0] if classification else None,
+                "classification_label": classification[1] if classification else None,
             }
         )
-    return breakdown[:20]
+    return breakdown
+
+
+def _classification_from_type(raw_type: str) -> tuple[str, str] | None:
+    """Map the provider's own MAINOP_TYPE to a conservative classification.
+
+    The Eastmoney taxonomy is factual: 1 = by industry, 2 = by product,
+    3 = by region.  Region rows are retained for display/provenance but are
+    never used as a company's largest business/product.
+    """
+    if raw_type == "1":
+        return ("industry", "行业")
+    if raw_type == "2":
+        return ("product", "产品")
+    if raw_type == "3":
+        return ("region", "地区")
+    return None
 
 
 def fetch_business_analysis(code: str) -> dict[str, Any]:
     """Fetch and parse one A-share company's business/revenue breakdown."""
     url = f"https://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/PageAjax?code={_eastmoney_code(code)}"
-    _throttle_f10(_THROTTLE_SECONDS)
-    body = _retry_get(url, timeout=18.0, encoding="utf-8")
+    body = _governed_fetch(url, timeout=18.0, encoding="utf-8")
     try:
         payload = json.loads(body)
     except json.JSONDecodeError as error:
@@ -876,25 +946,53 @@ def _atlas_record(
     quote: Mapping[str, Any] | None,
     revenue: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Normalize a raw F10 record to the industry-atlas compact contract."""
+    """Normalize a raw F10 record to the industry-atlas compact contract.
+
+    Market caps are emitted as canonical MoneySnapshot dicts (value in base
+    currency units, currency, asOf, source) so no consumer can render a
+    number without knowing when and where it came from.  Legacy Tencent
+    ``*_yi`` scalars are converted with 1 yi = 1e8 units.  A missing float
+    market cap may be derived from a same-day quote price and share counts
+    (CN only); ``asOf`` is always the real quote time, never the detail-page
+    fetch time.  Reasons for a missing cap are attached so callers can show
+    ``暂无数据`` instead of a bare blank.
+    """
+    market = "HK" if str(record.get("market") or "").upper() == "HK" else "CN"
+    fetched_at = str(record.get("detail_fetched_at") or record.get("fetched_at") or "").strip()
+    revenue_rows, _ = migrate_revenue_rows(list(revenue or record.get("revenue_breakdown") or []))
+    total_cap, float_cap, cap_reasons = derive_market_caps(record, quote, market=market)
     out: dict[str, Any] = {
         "code": record.get("code"),
-        "market": "HK" if str(record.get("market") or "").upper() == "HK" else "CN",
+        "market": market,
         "name": record.get("name") or "",
         "full_name": record.get("org_name") or "",
-        "total_market_cap": (quote or {}).get("total_market_cap_yi"),
-        "float_market_cap": (quote or {}).get("float_market_cap_yi"),
-        "industry": record.get("industry_em") or "",
-        "csrc_industry": record.get("industry_csrc") or "",
-        "profile": record.get("org_profile") or "",
-        "main_business": record.get("business_scope") or "",
-        "revenue_breakdown": list(revenue or record.get("revenue_breakdown") or []),
+        "total_market_cap": total_cap,
+        "float_market_cap": float_cap,
+        "industry": record.get("industry_em") or record.get("industry") or "",
+        "csrc_industry": record.get("industry_csrc") or record.get("csrc_industry") or "",
+        "industry_tdx": record.get("industry_tdx") or "",
+        "industry_sw": record.get("industry_sw") or "",
+        "industry_em": record.get("industry_em") or "",
+        "industry_hs": record.get("industry_hs") or "",
+        "profile": record.get("org_profile") or record.get("profile") or "",
+        "main_business": record.get("main_business") or "",
+        "business_scope": record.get("business_scope") or "",
+        "company_position": record.get("company_position") or record.get("position") or "",
+        "company_highlight": record.get("company_highlight") or record.get("highlight") or "",
+        "company_website": record.get("company_website") or record.get("org_web") or "",
+        "total_shares": record.get("total_shares"),
+        "float_shares": record.get("float_shares"),
+        "largest_revenue_segment": largest_revenue_segment(revenue_rows),
+        "revenue_breakdown": revenue_rows,
         "products": record.get("products") or [],
-        "source": "eastmoney_f10",
-        "fetched_at": record.get("detail_fetched_at") or record.get("fetched_at") or "",
-        "status": "ok",
+        "source": record.get("source") or "eastmoney_f10",
+        "fetched_at": fetched_at,
+        "status": record.get("status") or "ok",
+        "provenance": record.get("provenance") or {},
     }
-    return {key: value for key, value in out.items() if value not in (None, "", [])}
+    if cap_reasons:
+        out["market_cap_missing_reasons"] = cap_reasons
+    return {key: value for key, value in out.items() if value not in (None, "", [], {})}
 
 
 def export_atlas_f10(data_root: Path, *, markets: Sequence[str] = ("CN", "HK")) -> dict[str, Any]:

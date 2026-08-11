@@ -194,13 +194,25 @@ def _compact_f10(record: Mapping[str, Any]) -> dict[str, Any]:
         "float_market_cap",
         "industry",
         "csrc_industry",
+        "industry_tdx",
+        "industry_sw",
+        "industry_em",
+        "industry_hs",
         "profile",
         "main_business",
+        "business_scope",
+        "company_position",
+        "company_highlight",
+        "company_website",
+        "total_shares",
+        "float_shares",
+        "largest_revenue_segment",
         "revenue_breakdown",
         "products",
         "source",
         "fetched_at",
         "status",
+        "provenance",
     )
     out: dict[str, Any] = {}
     for key in keys:
@@ -320,12 +332,19 @@ def _build_f10_text_index(f10_records: list[Mapping[str, Any]]) -> dict[str, str
         parts: list[str] = [
             str(record.get("industry") or ""),
             str(record.get("csrc_industry") or ""),
+            str(record.get("industry_tdx") or ""),
+            str(record.get("industry_sw") or ""),
+            str(record.get("industry_em") or ""),
+            str(record.get("industry_hs") or ""),
             str(record.get("profile") or ""),
             str(record.get("main_business") or ""),
+            str(record.get("business_scope") or ""),
+            str(record.get("company_position") or ""),
+            str(record.get("company_highlight") or ""),
         ]
         for item in record.get("revenue_breakdown") or []:
             if isinstance(item, Mapping):
-                parts.append(str(item.get("item") or ""))
+                parts.append(str(item.get("item_name") or item.get("item") or ""))
         for prod in record.get("products") or []:
             parts.append(str(prod))
         text = " ".join(p for p in parts if p)
@@ -1872,7 +1891,7 @@ function showPopover(chip){
     ["证券代码",displayCode(rec)], ["市场",marketName(rec.market)], ["公司亮点",rec.companyHighlight],
     ["总市值",fmtMoney(rec.totalMarketCap)], ["流通市值",fmtMoney(rec.floatMarketCap)],
     ["所属行业",rec.industry||rec.csrcIndustry], ["主营业务",rec.mainBusiness],
-    ["最赚钱业务",top.name ? top.name+(top.ratio!=null?" "+fmtPct(top.ratio):"") : null],
+    ["收入最大业务",top.name ? top.name+(top.ratio!=null?" "+fmtPct(top.ratio):"") : null],
     ["主要产品",(rec.products||[]).slice(0,4).join("、")], ["当前定位",activeChain.name+" / "+chip.dataset.stage+" / "+chip.dataset.node],
     ["公司简介",(rec.companyIntro||"").slice(0,240)]
   ].filter(row=>row[1]!=null&&row[1]!=="");

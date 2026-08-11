@@ -126,21 +126,29 @@ def company_detail_from_record(record: Mapping[str, Any]) -> CompanyDetail | Non
         name=name,
         code=code,
         market=market,
+        company_position=_clean_text(record.get("company_position")) or _clean_text(record.get("position")),
         company_highlight=_clean_text(record.get("company_highlight")) or _clean_text(record.get("highlight")),
+        company_website=_clean_text(record.get("company_website")) or _clean_text(record.get("org_web")),
         total_market_cap=total_cap,
         float_market_cap=float_cap,
         company_intro=_clean_text(record.get("profile")) or _clean_text(record.get("org_profile")),
         industry=_clean_text(record.get("industry")) or _clean_text(record.get("industry_em")),
         csrc_industry=_clean_text(record.get("csrc_industry")) or _clean_text(record.get("industry_csrc")),
-        main_business=_clean_text(record.get("main_business")) or _clean_text(record.get("business_scope")),
-        top_revenue_segment=_top_revenue_segment(revenue_segments),
+        industry_tdx=_clean_text(record.get("industry_tdx")),
+        industry_sw=_clean_text(record.get("industry_sw")),
+        industry_em=_clean_text(record.get("industry_em")),
+        industry_hs=_clean_text(record.get("industry_hs")),
+        main_business=_clean_text(record.get("main_business")),
+        business_scope=_clean_text(record.get("business_scope")),
+        total_shares=_num(record.get("total_shares")),
+        float_shares=_num(record.get("float_shares")),
+        largest_revenue_segment=_top_revenue_segment(revenue_segments),
         products=products,
         source=source,
         updated_at=updated_at,
     )
     return CompanyDetail(
         summary=summary,
-        business_scope=_clean_text(record.get("business_scope")),
         revenue_segments=revenue_segments,
         sources=(source,),
         raw_status=_clean_text(record.get("status")),
@@ -190,6 +198,11 @@ def _instrument_key(market: str, code: str) -> str:
 
 
 def _market_cap(value: object, currency: str, as_of: str | None, source: str) -> MoneySnapshot | None:
+    if isinstance(value, Mapping):
+        snapshot = MoneySnapshot.from_dict(value)
+        if snapshot is not None:
+            return snapshot
+        value = value.get("value")
     try:
         yi = float(value)
     except (TypeError, ValueError):
@@ -209,20 +222,54 @@ def _revenue_segments(raw: object, currency: str, as_of: str | None, source: str
     for item in raw:
         if not isinstance(item, Mapping):
             continue
-        name = _clean_text(item.get("item") or item.get("name"))
+        name = _clean_text(item.get("item_name") or item.get("item") or item.get("name"))
         if not name:
             continue
         try:
             ratio = float(item["ratio"]) if item.get("ratio") is not None else None
         except (TypeError, ValueError):
             ratio = None
-        amount = _revenue_amount(item.get("income", item.get("amount")), currency, as_of, source)
+        try:
+            share_pct = float(item["revenue_share_pct"]) if item.get("revenue_share_pct") is not None else None
+        except (TypeError, ValueError):
+            share_pct = None
+        amount = _revenue_amount(
+            item.get("revenue", item.get("income", item.get("amount"))),
+            currency,
+            item.get("as_of") or as_of,
+            item.get("source") or source,
+        )
+        cost = _revenue_amount(
+            item.get("cost"),
+            currency,
+            item.get("as_of") or as_of,
+            item.get("source") or source,
+        )
+        gross_profit = _revenue_amount(
+            item.get("gross_profit"),
+            currency,
+            item.get("as_of") or as_of,
+            item.get("source") or source,
+        )
+        try:
+            gross_margin_pct = float(item["gross_margin_pct"]) if item.get("gross_margin_pct") is not None else None
+        except (TypeError, ValueError):
+            gross_margin_pct = None
         rows.append(
             RevenueSegment(
                 name=name,
                 amount=amount,
                 ratio=ratio if ratio is not None and ratio >= 0 else None,
                 segment_type=_clean_text(item.get("type")),
+                revenue_share_pct=share_pct,
+                classification=_clean_text(item.get("classification")),
+                classification_label=_clean_text(item.get("classification_label")),
+                period=_clean_text(item.get("period")),
+                source=_clean_text(item.get("source")),
+                fetched_at=_clean_text(item.get("fetched_at")),
+                cost=cost,
+                gross_profit=gross_profit,
+                gross_margin_pct=gross_margin_pct,
             )
         )
     return tuple(rows)
@@ -242,7 +289,29 @@ def _top_revenue_segment(segments: Iterable[RevenueSegment]) -> RevenueSegment |
     rows = list(segments)
     if not rows:
         return None
-    return max(rows, key=lambda item: ((item.ratio or -1.0), (item.amount.value if item.amount else -1.0)))
+    valid = [
+        item
+        for item in rows
+        if item.period and item.amount is not None and item.amount.value > 0
+    ]
+    if not valid:
+        fallback = max(rows, key=lambda item: ((item.amount.value if item.amount else -1.0), (item.ratio or -1.0)))
+        return fallback if (fallback.amount is not None or fallback.ratio is not None) else None
+    latest_period = max(item.period[:10] for item in valid)
+    same_period = [item for item in valid if (item.period or "")[:10] == latest_period]
+    preference = ("product", "business", "industry", "project", "other")
+    classified = {
+        (item.classification or "").strip().lower(): item
+        for item in same_period
+        if (item.classification or "").strip()
+    }
+    for classification in preference:
+        if classification in classified:
+            return classified[classification]
+    untyped = [item for item in same_period if not (item.classification or "").strip()]
+    if untyped:
+        return max(untyped, key=lambda item: item.amount.value if item.amount else -1.0)
+    return max(same_period, key=lambda item: item.amount.value if item.amount else -1.0)
 
 
 def _sort_value(item: CompanySummary, sort: str) -> tuple[object, ...]:
@@ -253,6 +322,14 @@ def _sort_value(item: CompanySummary, sort: str) -> tuple[object, ...]:
     if sort == "market":
         return (item.market, item.name)
     return (getattr(item, sort), item.instrument_key)
+
+
+def _num(value: object) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
 
 
 __all__ = ("CompanyPage", "CompanyRepository", "company_detail_from_record")

@@ -66,14 +66,41 @@ def test_atlas_record_contract(tmp_path: Path) -> None:
         "business_scope": "经营范围",
         "detail_fetched_at": "2026-08-09T00:00:00+00:00",
     }
-    quote = {"total_market_cap_yi": 16366.32, "float_market_cap_yi": 16366.32}
+    quote = {
+        "total_market_cap_yi": 16366.32,
+        "float_market_cap_yi": 16366.32,
+        "quote_time": "2026/08/09 10:00:00",
+        "price": 1309.22,
+    }
     out = _atlas_record(record, quote)
     assert out["code"] == "600519"
     assert out["full_name"] == "贵州茅台酒股份有限公司"
-    assert out["total_market_cap"] == 16366.32
+    assert out["total_market_cap"] == {
+        "value": 1_636_632_000_000.0,
+        "currency": "CNY",
+        "asOf": "2026/08/09 10:00:00",
+        "source": "tencent_quote",
+    }
+    assert out["float_market_cap"]["value"] == 1_636_632_000_000.0
     assert out["source"] == "eastmoney_f10"
     assert out["status"] == "ok"
     assert out["profile"] == "公司简介"
+    assert out["business_scope"] == "经营范围"
+    assert "main_business" not in out
+
+
+def test_atlas_record_never_uses_detail_fetch_time_for_caps() -> None:
+    record = {
+        "code": "600519",
+        "market": "CN",
+        "name": "贵州茅台",
+        "detail_fetched_at": "2026-08-09T00:00:00+00:00",
+    }
+    quote = {"total_market_cap_yi": 16366.32, "float_market_cap_yi": 16366.32}
+    out = _atlas_record(record, quote)
+    assert "total_market_cap" not in out
+    assert "float_market_cap" not in out
+    assert out["market_cap_missing_reasons"]["float_market_cap"] == "missing_quote_time"
 
 
 def test_parse_business_analysis() -> None:
@@ -93,6 +120,21 @@ def test_parse_business_analysis() -> None:
 
 def test_atlas_record_includes_revenue() -> None:
     record = {"code": "600519", "market": "CN", "name": "贵州茅台"}
-    revenue = [{"item": "茅台酒", "income": 146499906480.49, "ratio": 0.867695}]
+    revenue = [
+        {
+            "item": "茅台酒",
+            "type": "2",
+            "income": 146499906480.49,
+            "ratio": 0.867695,
+            "period": "2025-12-31",
+        }
+    ]
     out = _atlas_record(record, None, revenue)
-    assert out["revenue_breakdown"] == revenue
+    row = out["revenue_breakdown"][0]
+    assert row["item"] == "茅台酒"
+    assert row["item_name"] == "茅台酒"
+    assert row["income"] == 146499906480.49
+    assert row["revenue"] == 146499906480.49
+    assert row["classification"] == "product"
+    assert row["revenue_share_pct"] == 86.7695
+    assert out["largest_revenue_segment"]["item"] == "茅台酒"
