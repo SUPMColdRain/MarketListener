@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from market_monitor import f10 as f10_service
 from market_monitor.industry_graph.f10 import enrichment
 from market_monitor.industry_graph.f10.enrichment import (
     already_enriched,
@@ -155,9 +156,8 @@ class FakeTencentProvider(F10Provider):
 
 
 def _write_details(root: Path, market: str, *records: Mapping[str, Any]) -> Path:
-    directory = root / "f10" / market.lower()
-    directory.mkdir(parents=True, exist_ok=True)
-    path = directory / "details_20260811.jsonl"
+    path = f10_service._record_path(root, market, "details")
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         for record in records:
             handle.write(json.dumps(dict(record), ensure_ascii=False) + "\n")
@@ -165,18 +165,16 @@ def _write_details(root: Path, market: str, *records: Mapping[str, Any]) -> Path
 
 
 def _write_quotes(root: Path, market: str, *rows: Mapping[str, Any]) -> Path:
-    directory = root / "f10" / market.lower()
-    directory.mkdir(parents=True, exist_ok=True)
-    path = directory / "quotes_20260811.jsonl"
+    path = f10_service._record_path(root, market, "quotes")
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps({"fetched_at": "2026-08-11T00:00:00Z", "rows": list(rows)}, ensure_ascii=False) + "\n")
     return path
 
 
 def _write_revenue(root: Path, market: str, code: str, rows: Sequence[Mapping[str, Any]]) -> Path:
-    directory = root / "f10" / market.lower()
-    directory.mkdir(parents=True, exist_ok=True)
-    path = directory / "revenue_20260811.jsonl"
+    path = f10_service._record_path(root, market, "revenue")
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(
             json.dumps({"code": code, "revenue_breakdown": list(rows), "fetched_at": "2026-08-11T00:00:00Z"}, ensure_ascii=False)
@@ -211,8 +209,6 @@ def _base_record_without_quote(code: str = "688825") -> dict[str, Any]:
 
 
 def _latest_record(root: Path, market: str, code: str) -> dict[str, Any]:
-    import market_monitor.f10 as f10_service
-
     records = f10_service._load_existing_records(root, market)
     return records.get(code) or {}
 
