@@ -19,18 +19,18 @@
 
 ### R2-T001 — R2 基线审计、计划收敛与文档入口
 
-- `type`：治理与审计；`priority`：P0；`执行对象/模块`：仓库、Git、计划、README、ADR、STATUS、docs、测试与数据目录；`state`：VERIFYING；`failure_count`：0；`来源`：R2 总指令、R1-T001/T008、历史状态档案。
+- `type`：治理与审计；`priority`：P0；`执行对象/模块`：仓库、Git、计划、README、ADR、STATUS、docs、测试与数据目录；`state`：DONE；`failure_count`：0；`来源`：R2 总指令、R1-T001/T008、历史状态档案。
 - `现状/问题`：R1 已建立计划，但 R2 要求一个新的唯一活动台账；历史状态仍表述为唯一入口，容易产生双重待办。
 - `目标`：保留历史事实、建立本文件，并只迁移确实未完成的有效工作。
 - `影响范围`：根目录计划、文档入口；`依赖关系`：无；`前置条件`：完成 Git/文档/代码/测试/数据源审计。
 - `实施方案`：审计工作树、分支、远端、最近提交、计划、ADR、TODO、Provider、web API、前端生命周期、Silver/目录及 Actions；更新入口为 R2 引用。
 - `验收标准`：无重复的当前任务清单；完成项不复活；每项具备统一字段。
 - `测试要求`：Markdown 链接与反向引用审计；`输出规范`：记录审计命令和事实；`风险`：误把历史阻塞变成当前承诺；`回滚方案`：仅新增/修订文档，可逐文件回退。
-- `实际修改文件`：`Plan_R2.md`；`验证命令`：`git status --short`、`rg`、文档人工审计；`验证结果`：审计已开始，工作树干净、当前分支为已推送 R1 分支；`遗留问题`：入口文件待本轮结尾统一修订。
+- `实际修改文件`：`Plan_R2.md`、`docs/README.md`；`验证命令`：`git status --short`、`rg`、文档人工审计；`验证结果`：审计完成，R1/历史有效未完成项已迁移为 R2-T004 至 R2-T009；docs 入口指向 R2；`遗留问题`：旧文档只保留历史事实。
 
 ### R2-T002 — 路由级请求、取消、去重与持久缓存架构
 
-- `type`：性能与前端基础设施；`priority`：P0；`执行对象/模块`：Vue router、`domain/api.ts`、视图、测试；`state`：ANALYSIS；`failure_count`：0；`来源`：R2 总指令。
+- `type`：性能与前端基础设施；`priority`：P0；`执行对象/模块`：Vue router、`domain/api.ts`、视图、测试；`state`：PARTIAL；`failure_count`：2；`来源`：R2 总指令。
 - `现状/问题`：页面各自直接 `fetch`，路由均静态导入；数据页进入时同时加载 definitions、全部可用面板、排行、热力图和数据浏览器，首页并发健康与操作列表，缺少取消、去重、TTL、持久缓存和可测指标。
 - `目标`：统一 Query Cache（内存 + IndexedDB），key 包含 endpoint/参数/schema；相同并发请求去重、切换取消、TTL stale-while-revalidate、显式刷新失效、路由/面板按需加载。
 - `影响范围`：所有网页 API 读取；`依赖关系`：R2-T001；`前置条件`：基线请求清单与目标接口稳定。
@@ -41,7 +41,7 @@
 
 ### R2-T003 — 可配置“客户端→数据”仪表盘与市场广度/金银比
 
-- `type`：产品与数据功能；`priority`：P0；`执行对象/模块`：Dashboard API、个人配置、Silver/Gold 指标、Vue 面板与图表；`state`：NEW；`failure_count`：0；`来源`：R2 总指令。
+- `type`：产品与数据功能；`priority`：P0；`执行对象/模块`：Dashboard API、个人配置、Silver/Gold 指标、Vue 面板与图表；`state`：BLOCKED；`failure_count`：1；`来源`：R2 总指令。
 - `现状/问题`：数据页固定面板且 onMounted 全量请求；现有广度将股票/ETF/指数混合，涨停判定尚不满足分板规则，未保存可增量历史；没有金银比基础序列和自定义布局。
 - `目标`：建立安全的 PanelDefinition/MetricDefinition 注册和个人布局；支持创建、删除、隐藏、恢复、排序、配置；提供真实广度、连板高度、金银比的历史面板与空状态。
 - `影响范围`：个人设置、指标 schema、API、Vue；`依赖关系`：R2-T002、R2-T004、R2-T005；`前置条件`：真实来源/计算口径明确。
@@ -52,7 +52,7 @@
 
 ### R2-T004 — 行情页面分类、周期与按面板加载重构
 
-- `type`：产品与性能；`priority`：P0；`执行对象/模块`：Market API、聚合、MarketView、图表；`state`：NEW；`failure_count`：0；`来源`：R2 总指令、R1-T004/T006。
+- `type`：产品与性能；`priority`：P0；`执行对象/模块`：Market API、聚合、MarketView、图表；`state`：BLOCKED；`failure_count`：0；`来源`：R2 总指令、R1-T004/T006。
 - `现状/问题`：市场分组没有完整业务分类；K 线派生只覆盖部分周期；页面仍进入即概览/分组/列表并发加载。
 - `目标`：分开 A 股个股、A 股 ETF、港股个股、A/港/全球指数、国内期货主力/连续、商品/期货指数；面板展开后取本组列表，选标的和周期后才取 K 线；周期统一 `15m/30m/1h/2h/1d/1w/1mo/1q/1y`。
 - `影响范围`：API 契约、前端、聚合；`依赖关系`：R2-T002、R2-T005；`前置条件`：分类和 canonical 周期定义。
@@ -63,7 +63,7 @@
 
 ### R2-T005 — 分层 Provider 验证、分钟数据管道与能力矩阵
 
-- `type`：数据工程；`priority`：P1；`执行对象/模块`：Provider、探针、Silver、catalog、文档；`state`：NEW；`failure_count`：0；`来源`：R2 总指令、R1-T007。
+- `type`：数据工程；`priority`：P1；`执行对象/模块`：Provider、探针、Silver、catalog、文档；`state`：BLOCKED；`failure_count`：1；`来源`：R2 总指令、R1-T007。
 - `现状/问题`：代码声明能力与真实数据覆盖混杂；分钟线、指数全集、期货主力/连续缺少分层验证和一致的数据库证据。
 - `目标`：按“代码→连接→单标的→跨交易所抽样→批量→落库→API→前端”分层验证 A 股/ETF/港股/期货；完善 lineage、去重、缺口、增量、时区、复权、单位与健康/降级策略。
 - `影响范围`：provider、文档、采集任务；`依赖关系`：R2-T001；`前置条件`：公开合法来源/本机凭据实际可用。
@@ -74,7 +74,7 @@
 
 ### R2-T006 — 候选源研究、主备策略与外部阻塞记录
 
-- `type`：研究与架构验证；`priority`：P1；`执行对象/模块`：AKShare、pytdx、BaoStock、JoinQuant、Tushare、AData/mootdx/easy_tdx、GitHub 候选、文档；`state`：NEW；`failure_count`：0；`来源`：R2 总指令、FULL-610/804。
+- `type`：研究与架构验证；`priority`：P1；`执行对象/模块`：AKShare、pytdx、BaoStock、JoinQuant、Tushare、AData/mootdx/easy_tdx、GitHub 候选、文档；`state`：BLOCKED；`failure_count`：1；`来源`：R2 总指令、FULL-610/804。
 - `现状/问题`：候选库和 GitHub Topic 不等于可合法生产数据源；付费/登录来源没有凭据。
 - `目标`：审计活跃度、License、底层来源、权限、限频、分钟历史、覆盖、字段、Windows 打包兼容性；明确主备和 provenance。
 - `影响范围`：数据源矩阵与 provider registry；`依赖关系`：R2-T005；`前置条件`：官方文档与实际探针。
@@ -84,7 +84,7 @@
 
 ### R2-T007 — Windows 可携带后端网页发行包与 GitHub Actions
 
-- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：NEW；`failure_count`：0；`来源`：R2 总指令。
+- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：VERIFYING；`failure_count`：1；`来源`：R2 总指令。
 - `现状/问题`：当前需要开发环境运行；没有 GitHub Actions 或 Windows 可下载包。
 - `目标`：生成 `MarketListener-Windows-x64-<version>.zip`，双击启动并自动打开 localhost，外置可写 data/log/config，Actions 构建、校验、烟雾测试、artifact/tag release。
 - `影响范围`：构建脚本、CI、发行说明；`依赖关系`：R2-T002；`前置条件`：审计打包依赖和静态资源路径。
@@ -95,14 +95,14 @@
 
 ### R2-T008 — R2 统一回归、安全审查与发布
 
-- `type`：质量与交付；`priority`：P0；`执行对象/模块`：全仓库、CI、Git；`state`：NEW；`failure_count`：0；`来源`：R2 总指令、R1-T009。
+- `type`：质量与交付；`priority`：P0；`执行对象/模块`：全仓库、CI、Git；`state`：VERIFYING；`failure_count`：0；`来源`：R2 总指令、R1-T009。
 - `现状/问题`：R2 会跨前后端、数据和打包改动，需统一验证和泄漏审查。
 - `目标`：运行现有统一验证、专项测试、构建、页面/API/package smoke、安全扫描；仅提交 R2 路径并推送。
 - `影响范围`：全部 R2 变更；`依赖关系`：R2-T001 至 R2-T007；`前置条件`：实现完成或外部阻塞证据完整。
 - `实施方案`：检查 Git diff、ignored files、凭据模式、Actions；不重置、不强推、不合并 PR。
 - `验收标准`：命令与结果记录；Actions 成功或外部 BLOCKED 有证据。
 - `测试要求`：`scripts/verify.ps1`、pytest、ruff、Vue build/E2E、package smoke、适用 Android；`输出规范`：最终报告；`风险`：环境/CI 外部失败；`回滚方案`：按提交回退。
-- `实际修改文件`：待实施；`验证命令`：待实施；`验证结果`：待实施；`遗留问题`：待实施。
+- `实际修改文件`：全部本轮 R2 文件；`验证命令`：`scripts/verify.ps1`、定向 pytest、`npm run build`、`git diff --check`；`验证结果`：统一验证通过，Git security diff 审查未发现新增凭据/数据库/构建产物；分支已推送。`gh` 未安装，Actions 状态无法从本机读取；`遗留问题`：等待 GitHub Actions 页面完成状态。
 
 ### R2-T009 — 历史外部验收与领域欠账审计
 
