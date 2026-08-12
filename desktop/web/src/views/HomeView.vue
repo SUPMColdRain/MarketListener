@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { formatOperation, formatStatus, formatTime } from "../domain/api";
+import { apiGet, apiPost, formatOperation, formatStatus, formatTime, invalidateQuery } from "../domain/api";
 
 type OperationStatus = "QUEUED" | "RUNNING" | "PASS" | "PARTIAL_FAILURE" | "FAILED" | "CANCELLED";
 interface Operation { operation_id: string; kind: string; status: OperationStatus; created_at: string; detail?: string }
@@ -18,17 +18,21 @@ const operationButtons = [
 ] as const;
 
 async function refresh() {
-  const [healthResponse, operationResponse] = await Promise.all([fetch("/api/health"), fetch("/api/operations")]);
-  if (healthResponse.ok) health.value = await healthResponse.json() as Health;
-  if (operationResponse.ok) operations.value = (await operationResponse.json() as { items: Operation[] }).items;
+  try {
+    const [healthResponse, operationResponse] = await Promise.all([
+      apiGet<Health>("/api/health", undefined, { ttlMs: 30_000, persist: true }),
+      apiGet<{ items: Operation[] }>("/api/operations", undefined, { ttlMs: 10_000, persist: true }),
+    ]);
+    health.value = healthResponse; operations.value = operationResponse.items;
+  } catch { error.value = "首页状态加载失败"; }
 }
 
 async function submit(kind: string) {
   busy.value = kind;
   error.value = "";
   try {
-    const response = await fetch("/api/operations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind }) });
-    if (!response.ok) throw new Error("操作创建被拒绝");
+    await apiPost("/api/operations", { kind });
+    invalidateQuery("/api/operations"); invalidateQuery("/api/health");
     await refresh();
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "操作创建失败";
@@ -39,6 +43,7 @@ async function submit(kind: string) {
 
 async function cancel(operation: Operation) {
   await fetch(`/api/operations/${encodeURIComponent(operation.operation_id)}/cancel`, { method: "POST" });
+  invalidateQuery("/api/operations");
   await refresh();
 }
 
