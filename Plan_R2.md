@@ -37,7 +37,7 @@
 - `实施方案`：实现无任意请求执行能力的 allow-list 型封装；动态路由 import；视图改用统一 query；为首次/缓存/强刷提供测量钩子。
 - `验收标准`：无业务必要轮询；重复并发请求只发一次；缓存命中无整体 loading/滚动重置；切换时旧请求取消。
 - `测试要求`：缓存 TTL、失效、去重、取消、错误恢复、路由 lazy-load 单测/E2E；`输出规范`：请求计数前后证据；`风险`：陈旧数据误导；`回滚方案`：保留服务器真实响应，单独移除 query 封装即可。
-- `实际修改文件`：`desktop/web/src/domain/api.ts`、`desktop/web/src/router.ts`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/views/MarketView.vue`；`验证命令`：`npm run build`、定向 API pytest；`验证结果`：Vue typecheck/build 通过，已形成独立路由 chunk；定向 API 回归通过。首次两次验证因错误工作目录调用 Python/NPM 未启动，`failure_count=2`，均已用正确目录复验；`遗留问题`：首页与低频视图仍待逐页迁移统一 query。
+- `实际修改文件`：`desktop/web/src/domain/api.ts`、`desktop/web/src/router.ts`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/views/MarketView.vue`；`验证命令`：`npm run build`、定向 API pytest；`验证结果`：Vue typecheck/build 通过，已形成独立路由 chunk；定向 API 回归通过；缓存已补全 stale-while-revalidate、并发去重和 TTL 内持久命中，行情支持 assetType 服务端筛选。首次两次验证因错误工作目录调用 Python/NPM 未启动，`failure_count=2`，均已用正确目录复验；`遗留问题`：首页与低频视图仍待逐页迁移统一 query。
 
 ### R2-T003 — 可配置“客户端→数据”仪表盘与市场广度/金银比
 
@@ -84,14 +84,14 @@
 
 ### R2-T007 — Windows 可携带后端网页发行包与 GitHub Actions
 
-- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：VERIFYING；`failure_count`：1；`来源`：R2 总指令。
+- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：DONE；`failure_count`：1；`来源`：R2 总指令。
 - `现状/问题`：当前需要开发环境运行；没有 GitHub Actions 或 Windows 可下载包。
 - `目标`：生成 `MarketListener-Windows-x64-<version>.zip`，双击启动并自动打开 localhost，外置可写 data/log/config，Actions 构建、校验、烟雾测试、artifact/tag release。
 - `影响范围`：构建脚本、CI、发行说明；`依赖关系`：R2-T002；`前置条件`：审计打包依赖和静态资源路径。
 - `实施方案`：默认只监听 127.0.0.1，不打入数据/凭据；Windows runner 构建前端与 Python bundle，启动后验证 `/` 和 `/api/health`。
 - `验收标准`：workflow_dispatch 可执行、zip/sha256 产出、smoke test 通过。
 - `测试要求`：本地或 CI Windows package smoke；`输出规范`：升级/迁移说明；`风险`：PyInstaller 隐式依赖；`回滚方案`：独立 workflow/打包目录。
-- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.0.zip` 与 SHA256；本地进程启动 smoke 命令受执行环境策略拦截，`failure_count=1`，CI workflow 在 Windows runner 启动 EXE 并访问 `/`、`/api/health`；`遗留问题`：等待首次 GitHub Actions 真实运行。
+- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions run `31624423028`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.0.zip` 与 SHA256，EXE 成功以 `127.0.0.1` 随机端口启动并退出；首次 Actions 实际成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：后续提交 Actions 仍在运行。
 
 ### R2-T008 — R2 统一回归、安全审查与发布
 
