@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CompanyDetailPanel from "../components/CompanyDetailPanel.vue";
 import { formatMoney, type CompanyDetail, type CompanyPage, type CompanySummary } from "../domain/company";
-import { formatTime } from "../domain/api";
+import { apiGet, formatTime } from "../domain/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -21,12 +21,7 @@ async function loadCompanies() {
   loading.value = true;
   error.value = "";
   try {
-    const params = new URLSearchParams({ page: "1", page_size: "50", sort: "name" });
-    if (search.value.trim()) params.set("q", search.value.trim());
-    if (market.value) params.set("market", market.value);
-    const response = await fetch(`/api/f10/companies?${params}`);
-    if (!response.ok) throw new Error("企业列表加载失败");
-    page.value = await response.json() as CompanyPage;
+    page.value = await apiGet<CompanyPage>("/api/f10/companies", { page: 1, page_size: 50, sort: "name", q: search.value.trim() || undefined, market: market.value || undefined }, { ttlMs: 60_000, persist: true });
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "企业列表加载失败";
   } finally {
@@ -41,9 +36,7 @@ async function loadDetail(key = selectedKey.value) {
   }
   detailLoading.value = true;
   try {
-    const response = await fetch(`/api/f10/companies/${encodeURIComponent(key)}`);
-    if (!response.ok) throw new Error("企业详情不存在或尚未入库");
-    detail.value = await response.json() as CompanyDetail;
+    detail.value = await apiGet<CompanyDetail>(`/api/f10/companies/${encodeURIComponent(key)}`, undefined, { ttlMs: 5 * 60_000, persist: true });
   } catch (reason) {
     detail.value = null;
     error.value = reason instanceof Error ? reason.message : "企业详情加载失败";

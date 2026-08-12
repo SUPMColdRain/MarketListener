@@ -37,7 +37,7 @@
 - `实施方案`：实现无任意请求执行能力的 allow-list 型封装；动态路由 import；视图改用统一 query；为首次/缓存/强刷提供测量钩子。
 - `验收标准`：无业务必要轮询；重复并发请求只发一次；缓存命中无整体 loading/滚动重置；切换时旧请求取消。
 - `测试要求`：缓存 TTL、失效、去重、取消、错误恢复、路由 lazy-load 单测/E2E；`输出规范`：请求计数前后证据；`风险`：陈旧数据误导；`回滚方案`：保留服务器真实响应，单独移除 query 封装即可。
-- `实际修改文件`：`desktop/web/src/domain/api.ts`、`desktop/web/src/router.ts`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/views/MarketView.vue`、`desktop/web/e2e/terminal.spec.ts`；`验证命令`：`npm run build`、定向 API pytest、`npm run test:e2e`；`验证结果`：Vue typecheck/build 通过，已形成独立路由 chunk；缓存已补全内存 + IndexedDB 持久层、stale-while-revalidate、并发去重和 TTL 内持久命中；仅在 IndexedDB 不可用或失败时回退 localStorage。修复同键旧请求结束误删新请求去重标记的竞态。行情支持 assetType 服务端筛选与旧请求取消。数据浏览器、排行、热力图和面板改为显式加载；浏览器端到端测试断言数据页实际写入 IndexedDB。首次两次验证因错误工作目录调用 Python/NPM 未启动，`failure_count=2`，均已用正确目录复验；`遗留问题`：首页与低频视图仍待逐页迁移统一 query。
+- `实际修改文件`：`desktop/web/src/domain/api.ts`、`desktop/web/src/router.ts`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/views/MarketView.vue`、`desktop/web/src/views/F10View.vue`、`desktop/web/src/views/LogsView.vue`、`desktop/web/e2e/terminal.spec.ts`；`验证命令`：`npm run build`、定向 API pytest、`npm run test:e2e`、前端直接 `fetch` 审计；`验证结果`：Vue typecheck/build 通过，已形成独立路由 chunk；缓存已补全内存 + IndexedDB 持久层、stale-while-revalidate、并发去重和 TTL 内持久命中；仅在 IndexedDB 不可用或失败时回退 localStorage。修复同键旧请求结束误删新请求去重标记的竞态。行情支持 assetType 服务端筛选与旧请求取消。数据浏览器、F10、日志、排行、热力图和面板的只读请求均改用统一 query；剩余原生 `fetch` 仅为取消操作的写请求。浏览器端到端测试断言数据页实际写入 IndexedDB。首次两次验证因错误工作目录调用 Python/NPM 未启动，`failure_count=2`，均已用正确目录复验；`遗留问题`：Stats/Strategy/数据源页面仍可逐项增加持久 TTL，但已无绕过统一 query 的只读 fetch。
 
 ### R2-T003 — 可配置“客户端→数据”仪表盘与市场广度/金银比
 

@@ -169,10 +169,7 @@ async function loadBrowser(): Promise<void> {
   browserLoading.value = true;
   browserError.value = "";
   try {
-    const params = new URLSearchParams({ page_size: "500", q: query.value.trim() });
-    const response = await fetch(`/api/data/${encodeURIComponent(view.value)}?${params}`);
-    if (!response.ok) throw new Error("数据浏览器加载失败");
-    const data = (await response.json()) as { items: Record<string, unknown>[]; total: number };
+    const data = await apiGet<{ items: Record<string, unknown>[]; total: number }>(`/api/data/${encodeURIComponent(view.value)}`, { page_size: 500, q: query.value.trim() || undefined }, { ttlMs: 60_000, persist: true });
     rows.value = data.items;
     total.value = data.total;
     await nextTick();
