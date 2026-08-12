@@ -19,11 +19,11 @@ def test_dashboard_definitions_empty_data_is_never_fabricated(tmp_path: Path) ->
     response = client.get("/api/dashboard/definitions")
     assert response.status_code == 200
     body = response.json()
-    assert len(body["items"]) == 9
+    assert len(body["items"]) == 10
     assert all(item["available"] is False for item in body["items"])
     assert all(item["id"] for item in body["items"])
 
-    for dashboard_id in ("market-breadth", "futures-breadth", "gold-metrics", "gold-silver-ratio", "storage", "quality", "freshness", "runs", "partitions"):
+    for dashboard_id in ("market-breadth", "limit-pool", "futures-breadth", "gold-metrics", "gold-silver-ratio", "storage", "quality", "freshness", "runs", "partitions"):
         detail = client.get(f"/api/dashboard/{dashboard_id}")
         assert detail.status_code == 200
         assert detail.json()["available"] is False
@@ -197,6 +197,23 @@ def test_gold_silver_ratio_dashboard_only_uses_aligned_local_derived_series(tmp_
     assert body["available"] is True
     assert body["unit"] == "比值"
     assert body["series"] == [{"name": "金银比", "points": [{"t": "2026-08-06", "value": 81.2}, {"t": "2026-08-07", "value": 80.8}]}]
+
+
+def test_limit_pool_dashboard_only_reads_authoritative_pool_metrics(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    write_gold_metrics(
+        data_root,
+        [
+            {"instrument_id": "CN.A_SHARE.涨停", "trading_date": "2026-08-07", "metric_name": "涨停家数", "value": 74.0, "metric_id": "CN_ZT_POOL:CN.A_SHARE.涨停:20260807:1d:涨停_COUNT"},
+            {"instrument_id": "CN.A_SHARE.涨停", "trading_date": "2026-08-07", "metric_name": "涨停最高连板高度", "value": 4.0, "metric_id": "CN_ZT_POOL:CN.A_SHARE.涨停:20260807:1d:涨停_MAX_LIANBAN"},
+            {"instrument_id": "CN.A_SHARE.BREADTH", "trading_date": "2026-08-07", "metric_name": "涨停家数(约)", "value": 999.0, "metric_id": "A_SHARE_BREADTH:unsafe"},
+        ],
+    )
+    client = TestClient(create_web_app(data_root), client=("127.0.0.1", 50000))
+    body = client.get("/api/dashboard/limit-pool").json()
+    assert body["available"] is True
+    assert {item["name"] for item in body["series"]} == {"涨停家数", "涨停最高连板高度"}
+    assert all(item["points"][0]["value"] != 999.0 for item in body["series"])
 
 
 def test_dashboard_series_points_are_capped(tmp_path: Path) -> None:

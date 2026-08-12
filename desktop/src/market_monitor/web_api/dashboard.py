@@ -50,6 +50,12 @@ DASHBOARD_SPECS: tuple[dict[str, str], ...] = (
         "description": "本地 CN 股票日线计算的每日上涨、下跌与平盘家数；涨跌停/连板须由权威涨停池或分板规则另行验证",
     },
     {
+        "id": "limit-pool",
+        "title": "A股涨停池与连板",
+        "category": "breadth",
+        "description": "东财权威涨停/跌停池的家数、最高连板高度和昨日涨停今日接盘收益率；仅展示已落库交易日",
+    },
+    {
         "id": "futures-breadth",
         "title": "期货涨跌家数",
         "category": "breadth",
@@ -268,6 +274,28 @@ def _market_breadth_dashboard(data_root: Path) -> dict[str, Any]:
     }
 
 
+def _limit_pool_dashboard(data_root: Path) -> dict[str, Any]:
+    rows = _gold_metric_rows(data_root, where="metric_id LIKE ?", params=["CN_ZT_POOL:%"])
+    if not rows:
+        return {"available": False}
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for _instrument_id, trading_date, metric_name, value, _metric_id in rows:
+        grouped.setdefault(metric_name, []).append({"t": trading_date, "value": value})
+    series = [
+        {"name": metric_name, "points": _downsample_points(points)}
+        for metric_name, points in sorted(grouped.items())
+    ]
+    return {
+        "available": True,
+        "id": "limit-pool",
+        "title": "A股涨停池与连板",
+        "unit": "家数 / 高度 / %",
+        "series": series,
+        "generatedAt": now_iso(),
+        "source": "akshare-eastmoney: CN_ZT_POOL",
+    }
+
+
 def _futures_breadth_dashboard(data_root: Path) -> dict[str, Any]:
     snapshots = _futures_breadth_snapshots(data_root)
     if not snapshots:
@@ -459,6 +487,8 @@ def _control_center_dashboard(dashboard_id: str, data_root: Path) -> dict[str, A
 def _dashboard_payload(dashboard_id: str, data_root: Path) -> dict[str, Any]:
     if dashboard_id == "market-breadth":
         return _market_breadth_dashboard(data_root)
+    if dashboard_id == "limit-pool":
+        return _limit_pool_dashboard(data_root)
     if dashboard_id == "futures-breadth":
         return _futures_breadth_dashboard(data_root)
     if dashboard_id == "gold-metrics":
@@ -475,6 +505,7 @@ def _availability(data_root: Path) -> dict[str, bool]:
     partitions = list(report.get("partitions") or [])
     return {
         "market-breadth": bool(market_ids),
+        "limit-pool": bool(_gold_metric_rows(data_root, where="metric_id LIKE ?", params=["CN_ZT_POOL:%"], limit=1)),
         "futures-breadth": bool(futures_ids),
         "gold-metrics": bool(_gold_metric_rows(data_root, limit=1)),
         "gold-silver-ratio": bool(_gold_metric_rows(data_root, where="metric_id LIKE ?", params=["GOLD_SILVER_RATIO:%"], limit=1)),
