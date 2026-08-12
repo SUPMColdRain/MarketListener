@@ -202,6 +202,8 @@ const PERIOD_LABELS: Record<string, string> = {
   "1d": "日线",
   "1w": "周线",
   "1mo": "月线",
+  "1q": "季线",
+  "1y": "年线",
 };
 const FIELD_LABELS: Record<string, string> = {
   open: "开盘价",

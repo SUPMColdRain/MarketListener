@@ -62,6 +62,12 @@ DASHBOARD_SPECS: tuple[dict[str, str], ...] = (
         "description": "catalog.duckdb gold_metrics 中的真实指标序列",
     },
     {
+        "id": "gold-silver-ratio",
+        "title": "金银比",
+        "category": "gold",
+        "description": "同一交易日、同一美元计价口径下的 COMEX 黄金收盘价 ÷ 白银收盘价；仅展示本地已落库的真实派生序列",
+    },
+    {
         "id": "storage",
         "title": "存储占用",
         "category": "storage",
@@ -317,6 +323,22 @@ def _gold_metrics_dashboard(data_root: Path) -> dict[str, Any]:
     }
 
 
+def _gold_silver_ratio_dashboard(data_root: Path) -> dict[str, Any]:
+    rows = _gold_metric_rows(data_root, where="metric_id LIKE ?", params=["GOLD_SILVER_RATIO:%"])
+    if not rows:
+        return {"available": False}
+    points = [{"t": trading_date, "value": value} for _instrument_id, trading_date, _name, value, _metric_id in rows]
+    return {
+        "available": True,
+        "id": "gold-silver-ratio",
+        "title": "金银比",
+        "unit": "比值",
+        "series": [{"name": "金银比", "points": _downsample_points(points)}],
+        "generatedAt": now_iso(),
+        "source": "local-derived: COMEX GC/SI close",
+    }
+
+
 def _control_center_dashboard(dashboard_id: str, data_root: Path) -> dict[str, Any]:
     report = build_control_center_report(data_root)
     generated_at = str(report.get("generated_at") or now_iso())
@@ -441,6 +463,8 @@ def _dashboard_payload(dashboard_id: str, data_root: Path) -> dict[str, Any]:
         return _futures_breadth_dashboard(data_root)
     if dashboard_id == "gold-metrics":
         return _gold_metrics_dashboard(data_root)
+    if dashboard_id == "gold-silver-ratio":
+        return _gold_silver_ratio_dashboard(data_root)
     return _control_center_dashboard(dashboard_id, data_root)
 
 
@@ -453,6 +477,7 @@ def _availability(data_root: Path) -> dict[str, bool]:
         "market-breadth": bool(market_ids),
         "futures-breadth": bool(futures_ids),
         "gold-metrics": bool(_gold_metric_rows(data_root, limit=1)),
+        "gold-silver-ratio": bool(_gold_metric_rows(data_root, where="metric_id LIKE ?", params=["GOLD_SILVER_RATIO:%"], limit=1)),
         "storage": bool(storage) and any(int(value) > 0 for value in storage.values()),
         "quality": bool(partitions) or bool(report.get("quarantine")),
         "freshness": bool(partitions),

@@ -38,7 +38,7 @@ def _camel_key(key: str) -> str:
     return head + "".join(part[:1].upper() + part[1:] for part in parts)
 
 
-_RAW_PERIODS = ("1m", "5m", "15m", "30m", "1h", "1d", "1w", "1mo")
+_RAW_PERIODS = ("1m", "5m", "15m", "30m", "1h", "1d", "1w", "1mo", "1q", "1y")
 _MINUTE_DERIVATIVES = {"1h": 60, "2h": 120, "4h": 240}
 _MINUTE_SOURCES = ("1m", "5m", "15m", "30m")
 
@@ -90,18 +90,18 @@ def _available_periods(data_root: Path, instrument_id: str) -> list[str]:
     raw = _raw_periods_for_instrument(data_root, instrument_id)
     available = set(raw)
     if "1d" in raw:
-        available.update({"1w", "1mo"})
+        available.update({"1w", "1mo", "1q", "1y"})
     minute_source = next((period for period in _MINUTE_SOURCES if period in raw), None)
     if minute_source:
         probe = read_bars(data_root, instrument_id, period=minute_source, limit=1)
         if probe and _session_rule(probe[0]):
             available.update(_MINUTE_DERIVATIVES)
-    order = ("1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d", "1w", "1mo")
+    order = ("1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d", "1w", "1mo", "1q", "1y")
     return [period for period in order if period in available]
 
 
 def _derived_bars(data_root: Path, instrument_id: str, period: str) -> list[dict[str, Any]]:
-    if period in {"1w", "1mo"}:
+    if period in {"1w", "1mo", "1q", "1y"}:
         daily = read_bars(data_root, instrument_id, period="1d", limit=MAX_BARS)
         normalized = [_daily_bar_for_aggregate(bar) for bar in daily]
         return aggregate_daily_bars(normalized, period) if normalized else []

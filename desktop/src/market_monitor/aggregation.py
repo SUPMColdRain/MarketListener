@@ -2,7 +2,7 @@
 
 支持：
 - 分钟级聚合（1/5/15/30/60/120/240 分钟），严格按交易时段分桶；
-- 日线 -> 周线/月线聚合（架构调整任务第三节）；
+- 日线 -> 周线/月线/季线/年线聚合（架构调整任务第三节）；
 - 期货夜盘归属下一交易日（可传入交易日历，避免把 21:00+ 的 bar 算进错误交易日）。
 """
 
@@ -69,14 +69,14 @@ def aggregate_daily_bars(
     *,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """把日线（1d）聚合为周线（1w）或月线（1mo）。
+    """把日线（1d）聚合为周线、月线、季线或年线。
 
     按每个标的独立聚合：open 取首日、high/low 取极值、close 取末日、
     volume/amount 求和、open_interest 取末日。不跨标的混合。
     """
 
-    if output_period not in ("1w", "1mo"):
-        raise ValueError("output_period must be '1w' or '1mo'")
+    if output_period not in ("1w", "1mo", "1q", "1y"):
+        raise ValueError("output_period must be one of '1w', '1mo', '1q', '1y'")
     groups: dict[tuple[str, str], list[Mapping[str, Any]]] = {}
     for bar in sorted(bars, key=lambda item: (str(item.get("instrument_key", "")), str(item["bar_open_time"]))):
         trading_day = str(bar["trading_day"])
@@ -196,7 +196,11 @@ def _period_bucket(trading_day: str, output_period: str) -> str:
     if output_period == "1w":
         iso_year, iso_week, _ = value.isocalendar()
         return f"{iso_year}-W{iso_week:02d}"
-    return f"{value.year:04d}-{value.month:02d}"
+    if output_period == "1mo":
+        return f"{value.year:04d}-{value.month:02d}"
+    if output_period == "1q":
+        return f"{value.year:04d}-Q{(value.month - 1) // 3 + 1}"
+    return f"{value.year:04d}"
 
 
 def _instrument_id(bar: Mapping[str, Any]) -> str:

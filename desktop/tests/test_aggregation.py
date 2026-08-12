@@ -83,6 +83,23 @@ def test_daily_bars_aggregate_to_monthly_without_mixing_instruments():
     assert august_000001["trading_day"] == "2026-08-04"
 
 
+def test_daily_bars_aggregate_to_quarterly_and_yearly_without_mixing_instruments():
+    rows = [
+        daily("2026-01-30", "600519", open_price=10.0, high=12.0, low=9.0, close=11.0),
+        daily("2026-03-31", "600519", open_price=11.0, high=14.0, low=10.0, close=13.0),
+        daily("2026-04-01", "600519", open_price=13.0, high=15.0, low=12.0, close=14.0),
+        daily("2026-04-01", "000001", open_price=20.0, high=21.0, low=19.0, close=20.5),
+    ]
+    quarters = aggregate_daily_bars(rows, "1q")
+    assert len(quarters) == 3
+    first_quarter = next(item for item in quarters if item["trading_day"] == "2026-03-31")
+    assert first_quarter["open"] == 10.0 and first_quarter["close"] == 13.0
+    assert first_quarter["high"] == 14.0 and first_quarter["low"] == 9.0
+    years = aggregate_daily_bars(rows, "1y")
+    stock_year = next(item for item in years if "600519" in str(item["instrument_key"]))
+    assert stock_year["open"] == 10.0 and stock_year["close"] == 14.0
+
+
 def test_weekly_aggregation_marks_partial_when_now_is_given():
     rows = [daily("2026-08-03", "600519")]
     result = aggregate_daily_bars(rows, "1w", now=datetime(2026, 8, 3, 12, 0, tzinfo=timezone.utc))
@@ -91,7 +108,7 @@ def test_weekly_aggregation_marks_partial_when_now_is_given():
 
 def test_daily_aggregation_rejects_unknown_period():
     try:
-        aggregate_daily_bars([], "1y")
+        aggregate_daily_bars([], "2y")
     except ValueError as exc:
         assert "output_period" in str(exc)
     else:  # pragma: no cover

@@ -42,13 +42,13 @@
 ### R2-T003 — 可配置“客户端→数据”仪表盘与市场广度/金银比
 
 - `type`：产品与数据功能；`priority`：P0；`执行对象/模块`：Dashboard API、个人配置、Silver/Gold 指标、Vue 面板与图表；`state`：CODING；`failure_count`：1；`来源`：R2 总指令。
-- `现状/问题`：数据页固定面板且 onMounted 全量请求；现有广度将股票/ETF/指数混合，涨停判定尚不满足分板规则，未保存可增量历史；没有金银比基础序列和自定义布局。
+- `现状/问题`：数据页固定面板且 onMounted 全量请求；现有广度将股票/ETF/指数混合，涨停判定尚不满足分板规则，未保存可增量历史；金银比虽已由采集器产生，但此前没有独立可发现的仪表盘面板。
 - `目标`：建立安全的 PanelDefinition/MetricDefinition 注册和个人布局；支持创建、删除、隐藏、恢复、排序、配置；提供真实广度、连板高度、金银比的历史面板与空状态。
 - `影响范围`：个人设置、指标 schema、API、Vue；`依赖关系`：R2-T002、R2-T004、R2-T005；`前置条件`：真实来源/计算口径明确。
 - `实施方案`：只允许注册指标和受控配置，不允许 SQL/脚本；折叠/可见时才请求；涨跌和涨停使用独立序列及差值视觉；无法验证的涨停/连板/比率 OHLC 标记不可用或近似。
 - `验收标准`：布局持久化、重启可读、未显示数据不请求、指标有来源和时间序列。
 - `测试要求`：配置 API、布局迁移、指标口径、图表数据、空/错恢复；`输出规范`：中文展示和北京时区；`风险`：错误金融口径；`回滚方案`：个人配置独立文件/表，删除可恢复默认。
-- `实际修改文件`：`desktop/src/market_monitor/web_api/watchlist.py`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/components/charts/SeriesChart.vue`、`desktop/src/market_monitor/web_api/dashboard.py`、`desktop/src/market_monitor/market_breadth.py`、`desktop/src/market_monitor/collector.py`、`desktop/tests/test_web_dashboard_api.py`、`desktop/tests/test_market_breadth.py`；`验证命令`：定向 dashboard/market-breadth pytest、`npm run build`、`npm run test:e2e`；`验证结果`：个人面板配置仅写入受 Pydantic 约束的本机 JSON，支持新增、删除、隐藏/恢复、排序、标题、折线/柱状图、颜色、透明度与时间范围，定向测试和 14 项端到端测试通过。广度只统计 A 股个股，移除了 ETF/指数混入和所有 `±9.9%` 近似涨跌停；涨停/跌停与连板仍仅由东财权威池采集。旧涨停/跌停热力图断言在移除未验证统一阈值后失败一次，`failure_count=1`，已改为只验证上涨/下跌/平盘后通过；`遗留问题`：需为权威涨停池、连板高度和金银比补齐可验证的持续历史入库与展示。
+- `实际修改文件`：`desktop/src/market_monitor/web_api/watchlist.py`、`desktop/web/src/views/DataView.vue`、`desktop/web/src/components/charts/SeriesChart.vue`、`desktop/src/market_monitor/web_api/dashboard.py`、`desktop/src/market_monitor/market_breadth.py`、`desktop/src/market_monitor/collector.py`、`desktop/tests/test_web_dashboard_api.py`、`desktop/tests/test_market_breadth.py`；`验证命令`：定向 dashboard/market-breadth pytest、`npm run build`、`npm run test:e2e`、本机 `catalog.duckdb` 查询；`验证结果`：个人面板配置仅写入受 Pydantic 约束的本机 JSON，支持新增、删除、隐藏/恢复、排序、标题、折线/柱状图、颜色、透明度与时间范围，定向测试和 14 项端到端测试通过。广度只统计 A 股个股，移除了 ETF/指数混入和所有 `±9.9%` 近似涨跌停；涨停/跌停与连板仍仅由东财权威池采集。金银比增加独立面板，仅从 `GOLD_SILVER_RATIO` 的同日 COMEX GC/SI 本地派生记录读取；本机存在 2,590 条（2016-08-08 至 2026-08-07）可展示记录。旧涨停/跌停热力图断言在移除未验证统一阈值后失败一次，`failure_count=1`，已改为只验证上涨/下跌/平盘后通过；`遗留问题`：需为权威涨停池、连板高度补齐可验证的持续历史入库与展示。
 
 ### R2-T004 — 行情页面分类、周期与按面板加载重构
 
@@ -59,7 +59,7 @@
 - `实施方案`：服务端按类别分页、前端懒加载；派生仅基于经验证的细粒度 K 线与会话规则，无法支持时诚实返回。
 - `验收标准`：首屏不请求 K 线；ETF/股票独立；周期命名无歧义；错误与空态可追溯。
 - `测试要求`：分类、分页、按需请求、交易时段/周季年聚合；`输出规范`：中文名称；`风险`：市场会话错误；`回滚方案`：兼容现有 period API。
-- `实际修改文件`：`desktop/web/src/views/MarketView.vue`；`验证命令`：`npm run build`、market API pytest；`验证结果`：分类覆盖按点击加载，列表服务端分页并缓存，搜索 300ms 防抖，K 线仅在选择标的和周期后请求；`遗留问题`：完整业务分类与 `1q/1y` 聚合依赖可验证的基础数据和交易所日历，保持 BLOCKED。
+- `实际修改文件`：`desktop/web/src/views/MarketView.vue`、`desktop/src/market_monitor/web_api/market.py`、`desktop/src/market_monitor/aggregation.py`、`desktop/tests/test_aggregation.py`、`desktop/tests/test_web_market_api.py`；`验证命令`：`npm run build`、market API/aggregation pytest；`验证结果`：分类覆盖按点击加载，列表服务端分页并缓存，搜索 300ms 防抖，K 线仅在选择标的和周期后请求；已由本地日线安全派生 `1w/1mo/1q/1y`，并用跨季度/跨标的测试验证 OHLCV 聚合；`遗留问题`：完整业务分类与分钟跨市场基础数据仍依赖可验证的交易所日历和来源。
 
 ### R2-T005 — 分层 Provider 验证、分钟数据管道与能力矩阵
 

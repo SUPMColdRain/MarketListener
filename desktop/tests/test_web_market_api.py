@@ -185,7 +185,7 @@ def test_market_bars_derives_session_aware_hourly_and_weekly_periods(tmp_path: P
 
     hourly = client.get("/api/market/instruments/CN.SSE.STOCK.600519/bars", params={"period": "1h"})
     assert hourly.status_code == 200
-    assert hourly.json()["availablePeriods"] == ["30m", "1h", "2h", "4h", "1d", "1w", "1mo"]
+    assert hourly.json()["availablePeriods"] == ["30m", "1h", "2h", "4h", "1d", "1w", "1mo", "1q", "1y"]
     assert hourly.json()["total"] == 2
     assert hourly.json()["bars"][0]["sourcePeriod"] == "30m"
     assert hourly.json()["bars"][0]["period"] == "1h"
@@ -194,6 +194,10 @@ def test_market_bars_derives_session_aware_hourly_and_weekly_periods(tmp_path: P
     assert weekly.status_code == 200
     assert weekly.json()["total"] == 1
     assert weekly.json()["bars"][0]["aggregatedFrom"] == "1d"
+
+    quarterly = client.get("/api/market/instruments/CN.SSE.STOCK.600519/bars", params={"period": "1q"})
+    assert quarterly.status_code == 200
+    assert quarterly.json()["bars"][0]["period"] == "1q"
 
 
 def test_watchlist_add_list_duplicate_delete(tmp_path: Path) -> None:
