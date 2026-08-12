@@ -61,6 +61,7 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = 50;
 const market = ref("");
+const assetType = ref("");
 const query = ref("");
 const loading = ref(false);
 const error = ref("");
@@ -106,6 +107,7 @@ async function loadInstruments(): Promise<void> {
   try {
     const data = await apiGet<{ items: InstrumentRow[]; total: number }>("/api/market/instruments", {
       market: market.value || "",
+      assetType: assetType.value || "",
       q: query.value.trim(),
       page: page.value,
       pageSize,
@@ -186,7 +188,7 @@ async function toggleWatchlist(row: InstrumentRow): Promise<void> {
 function reload(): void {
   error.value = "";
   invalidateQuery("/api/market/overview");
-  invalidateQuery("/api/market/instruments", { market: market.value || "", q: query.value.trim(), page: page.value, pageSize });
+  invalidateQuery("/api/market/instruments", { market: market.value || "", assetType: assetType.value || "", q: query.value.trim(), page: page.value, pageSize });
   void Promise.all([loadOverview(), loadInstruments(), loadWatchlist()]);
   if (groupsLoaded.value) { invalidateQuery("/api/market/groups"); void loadGroups(); }
 }
@@ -233,6 +235,12 @@ onMounted(reload);
     <section class="panel market-controls">
       <el-select v-model="market" clearable placeholder="全部市场" data-test="market-filter" @change="page = 1; void loadInstruments()">
         <el-option v-for="option in marketOptions" :key="option" :label="formatMarket(option)" :value="option" />
+      </el-select>
+      <el-select v-model="assetType" clearable placeholder="全部类别" @change="page = 1; void loadInstruments()">
+        <el-option label="A股个股 / 港股个股" value="STOCK" />
+        <el-option label="A股 ETF" value="ETF" />
+        <el-option label="A股 / 港股 / 全球指数" value="INDEX" />
+        <el-option label="国内期货主力 / 连续" value="FUTURE" />
       </el-select>
       <el-input v-model="query" placeholder="名称 / 代码 / instrumentId" clearable data-test="market-search" @input="debounceSearch" @keyup.enter="page = 1; void loadInstruments()" />
       <el-button type="primary" :loading="loading" @click="page = 1; void loadInstruments()">查询</el-button>

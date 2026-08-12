@@ -26,6 +26,15 @@ export function invalidateQuery(path: string, params?: QueryParams): void {
   const key = queryKey(path, params); memoryCache.delete(key); try { localStorage.removeItem(CACHE_PREFIX + key); } catch { /* ignore */ }
 }
 
+function fetchQuery<T>(url: URL, key: string, options: CacheOptions): Promise<T> {
+  const request = fetch(url.toString(), { signal: options.signal }).then(async response => {
+    if (!response.ok) throw new Error(await errorMessage(response));
+    const value = await response.json() as T; const entry = { value, savedAt: Date.now() }; memoryCache.set(key, entry);
+    if (options.persist) writePersistent(key, entry); return value;
+  }).finally(() => inFlight.delete(key));
+  inFlight.set(key, request); return request;
+}
+
 async function errorMessage(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { detail?: unknown };
@@ -50,14 +59,15 @@ export async function apiGet<T>(path: string, params?: QueryParams, options: Cac
   }
   const key = queryKey(path, params); const ttlMs = options.ttlMs ?? 30_000;
   const cached = (memoryCache.get(key) as CachedValue<T> | undefined) ?? (options.persist ? readPersistent<T>(key) : undefined);
-  if (!options.force && cached && Date.now() - cached.savedAt < ttlMs) { memoryCache.set(key, cached); return cached.value; }
+  if (!options.force && cached) {
+    memoryCache.set(key, cached);
+    if (Date.now() - cached.savedAt < ttlMs) return cached.value;
+    // Stale-while-revalidate: retain visible cached data, refresh silently.
+    if (!inFlight.has(key)) void fetchQuery<T>(url, key, { ...options, signal: undefined }).catch(() => undefined);
+    return cached.value;
+  }
   if (!options.force && inFlight.has(key)) return inFlight.get(key) as Promise<T>;
-  const request = fetch(url.toString(), { signal: options.signal }).then(async response => {
-    if (!response.ok) throw new Error(await errorMessage(response));
-    const value = await response.json() as T; const entry = { value, savedAt: Date.now() }; memoryCache.set(key, entry);
-    if (options.persist) writePersistent(key, entry); return value;
-  }).finally(() => inFlight.delete(key));
-  inFlight.set(key, request); return request;
+  return fetchQuery<T>(url, key, options);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {

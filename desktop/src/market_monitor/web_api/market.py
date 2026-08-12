@@ -158,6 +158,7 @@ def market_groups(request: Request) -> dict[str, Any]:
 def market_instruments(
     request: Request,
     market: str | None = None,
+    asset_type: str | None = Query(default=None, alias="assetType"),
     q: str = "",
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, alias="pageSize"),
@@ -167,6 +168,9 @@ def market_instruments(
     if market:
         wanted = market.strip().casefold()
         items = [item for item in items if str(item.get("market") or "").casefold() == wanted]
+    if asset_type:
+        wanted_type = asset_type.strip().casefold()
+        items = [item for item in items if str(item.get("assetType") or "").casefold() == wanted_type]
     keyword = q.strip().casefold()
     if keyword:
         items = [

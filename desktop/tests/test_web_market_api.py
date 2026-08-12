@@ -126,6 +126,10 @@ def test_market_instruments_paginate_search_and_filter(tmp_path: Path) -> None:
     assert hk.json()["total"] == 1
     assert hk.json()["items"][0]["instrumentId"] == "HK.HKEX.STOCK.00700"
 
+    futures = client.get("/api/market/instruments", params={"assetType": "FUTURE"})
+    assert futures.json()["total"] == 1
+    assert futures.json()["items"][0]["instrumentId"] == "CN.SHFE.FUTURE.AU0"
+
 
 def test_market_bars_are_ascending_bounded_and_camel_cased(tmp_path: Path) -> None:
     _application, client = _app(tmp_path)
