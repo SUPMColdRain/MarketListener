@@ -91,7 +91,7 @@
 - `实施方案`：默认只监听 127.0.0.1，不打入数据/凭据；Windows runner 构建前端与 Python bundle，启动后验证 `/` 和 `/api/health`。
 - `验收标准`：workflow_dispatch 可执行、zip/sha256 产出、smoke test 通过。
 - `测试要求`：本地或 CI Windows package smoke；`输出规范`：升级/迁移说明；`风险`：PyInstaller 隐式依赖；`回滚方案`：独立 workflow/打包目录。
-- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions run `31624423028`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.0.zip` 与 SHA256，EXE 成功以 `127.0.0.1` 随机端口启动并退出；首次 Actions 实际成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：后续提交 Actions 仍在运行。
+- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions runs `31624423028`、`31625230417`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.1.zip` 与 SHA256，最新 EXE 成功以 `127.0.0.1` 随机端口启动并退出；此前连续 Actions 均已成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：提交 `5163aa5` 对应的 run `31626564325` 仍在运行。
 
 ### R2-T008 — R2 统一回归、安全审查与发布
 
