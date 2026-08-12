@@ -56,7 +56,16 @@ const browserViews = [
 const definitions = ref<DashboardDefinition[]>([]);
 const payloads = ref<Record<string, DashboardPayload>>({});
 const expandedPanels = ref<Set<string>>(new Set());
-interface PersonalPanel { id: string; title: string; metricId: string; chartType: "line" | "bar" | "kline"; color: string; hidden: boolean }
+interface PersonalPanel {
+  id: string;
+  title: string;
+  metricId: string;
+  chartType: "line" | "bar";
+  color: string;
+  opacity: number;
+  rangeDays: number;
+  hidden: boolean;
+}
 const personalPanels = ref<PersonalPanel[]>([]);
 const newPanelMetric = ref("market-breadth");
 const loading = ref(false);
@@ -76,14 +85,37 @@ const availablePanels = computed(() =>
 );
 
 async function loadLayout(): Promise<void> {
-  try { personalPanels.value = (await apiGet<{ panels: PersonalPanel[] }>("/api/personal/dashboard", undefined, { ttlMs: 5 * 60_000, persist: true })).panels; } catch { personalPanels.value = []; }
+  try {
+    const payload = await apiGet<{ panels: Partial<PersonalPanel>[] }>("/api/personal/dashboard", undefined, { ttlMs: 5 * 60_000, persist: true });
+    personalPanels.value = payload.panels
+      .filter((panel): panel is PersonalPanel & { id: string; title: string; metricId: string } => Boolean(panel.id && panel.title && panel.metricId))
+      .map((panel) => ({
+        id: panel.id,
+        title: panel.title,
+        metricId: panel.metricId,
+        chartType: panel.chartType === "bar" ? "bar" : "line",
+        color: /^#[0-9a-fA-F]{6}$/.test(panel.color ?? "") ? panel.color! : "#d64b4b",
+        opacity: typeof panel.opacity === "number" ? Math.min(1, Math.max(0, panel.opacity)) : 0.16,
+        rangeDays: typeof panel.rangeDays === "number" ? Math.max(0, panel.rangeDays) : 0,
+        hidden: Boolean(panel.hidden),
+      }));
+  } catch { personalPanels.value = []; }
 }
 async function saveLayout(): Promise<void> { await apiPut("/api/personal/dashboard", { panels: personalPanels.value }); invalidateQuery("/api/personal/dashboard"); }
 async function addPanel(): Promise<void> {
   const definition = definitions.value.find(item => item.id === newPanelMetric.value); if (!definition) return;
-  personalPanels.value.push({ id: `panel-${Date.now()}`, title: definition.title, metricId: definition.id, chartType: "line", color: "#d64b4b", hidden: false }); await saveLayout();
+  personalPanels.value.push({ id: `panel-${Date.now()}`, title: definition.title, metricId: definition.id, chartType: "line", color: "#d64b4b", opacity: 0.16, rangeDays: 0, hidden: false }); await saveLayout();
 }
 async function removePanel(id: string): Promise<void> { personalPanels.value = personalPanels.value.filter(panel => panel.id !== id); await saveLayout(); }
+async function togglePanelHidden(panel: PersonalPanel): Promise<void> { panel.hidden = !panel.hidden; await saveLayout(); }
+async function movePanel(id: string, offset: number): Promise<void> {
+  const index = personalPanels.value.findIndex(panel => panel.id === id);
+  const target = index + offset;
+  if (index < 0 || target < 0 || target >= personalPanels.value.length) return;
+  const [panel] = personalPanels.value.splice(index, 1);
+  personalPanels.value.splice(target, 0, panel);
+  await saveLayout();
+}
 
 async function loadDefinitions(): Promise<void> {
   loading.value = true;
@@ -223,7 +255,14 @@ onBeforeUnmount(() => {
     <section class="panel">
       <div class="panel-title"><h2>我的仪表盘</h2><div><el-select v-model="newPanelMetric" size="small"><el-option v-for="item in definitions" :key="item.id" :label="item.title" :value="item.id" /></el-select><el-button size="small" type="primary" @click="void addPanel()">添加面板</el-button></div></div>
       <p v-if="!personalPanels.length" class="muted">尚未添加自定义面板。布局仅保存到本机个人配置，不会改变业务指标定义。</p>
-      <div v-else class="dashboard-grid"><div v-for="panel in personalPanels.filter(item => !item.hidden)" :key="panel.id" class="panel dashboard-panel"><div class="panel-title"><h3>{{ panel.title }}</h3><div><el-button text size="small" @click="void loadPanel(panel.metricId)">加载</el-button><el-button text type="danger" size="small" @click="void removePanel(panel.id)">删除</el-button></div></div><SeriesChart v-if="payloads[panel.metricId]?.series?.length" :title="panel.title" :series="payloads[panel.metricId]?.series ?? []" :height="240" /><div v-else class="chart-empty-panel">点击“加载”读取指标</div></div></div>
+      <div v-else class="dashboard-grid">
+        <div v-for="panel in personalPanels.filter(item => !item.hidden)" :key="panel.id" class="panel dashboard-panel">
+          <div class="panel-title"><h3>{{ panel.title }}</h3><div><el-button text size="small" @click="void movePanel(panel.id, -1)">上移</el-button><el-button text size="small" @click="void movePanel(panel.id, 1)">下移</el-button><el-button text size="small" @click="void togglePanelHidden(panel)">隐藏</el-button><el-button text size="small" @click="void loadPanel(panel.metricId)">加载</el-button><el-button text type="danger" size="small" @click="void removePanel(panel.id)">删除</el-button></div></div>
+          <div class="data-controls personal-panel-settings"><el-input v-model="panel.title" size="small" aria-label="面板标题" @change="void saveLayout()" /><el-select v-model="panel.chartType" size="small" aria-label="图表类型" @change="void saveLayout()"><el-option label="折线图" value="line" /><el-option label="柱状图" value="bar" /></el-select><el-select v-model="panel.rangeDays" size="small" aria-label="时间范围" @change="void saveLayout()"><el-option label="全部时间" :value="0" /><el-option label="近30天" :value="30" /><el-option label="近90天" :value="90" /><el-option label="近1年" :value="365" /></el-select><input v-model="panel.color" type="color" aria-label="图表颜色" @change="void saveLayout()" /><el-slider v-model="panel.opacity" :min="0" :max="1" :step="0.05" aria-label="面积透明度" @change="void saveLayout()" /></div>
+          <SeriesChart v-if="payloads[panel.metricId]?.series?.length" :title="panel.title" :series="payloads[panel.metricId]?.series ?? []" :height="240" :color="panel.color" :chart-type="panel.chartType" :opacity="panel.opacity" :range-days="panel.rangeDays" /><div v-else class="chart-empty-panel">点击“加载”读取指标</div>
+        </div>
+      </div>
+      <div v-if="personalPanels.some(item => item.hidden)" class="hidden-panels"><span class="muted">已隐藏面板：</span><el-button v-for="panel in personalPanels.filter(item => item.hidden)" :key="panel.id" text size="small" @click="void togglePanelHidden(panel)">恢复 {{ panel.title }}</el-button></div>
     </section>
 
     <section v-if="availablePanels.length" class="dashboard-grid">

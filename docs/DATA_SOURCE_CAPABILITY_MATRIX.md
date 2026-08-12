@@ -34,7 +34,7 @@ Each local inventory category also exposes `sourceDetails`: its stored source id
 | Provider | 获取方式与实际入口 | 已实现能力 | 认证/授权 | 当前验证状态与限制 |
 | --- | --- | --- | --- | --- |
 | pytdx（通达信） | TDX TCP/7709，`TdxHq_API.get_security_bars`，服务地址可由 `TDX_SERVERS` 配置 | CN 股票/ETF/指数清单、报价、1m/5m/15m/30m/1h/1d/1w/1mo | 无账户；公网服务稳定性非保证 | 2026-08-12 实测：证券清单、报价、600519 `1d/30m`、510300 `1d` PASS；000001 指数 `1d` 因上游非法日期失败。证据：`artifacts/r1-provider-probe-20260812-pytdx-fixed/`。 |
-| AKShare | Python SDK；collector 使用 `stock_hk_hist`、`futures_main_sina`、`futures_index_ccidx`、`futures_foreign_hist` 等 | HK/全球/期货日线、CN 指标与多种公共数据 | 当前调用无 token；上游可变 | 2026-08-12 在 30 秒限制内：健康检查、A 股涨跌/涨停统计、交易日历、600519 日线 PASS；市场资金流因东方财富 endpoint 经代理连接被拒绝 FAILED。证据：`artifacts/r1-provider-probe-20260812-akshare-30s/`。 |
+| AKShare | Python SDK；collector 使用 `stock_hk_hist`、`futures_main_sina`、`futures_index_ccidx`、`futures_foreign_hist` 等 | HK/全球/期货日线、CN 指标与多种公共数据 | 当前调用无 token；上游可变 | 2026-08-12 在 30 秒限制内：健康检查、A 股涨跌家数、交易日历、600519 日线 PASS；涨停/跌停改由东财权威池采集，绝不以涨跌幅阈值近似；市场资金流因东方财富 endpoint 经代理连接被拒绝 FAILED。证据：`artifacts/r1-provider-probe-20260812-akshare-30s/`。 |
 | Baostock | `baostock.login`、`query_history_k_data_plus` | CN 股票 1d/30m | SDK 登录 | 2026-08-12 首次 10 秒超时；30 秒复测未在本任务运行时限内产出报告。当前没有可验证 PASS 结论，不能提升为可用来源。 |
 | JQData | `jqdatasdk.auth` 和价格接口 | CN 股票/ETF/指数/期货（以探测能力为准） | 用户名/密码、授权 | `BLOCKED_CONFIGURATION`，不能显示为当前可用。 |
 | Tushare Pro | `TUSHARE_TOKEN`、`pro_api`、`daily`/`stk_mins`/`stock_basic` | CN 股票日线/分钟、清单与财务（以积分权限为准） | token 与接口积分/权限 | `BLOCKED_CONFIGURATION`，不能显示为当前可用。 |

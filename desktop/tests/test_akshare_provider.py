@@ -38,21 +38,19 @@ class FakeAkShareSdk:
         return self.calendar
 
 
-def test_akshare_probe_calculates_market_breadth_and_limit_counts() -> None:
+def test_akshare_probe_calculates_market_breadth_without_approximate_limits() -> None:
     capabilities = AkShareProvider(sdk=FakeAkShareSdk()).probe_capabilities()
 
     assert [capability.name for capability in capabilities] == [
         "health_check",
         "a_share_rise_fall_counts",
-        "a_share_price_limit_counts",
         "trading_calendar",
         "market_fund_flow",
         "cn_stock_sh.600519_1d",
     ]
-    assert [capability.status for capability in capabilities] == [CapabilityStatus.PASS] * 6
+    assert [capability.status for capability in capabilities] == [CapabilityStatus.PASS] * 5
     assert "up=1; down=1; flat=1" in (capabilities[1].detail or "")
-    assert "limit_up=1; limit_down=1" in (capabilities[2].detail or "")
-    bars = capabilities[5]
+    bars = capabilities[4]
     assert bars.registration.request.operation.value == "bars"
     assert bars.registration.request.period == "1d"
     assert bars.row_count == 1
@@ -62,9 +60,9 @@ def test_akshare_bars_capability_reports_failure_without_wiping_others() -> None
     capabilities = AkShareProvider(sdk=FakeAkShareSdk(bars=ProviderError(ErrorCategory.NETWORK, "down"))).probe_capabilities()
 
     assert capabilities[0].status is CapabilityStatus.PASS
-    assert capabilities[5].name == "cn_stock_sh.600519_1d"
-    assert capabilities[5].status is CapabilityStatus.FAILED
-    assert capabilities[5].error is not None
+    assert capabilities[4].name == "cn_stock_sh.600519_1d"
+    assert capabilities[4].status is CapabilityStatus.FAILED
+    assert capabilities[4].error is not None
 
 
 def test_akshare_missing_change_field_is_reported_as_provider_failure() -> None:
@@ -72,9 +70,8 @@ def test_akshare_missing_change_field_is_reported_as_provider_failure() -> None:
 
     assert capabilities[0].status is CapabilityStatus.PASS
     assert capabilities[1].status is CapabilityStatus.FAILED
-    assert capabilities[2].status is CapabilityStatus.FAILED
+    assert capabilities[2].status is CapabilityStatus.PASS
     assert capabilities[3].status is CapabilityStatus.PASS
-    assert capabilities[4].status is CapabilityStatus.PASS
     assert "[PROVIDER]" in (capabilities[1].detail or "")
 
 
@@ -96,11 +93,11 @@ def test_akshare_calendar_failure_does_not_erase_snapshot_or_fund_results() -> N
     ).probe_capabilities()
 
     assert capabilities[0].status is CapabilityStatus.PASS
-    assert capabilities[3].name == "trading_calendar"
-    assert capabilities[3].status is CapabilityStatus.FAILED
-    assert capabilities[3].error is not None
-    assert capabilities[3].error.category is ErrorCategory.NETWORK
-    assert capabilities[4].status is CapabilityStatus.PASS
+    assert capabilities[2].name == "trading_calendar"
+    assert capabilities[2].status is CapabilityStatus.FAILED
+    assert capabilities[2].error is not None
+    assert capabilities[2].error.category is ErrorCategory.NETWORK
+    assert capabilities[3].status is CapabilityStatus.PASS
 
 
 def test_akshare_fund_failure_does_not_erase_snapshot_or_calendar_results() -> None:
@@ -109,9 +106,9 @@ def test_akshare_fund_failure_does_not_erase_snapshot_or_calendar_results() -> N
     ).probe_capabilities()
 
     assert capabilities[0].status is CapabilityStatus.PASS
-    assert capabilities[3].status is CapabilityStatus.PASS
-    assert capabilities[4].status is CapabilityStatus.FAILED
-    assert capabilities[4].error is not None
+    assert capabilities[2].status is CapabilityStatus.PASS
+    assert capabilities[3].status is CapabilityStatus.FAILED
+    assert capabilities[3].error is not None
 
 
 def test_akshare_bars_are_normalised_and_forward_adjusted() -> None:

@@ -214,8 +214,8 @@ DEFAULT_DATASETS: tuple[DatasetDefinition, ...] = (
         "A_SHARE_BREADTH", "A股每日涨跌与市值快照", "CN", "BREADTH", "DAILY",
         "akshare/腾讯全市场快照", "DAILY", ("metric_id",),
         ("metric_id", "instrument_id", "trading_date", "period", "metric_name", "value", "definition", "calculation_method", "timestamp"),
-        "SYNC_ALL", "全市场快照统计口径必须注明近似规则",
-        "每日上涨/下跌/平盘/涨停/跌停家数、沪深京总市值、当日成交额",
+        "SYNC_ALL", "全市场快照统计口径必须注明来源；涨停/跌停不得按统一阈值近似",
+        "每日上涨/下跌/平盘家数、沪深京总市值、当日成交额；涨停/跌停由 CN_ZT_POOL 权威池提供",
     ),
     DatasetDefinition(
         "HSGT_FLOW", "北向南向资金", "CN", "FLOW", "DAILY",

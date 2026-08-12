@@ -73,8 +73,10 @@ class DashboardPanelIn(BaseModel):
     id: str = Field(min_length=1, max_length=80)
     title: str = Field(min_length=1, max_length=80)
     metricId: str = Field(min_length=1, max_length=80)
-    chartType: str = Field(default="line", pattern="^(line|bar|kline)$")
+    chartType: str = Field(default="line", pattern="^(line|bar)$")
     color: str = Field(default="#d64b4b", pattern=r"^#[0-9a-fA-F]{6}$")
+    opacity: float = Field(default=0.16, ge=0.0, le=1.0)
+    rangeDays: int = Field(default=0, ge=0, le=3650)
     hidden: bool = False
 
 

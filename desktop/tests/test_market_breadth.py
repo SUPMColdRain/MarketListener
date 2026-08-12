@@ -1,6 +1,6 @@
 import pytest
 
-from market_monitor.market_breadth import compute_daily_breadth, compute_limit_up_heights
+from market_monitor.market_breadth import compute_daily_breadth
 
 
 def bar(day, code, open_price, close, amount=0.0):
@@ -21,7 +21,7 @@ def bar(day, code, open_price, close, amount=0.0):
     }
 
 
-def test_daily_breadth_counts_advances_declines_unchanged_and_limits():
+def test_daily_breadth_counts_advances_declines_and_unchanged():
     day0 = [
         bar("2026-08-02", "600001", 90.0, 90.0),
         bar("2026-08-02", "600002", 105.0, 105.0),
@@ -39,37 +39,16 @@ def test_daily_breadth_counts_advances_declines_unchanged_and_limits():
     ]
     snapshots = compute_daily_breadth(
         {"2026-08-02": day0, "2026-08-03": day1, "2026-08-04": day2},
-        limit_pct=0.10,
     )
     first, second, third = snapshots
     assert first.advances == 0
     assert second.advances == 1
     assert second.declines == 1
     assert second.unchanged == 1
-    assert second.limit_ups == 1
-    assert second.limit_downs == 0
-    assert second.yesterday_limit_up_open_return is None
-    assert third.limit_ups == 1
-    assert third.limit_up_heights == {"600001": 2}
-    # 昨日涨停的 600001 今日 open=100、close=110 → 接盘收益率 10%
-    assert third.yesterday_limit_up_open_return == pytest.approx(0.10)
+    assert third.advances == 2
 
 
-def test_limit_up_heights_uses_previous_close_and_matches_daily_breadth():
-    days = {
-        "2026-08-03": [bar("2026-08-03", "600001", 50.0, 50.0)],
-        "2026-08-04": [bar("2026-08-04", "600001", 50.0, 55.0)],
-        "2026-08-05": [bar("2026-08-05", "600001", 55.0, 60.5)],
-        "2026-08-06": [bar("2026-08-06", "600001", 60.5, 60.5)],
-    }
-    heights = compute_limit_up_heights(days, limit_pct=0.10)
-    last = compute_daily_breadth(days, limit_pct=0.10)[-1]
-    assert heights == last.limit_up_heights == {}
-    assert last.limit_ups == 0
-
-
-def test_limit_up_heights_returns_empty_for_no_data():
-    assert compute_limit_up_heights({}) == {}
+def test_daily_breadth_returns_empty_for_no_data():
     assert compute_daily_breadth({}) == []
 
 
@@ -83,10 +62,3 @@ def test_market_cap_and_amount_are_filtered_to_known_codes():
     assert snapshots[0].total_market_cap == pytest.approx(1e10)
     assert snapshots[0].total_amount == pytest.approx(3e8)
     assert snapshots[0].northbound_flow is None
-
-
-def test_breadth_rejects_invalid_limit_pct():
-    with pytest.raises(ValueError, match="limit_pct"):
-        compute_daily_breadth({}, limit_pct=0)
-    with pytest.raises(ValueError, match="limit_pct"):
-        compute_daily_breadth({}, limit_pct=0.6)

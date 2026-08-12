@@ -166,7 +166,7 @@ def _build_tasks(*, limit_futures: int, limit_cn_stocks: int) -> list[Collection
         CollectionTask("FUTURES_OI_LEADERBOARD", "期货持仓龙虎榜", "akshare", _collect_oi_leaderboard),
         CollectionTask("CN_MARGIN", "沪深京融资融券", "akshare", _collect_margin),
         CollectionTask("MACRO_SERIES", "宏观数据序列", "akshare", _collect_macro),
-        CollectionTask("A_SHARE_BREADTH", "A股涨跌/涨停/市值快照", "akshare", _collect_a_share_breadth),
+        CollectionTask("A_SHARE_BREADTH", "A股涨跌/市值快照", "akshare", _collect_a_share_breadth),
         CollectionTask("HSGT_FLOW", "北向南向资金", "akshare", _collect_hsgt),
         CollectionTask("CN_ZT_POOL", "涨停/跌停池与连板高度", "akshare", _collect_zt_pool),
         CollectionTask("FUTURE_GLOBAL_BAR", "外盘期货/金银比/金油比", "akshare", _collect_foreign_futures),
@@ -1315,8 +1315,6 @@ def _collect_a_share_breadth() -> CollectionTaskResult:
     advances = sum(1 for change in changes if change > 0)
     declines = sum(1 for change in changes if change < 0)
     unchanged = len(changes) - advances - declines
-    limit_up = sum(1 for change in changes if change >= 9.9)
-    limit_down = sum(1 for change in changes if change <= -9.9)
     total_cap_yi = sum(_num(row.get("zsz"), 0.0) or 0.0 for row in records)
     total_amount_yi = sum(_num(row.get("turnover"), 0.0) or 0.0 for row in records) / 10000.0
     day = _last_trading_day_compact()
@@ -1361,28 +1359,6 @@ def _collect_a_share_breadth() -> CollectionTaskResult:
                 "CN.A_SHARE.BREADTH",
                 day,
                 "1d",
-                "\u6da8\u505c\u5bb6\u6570(\u7ea6)",
-                limit_up,
-                "\u6da8\u8dcc\u5e45\u22659.9%\u8fd1\u4f3c\u6da8\u505c",
-                "source=stock_zh_a_spot_tx",
-                metric_key="LIMIT_UP",
-            ),
-            _metric(
-                "A_SHARE_BREADTH",
-                "CN.A_SHARE.BREADTH",
-                day,
-                "1d",
-                "\u8dcc\u505c\u5bb6\u6570(\u7ea6)",
-                limit_down,
-                "\u6da8\u8dcc\u5e45\u2264-9.9%\u8fd1\u4f3c\u8dcc\u505c",
-                "source=stock_zh_a_spot_tx",
-                metric_key="LIMIT_DOWN",
-            ),
-            _metric(
-                "A_SHARE_BREADTH",
-                "CN.A_SHARE.BREADTH",
-                day,
-                "1d",
                 "\u6caa\u6df1\u4eac\u603b\u5e02\u503c(\u4ebf)",
                 total_cap_yi,
                 "\u5168\u5e02\u573a zsz \u603b\u5e02\u503c\u5408\u8ba1",
@@ -1404,11 +1380,11 @@ def _collect_a_share_breadth() -> CollectionTaskResult:
     )
     return _result(
         "A_SHARE_BREADTH",
-        "A\u80a1\u6da8\u8dcc/\u6da8\u505c/\u5e02\u503c\u5feb\u7167",
+        "A\u80a1\u6da8\u8dcc/\u5e02\u503c\u5feb\u7167",
         "akshare",
         "PASS" if records else "FAILED",
         len(plan.gold_metrics),
-        f"\u5168\u5e02\u573a{len(records)}\u53ea\uff1b\u6da8={advances} \u8dcc={declines} \u5e73={unchanged} \u6da8\u505c\u7ea6={limit_up}",
+        f"\u5168\u5e02\u573a{len(records)}\u53ea\uff1b\u6da8={advances} \u8dcc={declines} \u5e73={unchanged}",
         None,
         plan,
     )

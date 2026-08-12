@@ -5,7 +5,7 @@ test("industry company name/code hover remains open on its data card", async ({ 
   const atlas = page.frameLocator("iframe.atlas-frame");
   const cnCompany = atlas.locator('[data-instrument-key^="CN."]').first();
   const code = cnCompany.locator(".code");
-  await expect(cnCompany).toBeVisible();
+  await expect(cnCompany).toBeVisible({ timeout: 15_000 });
   await code.hover();
 
   const tooltip = atlas.locator("#tooltip");
@@ -29,7 +29,8 @@ test("industry company click opens the complete local drawer", async ({ page }) 
   await page.goto("/industry/");
   const atlas = page.frameLocator("iframe.atlas-frame");
   const cnCompany = atlas.locator('[data-instrument-key^="CN."]').first();
-  await expect(cnCompany).toBeVisible();
+  // 图谱数据来自本地库存；在并发端到端测试时首个读取可能需要数秒。
+  await expect(cnCompany).toBeVisible({ timeout: 15_000 });
   await cnCompany.click();
   const drawer = atlas.locator("#drawer");
   await expect(drawer).toBeVisible();

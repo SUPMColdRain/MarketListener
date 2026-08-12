@@ -167,7 +167,6 @@ class AkShareProvider(Provider):
             )
         ]
         capabilities.append(self._market_breadth(spot))
-        capabilities.append(self._price_limit_counts(spot))
         return capabilities
 
     def _probe_calendar(self) -> Capability:
@@ -225,28 +224,6 @@ class AkShareProvider(Provider):
         except ProviderError as error:
             return _legacy_adapter_capability(
                 "a_share_rise_fall_counts",
-                CapabilityStatus.FAILED,
-                _error_detail(error),
-                error=error,
-            )
-
-    def _price_limit_counts(self, records: list[Mapping[str, Any]]) -> Capability:
-        try:
-            changes = [_number(record, "涨跌幅") for record in records]
-            usable = [change for change in changes if change is not None]
-            if not usable:
-                raise ProviderError(ErrorCategory.FIELD_CHANGE, "AkShare spot response has no 涨跌幅 field")
-            limit_up = sum(change >= 9.9 for change in usable)
-            limit_down = sum(change <= -9.9 for change in usable)
-            return _legacy_adapter_capability(
-                "a_share_price_limit_counts",
-                CapabilityStatus.PASS,
-                f"limit_up={limit_up}; limit_down={limit_down}",
-                len(usable),
-            )
-        except ProviderError as error:
-            return _legacy_adapter_capability(
-                "a_share_price_limit_counts",
                 CapabilityStatus.FAILED,
                 _error_detail(error),
                 error=error,

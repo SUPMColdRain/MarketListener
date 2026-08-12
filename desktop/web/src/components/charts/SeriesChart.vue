@@ -21,8 +21,11 @@ const props = withDefaults(
     height?: number;
     area?: boolean;
     rangeDays?: number;
+    color?: string;
+    chartType?: "line" | "bar";
+    opacity?: number;
   }>(),
-  { title: "", unit: "", height: 280, area: true, rangeDays: 0, series: () => [] },
+  { title: "", unit: "", height: 280, area: true, rangeDays: 0, color: "", chartType: "line", opacity: 0.16, series: () => [] },
 );
 
 const theme = useThemeStore();
@@ -69,7 +72,7 @@ function render(): void {
   chart.setOption(
     {
       backgroundColor: "transparent",
-      color: seriesColors.map((_name, index) => colorOf(index)),
+      color: props.color ? [props.color] : seriesColors.map((_name, index) => colorOf(index)),
       animationDuration: 320,
       tooltip: {
         trigger: "axis",
@@ -119,13 +122,13 @@ function render(): void {
       ],
       series: filteredSeries.value.map((item, index) => ({
         name: item.name,
-        type: "line",
+        type: props.chartType,
         data: seriesData(item),
-        smooth: true,
+        smooth: props.chartType === "line",
         showSymbol: false,
         connectNulls: false,
         lineStyle: { width: 1.6 },
-        areaStyle: props.area && index === 0 ? { opacity: 0.16 } : undefined,
+        areaStyle: props.area && props.chartType === "line" && index === 0 ? { opacity: props.opacity } : undefined,
         emphasis: { focus: "series" },
       })),
     },
@@ -138,7 +141,7 @@ function resize(): void {
 }
 
 watch(
-  () => [filteredSeries.value, theme.palette, props.rangeDays],
+  () => [filteredSeries.value, theme.palette, props.rangeDays, props.color, props.chartType, props.opacity],
   () => void nextTick(render),
   { deep: true },
 );

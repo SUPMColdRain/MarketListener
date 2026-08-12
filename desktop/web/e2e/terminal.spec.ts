@@ -102,6 +102,9 @@ test("data workbench is read-only, bounded and shows real dashboards", async ({ 
   await expect(page.locator('[data-test="data-refresh"]')).toBeVisible();
   await expect(page.locator(".dashboard-panel").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".data-browser")).toBeVisible();
+  // 数据浏览器是按需加载，进入数据页不应立即发送 500 行查询。
+  await expect(page.locator(".data-browser .el-table__row")).toHaveCount(0);
+  await page.getByRole("button", { name: "加载数据浏览器" }).click();
   await expect(page.locator(".data-browser .el-table__row").first()).toBeVisible({ timeout: 20_000 });
   await expectCleanTerminal(page);
 });

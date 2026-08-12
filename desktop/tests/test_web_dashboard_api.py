@@ -105,6 +105,37 @@ def test_metrics_ranking_and_heatmap_use_real_breadth_data(tmp_path: Path) -> No
     assert body["cells"]
 
 
+def test_market_breadth_excludes_etfs_and_indexes(tmp_path: Path) -> None:
+    """A股市场广度必须只代表个股，不能混入基金或指数。"""
+    data_root = tmp_path / "data"
+    write_silver(
+        data_root,
+        [
+            silver_row("CN.SSE.STOCK.600000", "2026-08-06", close=10.0),
+            silver_row("CN.SSE.STOCK.600000", "2026-08-07", close=11.0, open_=10.0),
+            silver_row("CN.SSE.ETF.510300", "2026-08-06", asset_type="ETF", close=10.0),
+            silver_row("CN.SSE.ETF.510300", "2026-08-07", asset_type="ETF", close=9.0, open_=10.0),
+            silver_row("CN.SSE.INDEX.000001", "2026-08-06", asset_type="INDEX", close=10.0),
+            silver_row("CN.SSE.INDEX.000001", "2026-08-07", asset_type="INDEX", close=9.0, open_=10.0),
+        ],
+    )
+    client = TestClient(create_web_app(data_root), client=("127.0.0.1", 50000))
+    series = client.get("/api/dashboard/market-breadth").json()["series"]
+    assert next(item for item in series if item["name"] == "上涨")["points"][-1]["value"] == 1
+    assert next(item for item in series if item["name"] == "下跌")["points"][-1]["value"] == 0
+
+
+def test_personal_dashboard_layout_accepts_display_options(tmp_path: Path) -> None:
+    client = _app(tmp_path)
+    payload = {
+        "panels": [{"id": "breadth", "title": "我的广度", "metricId": "market-breadth", "chartType": "bar", "color": "#123456", "opacity": 0.35, "rangeDays": 90, "hidden": True}],
+    }
+    saved = client.put("/api/personal/dashboard", json=payload)
+    assert saved.status_code == 200
+    assert saved.json()["panels"][0] == payload["panels"][0]
+    assert client.get("/api/personal/dashboard").json()["panels"] == payload["panels"]
+
+
 def test_metrics_gold_ranking_heatmap_and_downsampling(tmp_path: Path) -> None:
     data_root = tmp_path / "data"
     write_silver(data_root, [silver_row("CN.SHFE.FUTURE.AU0", "2026-08-07", market="CN", asset_type="FUTURE")])

@@ -29,7 +29,9 @@ DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
 MAX_GOLD_SERIES = 8
 
-_CN_NON_FUTURE_ASSET_TYPES = frozenset({"STOCK", "ETF", "INDEX"})
+# A 股涨跌广度只统计个股。ETF 和指数的价格变化不能混入个股家数，
+# 否则“上涨/下跌家数”会与交易所口径不一致。
+_CN_STOCK_ASSET_TYPE = "STOCK"
 _GOLD_VALUE_METRICS = ("最新价", "收盘", "收盘价", "close", "比特币价格", "以太坊价格")
 _EXCLUDED_METRIC_PREFIXES = (
     "FUTURES_BREADTH:",
@@ -169,7 +171,7 @@ def _inventory_groups(data_root: Path) -> tuple[set[str], set[str]]:
         if info.get("market") != "CN":
             continue
         asset_type = str(info.get("assetType") or "")
-        if asset_type in _CN_NON_FUTURE_ASSET_TYPES:
+        if asset_type == _CN_STOCK_ASSET_TYPE:
             market_ids.add(instrument_id)
         elif asset_type == "FUTURE":
             futures_ids.add(instrument_id)
