@@ -100,6 +100,17 @@ test("data workbench is read-only, bounded and shows real dashboards", async ({ 
   await page.goto("/data/");
   await expect(page.locator('h1.page-title')).toContainText("数据");
   await expect(page.locator('[data-test="data-refresh"]')).toBeVisible();
+  await expect.poll(async () => page.evaluate(async () => new Promise<number>((resolve) => {
+    const request = indexedDB.open("marketlistener-query-cache");
+    request.onerror = () => resolve(0);
+    request.onsuccess = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains("queries")) { resolve(0); return; }
+      const count = database.transaction("queries", "readonly").objectStore("queries").count();
+      count.onsuccess = () => resolve(count.result);
+      count.onerror = () => resolve(0);
+    };
+  }))).toBeGreaterThan(0);
   await expect(page.locator(".dashboard-panel").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".data-browser")).toBeVisible();
   // 数据浏览器是按需加载，进入数据页不应立即发送 500 行查询。

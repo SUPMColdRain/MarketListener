@@ -9,28 +9,109 @@ type CacheOptions = { ttlMs?: number; persist?: boolean; force?: boolean; signal
 type CachedValue<T> = { value: T; savedAt: number };
 const memoryCache = new Map<string, CachedValue<unknown>>();
 const inFlight = new Map<string, Promise<unknown>>();
-const CACHE_PREFIX = "marketlistener.query.v1:";
+const CACHE_PREFIX = "marketlistener.query.v2:";
+const CACHE_DATABASE = "marketlistener-query-cache";
+const CACHE_STORE = "queries";
+type PersistentValue<T> = CachedValue<T> & { key: string };
+let databasePromise: Promise<IDBDatabase | null> | undefined;
 
 function queryKey(path: string, params?: QueryParams): string {
   const pairs = Object.entries(params ?? {}).filter(([, value]) => value !== undefined && value !== "").sort(([a], [b]) => a.localeCompare(b));
   return `${path}?${new URLSearchParams(pairs.map(([key, value]) => [key, String(value)])).toString()}`;
 }
 
-function readPersistent<T>(key: string): CachedValue<T> | undefined {
-  try { const raw = localStorage.getItem(CACHE_PREFIX + key); return raw ? JSON.parse(raw) as CachedValue<T> : undefined; } catch { return undefined; }
+function fallbackRead<T>(key: string): CachedValue<T> | undefined {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    return raw ? JSON.parse(raw) as CachedValue<T> : undefined;
+  } catch {
+    return undefined;
+  }
 }
-function writePersistent<T>(key: string, entry: CachedValue<T>): void {
-  try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry)); } catch { /* storage may be unavailable/full */ }
+function fallbackWrite<T>(key: string, entry: CachedValue<T>): void {
+  try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry)); } catch { /* local fallback may be unavailable/full */ }
+}
+function fallbackDelete(key: string): void {
+  try { localStorage.removeItem(CACHE_PREFIX + key); } catch { /* local fallback may be unavailable */ }
+}
+
+function cacheDatabase(): Promise<IDBDatabase | null> {
+  if (databasePromise) return databasePromise;
+  if (typeof indexedDB === "undefined") return Promise.resolve(null);
+  databasePromise = new Promise((resolve) => {
+    try {
+      const request = indexedDB.open(CACHE_DATABASE, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(CACHE_STORE)) request.result.createObjectStore(CACHE_STORE, { keyPath: "key" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+  return databasePromise;
+}
+
+async function readPersistent<T>(key: string): Promise<CachedValue<T> | undefined> {
+  const database = await cacheDatabase();
+  if (!database) return fallbackRead<T>(key);
+  return new Promise((resolve) => {
+    try {
+      const request = database.transaction(CACHE_STORE, "readonly").objectStore(CACHE_STORE).get(key);
+      request.onsuccess = () => {
+        const item = request.result as PersistentValue<T> | undefined;
+        resolve(item && typeof item.savedAt === "number" ? { value: item.value, savedAt: item.savedAt } : undefined);
+      };
+      request.onerror = () => resolve(fallbackRead<T>(key));
+    } catch {
+      resolve(fallbackRead<T>(key));
+    }
+  });
+}
+
+async function writePersistent<T>(key: string, entry: CachedValue<T>): Promise<void> {
+  const database = await cacheDatabase();
+  if (!database) { fallbackWrite(key, entry); return; }
+  await new Promise<void>((resolve) => {
+    try {
+      const request = database.transaction(CACHE_STORE, "readwrite").objectStore(CACHE_STORE).put({ key, ...entry });
+      request.onsuccess = () => resolve();
+      request.onerror = () => { fallbackWrite(key, entry); resolve(); };
+    } catch {
+      fallbackWrite(key, entry);
+      resolve();
+    }
+  });
+}
+
+async function deletePersistent(key: string): Promise<void> {
+  fallbackDelete(key);
+  const database = await cacheDatabase();
+  if (!database) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const request = database.transaction(CACHE_STORE, "readwrite").objectStore(CACHE_STORE).delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
 }
 export function invalidateQuery(path: string, params?: QueryParams): void {
-  const key = queryKey(path, params); memoryCache.delete(key); try { localStorage.removeItem(CACHE_PREFIX + key); } catch { /* ignore */ }
+  const key = queryKey(path, params);
+  memoryCache.delete(key);
+  void deletePersistent(key);
 }
 
 function fetchQuery<T>(url: URL, key: string, options: CacheOptions): Promise<T> {
   const request = fetch(url.toString(), { signal: options.signal }).then(async response => {
     if (!response.ok) throw new Error(await errorMessage(response));
     const value = await response.json() as T; const entry = { value, savedAt: Date.now() }; memoryCache.set(key, entry);
-    if (options.persist) writePersistent(key, entry); return value;
+    if (options.persist) void writePersistent(key, entry);
+    return value;
   }).finally(() => inFlight.delete(key));
   inFlight.set(key, request); return request;
 }
@@ -58,7 +139,8 @@ export async function apiGet<T>(path: string, params?: QueryParams, options: Cac
     }
   }
   const key = queryKey(path, params); const ttlMs = options.ttlMs ?? 30_000;
-  const cached = (memoryCache.get(key) as CachedValue<T> | undefined) ?? (options.persist ? readPersistent<T>(key) : undefined);
+  let cached = memoryCache.get(key) as CachedValue<T> | undefined;
+  if (!cached && options.persist) cached = await readPersistent<T>(key);
   if (!options.force && cached) {
     memoryCache.set(key, cached);
     if (Date.now() - cached.savedAt < ttlMs) return cached.value;
