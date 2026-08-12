@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { apiDelete, apiGet, apiPost, invalidateQuery, formatAssetType, formatMarket, formatNumber, formatPeriod, formatStatus, formatTime } from "../domain/api";
 import KLineChart, { type KLineBar } from "../components/charts/KLineChart.vue";
 
@@ -75,6 +75,8 @@ const groups = ref<MarketGroup[]>([]);
 const expandedGroups = ref<string[]>([]);
 const groupsLoaded = ref(false);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
+let instrumentsController: AbortController | undefined;
+let barsController: AbortController | undefined;
 
 const marketOptions = computed(() => {
   const values = new Set<string>();
@@ -102,6 +104,7 @@ async function loadOverview(): Promise<void> {
 }
 
 async function loadInstruments(): Promise<void> {
+  instrumentsController?.abort(); const controller = new AbortController(); instrumentsController = controller;
   loading.value = true;
   error.value = "";
   try {
@@ -111,15 +114,16 @@ async function loadInstruments(): Promise<void> {
       q: query.value.trim(),
       page: page.value,
       pageSize,
-    }, { ttlMs: 60_000, persist: true });
+    }, { ttlMs: 60_000, persist: true, signal: controller.signal });
     instruments.value = data.items;
     total.value = data.total;
   } catch (reason) {
+    if (reason instanceof DOMException && reason.name === "AbortError") return;
     error.value = reason instanceof Error ? reason.message : "标的列表加载失败";
     instruments.value = [];
     total.value = 0;
   } finally {
-    loading.value = false;
+    if (instrumentsController === controller) loading.value = false;
   }
 }
 
@@ -135,19 +139,21 @@ async function loadGroups(): Promise<void> {
 }
 
 async function loadBars(instrumentId: string, wantedPeriod = period.value): Promise<void> {
+  barsController?.abort(); const controller = new AbortController(); barsController = controller;
   barsLoading.value = true;
   try {
     const data = await apiGet<BarsResponse>(`/api/market/instruments/${encodeURIComponent(instrumentId)}/bars`, {
       period: wantedPeriod,
       limit: 1000,
-    }, { ttlMs: 10 * 60_000, persist: true });
+    }, { ttlMs: 10 * 60_000, persist: true, signal: controller.signal });
     periods.value = data.availablePeriods;
     bars.value = data.bars;
   } catch (reason) {
+    if (reason instanceof DOMException && reason.name === "AbortError") return;
     error.value = reason instanceof Error ? reason.message : "K线加载失败";
     bars.value = [];
   } finally {
-    barsLoading.value = false;
+    if (barsController === controller) barsLoading.value = false;
   }
 }
 
@@ -200,6 +206,7 @@ watch(period, (next) => {
 });
 
 onMounted(reload);
+onBeforeUnmount(() => { instrumentsController?.abort(); barsController?.abort(); if (searchTimer) clearTimeout(searchTimer); });
 </script>
 
 <template>
