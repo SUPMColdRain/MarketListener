@@ -91,7 +91,7 @@
 - `实施方案`：默认只监听 127.0.0.1，不打入数据/凭据；Windows runner 构建前端与 Python bundle，启动后验证 `/` 和 `/api/health`。
 - `验收标准`：workflow_dispatch 可执行、zip/sha256 产出、smoke test 通过。
 - `测试要求`：本地或 CI Windows package smoke；`输出规范`：升级/迁移说明；`风险`：PyInstaller 隐式依赖；`回滚方案`：独立 workflow/打包目录。
-- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions runs `31624423028`、`31625230417`、`31651052390`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.1.zip` 与 SHA256，最新 EXE 成功以 `127.0.0.1` 随机端口启动并退出；连续 Actions 均已成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：无。
+- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions runs `31624423028`、`31625230417`、`31651052390`、`31651716726`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.1.zip` 与 SHA256，最新 EXE 成功以 `127.0.0.1` 随机端口启动并退出；连续 Actions 均已成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。`31651716726` 已在提交 `9e153d2` 上成功完成。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：无。
 
 ### R2-T008 — R2 统一回归、安全审查与发布
 
@@ -102,7 +102,7 @@
 - `实施方案`：检查 Git diff、ignored files、凭据模式、Actions；不重置、不强推、不合并 PR。
 - `验收标准`：命令与结果记录；Actions 成功或外部 BLOCKED 有证据。
 - `测试要求`：`scripts/verify.ps1`、pytest、ruff、Vue build/E2E、package smoke、适用 Android；`输出规范`：最终报告；`风险`：环境/CI 外部失败；`回滚方案`：按提交回退。
-- `实际修改文件`：全部本轮 R2 文件；`验证命令`：`scripts/verify.ps1`、定向 pytest、`npm run build`、`npm run test:e2e`、`git diff --check`、GitHub Actions REST 查询；`验证结果`：FULL-003 统一验证通过（锁定依赖、Ruff、完整桌面 pytest、Android lint/单测/APK）；前端构建和 14 项 Playwright 端到端测试通过，Git security diff 审查未发现新增凭据/数据库/构建产物；最新连续 Windows Actions 成功。`gh` 未安装，但已通过 GitHub REST 读取 Actions 状态；`遗留问题`：无。
+- `实际修改文件`：全部本轮 R2 文件；`验证命令`：`scripts/verify.ps1`、定向 pytest、`npm run build`、`npm run test:e2e`、`git diff --check`、GitHub Actions REST 查询；`验证结果`：FULL-003 统一验证通过（锁定依赖、Ruff、完整桌面 pytest、Android lint/单测/APK）；在提交 `9e153d2` 上复验：`pip check`、Ruff、525 项桌面 pytest、Android lint/单测/APK 均通过，且临时盘符已清理；前端构建和 14 项 Playwright 端到端测试通过，Git security diff 审查未发现新增凭据/数据库/构建产物；最新 Windows Action `31651716726` 成功。`gh` 未安装，但已通过 GitHub REST 读取 Actions 状态；`遗留问题`：无。
 
 ### R2-T009 — 历史外部验收与领域欠账审计
 
