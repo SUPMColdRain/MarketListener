@@ -6,7 +6,8 @@
 
 - 内部 OHLC 使用标准字段 `open/high/low/close`；界面可以显示为 `Start/High/Low/End`，不得反向改变存储字段。
 - `volume`、`amount`、`open_interest`、`pct_change`、`amplitude` 缺失时为 `NULL`/能力不可用，绝不写为零。沉淀资金尚无可靠统一口径，当前不支持。
-- 原始基础周期优先存 Silver；`aggregation.py` 已按 CN/HK 股票与 CN 期货交易时段聚合 1/5/15/30/60/120/240 分钟，日线可聚合为 `1w`/`1mo`。它尚未连接到通用派生查询/存储流程（R1-T006）。
+- 原始基础周期优先存 Silver；`aggregation.py` 已按 CN/HK 股票与 CN 期货交易时段聚合 1/5/15/30/60/120/240 分钟，日线可聚合为 `1w`/`1mo`。派生只在本地查询时进行；尚未验证的跨市场分钟数据不生成虚假周期。
+- A 股上涨/平盘/下跌可以从实际每日收盘价计算；**涨停/跌停、连板高度不得用统一 `±9.9%` 阈值计算**。主板、创业板、科创板、北交所、ST 和上市初期规则不同；在接入权威涨停池或完成带证券属性与生效日期的规则模型前，页面不展示该估算。
 
 ## 当前本地存量（真实 Silver）
 
@@ -40,6 +41,30 @@ Each local inventory category also exposes `sourceDetails`: its stored source id
 | Binance | HTTPS JSON：`https://data-api.binance.vision/api/v3/klines` | BTC/ETH 日线 | 公共端点 | collector 已落库；网络可达性需每次会话实测。 |
 | 东财/CBOE/腾讯 | 东财 `push2his.eastmoney.com/api/qt/stock/kline/get`；CBOE VIX CSV；腾讯回退 | DXY/VIX 日线指标 | 公共端点 | collector 已实现，TLS/网络可能导致部分失败。 |
 | 同花顺行情中心 | `q.10jqka.com.cn` 市场页与指数页快照 | A 股涨跌家数、涨停/跌停家数、昨日涨停平均收益率、指数表格 | 网站会话/反爬策略 | 已实现 `ths-market` 可恢复快照任务；公开页可获取首批指数，翻页请求会返回登录/授权限制。使用已登录浏览器 Cookie 的自动化仍需在可用浏览器会话中另行验证。 |
+
+## R2 分层实测（2026-08-13）
+
+验证层级依次为：代码已实现、真实连接探针、单标的真实数据、跨交易所/资产抽样、批量任务、数据库落库、API 查询、前端显示。较低层 PASS 不会自动提升为全量支持。
+
+| 类别 | 代码/连接/单标的 | 批量/落库/API/前端 | 结论 |
+| --- | --- | --- | --- |
+| A 股个股日线 | AKShare 真实探针：A 股现货 5,543、600519 日线 5,981、日历 PASS；pytdx 600519 日线 PASS | A 股全量日线已入 Silver，市场 API 已验证 | **日线 PARTIAL→主要覆盖**；分钟仅 pytdx 600519 `30m` 样本 PASS，不是全市场分钟承诺。 |
+| A 股 ETF 日线 | pytdx 510300 日线 PASS | 1,559 ETF 已入 Silver；14 个 `530xxx` 缺上游日线 | **日线 PARTIAL**；ETF 分钟线未完成独立实测/批量/落库。 |
+| 港股个股 | AKShare 日线回填已使用；本轮未做港股分钟真实探针 | 2,807 标的日线入 Silver，1 个缺口 | **港股日线 PARTIAL**；港股分钟线 **BLOCKED**，缺连接/样本/批量/落库证据。 |
+| A 股/港股/全球指数 | pytdx 上证指数日线探针因上游非法日期 FAILED；同花顺分页受登录限制 | 只有部分日线/快照 | **BLOCKED**，不能宣称指数全集或分钟线。 |
+| 国内期货主力 | AKShare 既有主力日线适配 | 19 个期货标的日线本地存量 | **主力日线 PARTIAL**；交易所级分钟线尚无本轮真实探针/批量/落库。 |
+| 国内期货加权/连续 | 无官方或透明来源已接入 | 未入库 | **BLOCKED**；若未来自行构造，必须明确标记 `DERIVED` 并固定换月、权重、复权方法。 |
+
+本轮 pytdx 报告：`artifacts/r2-probe-pytdx/provider-capabilities.json`（连接、清单、报价、600519 `1d/30m`、510300 `1d` PASS；000001 `1d` FAILED）。AKShare 报告：`artifacts/r2-probe-akshare/provider-capabilities.json`（连接/现货、涨跌家数、交易日历、资金流、600519 日线 PASS）。报告目录为本地 artifact，不纳入 Git。
+
+## 候选 Adapter 研究结论
+
+| 候选 | 结论 | 原因 |
+| --- | --- | --- |
+| GitHub `quantitative-finance` Topic | 仅作项目发现入口 | Topic 不是数据提供方；每个项目均须单独审查 License、活跃度、底层来源、条款和真实探针，不能直接接入。 |
+| AData | 候选，未提升 | 目标网页本轮抓取返回 404，未获得底层来源、许可、登录、频控、分钟深度和 Windows 兼容性证据。 |
+| mootdx/easy_tdx | 候选，未提升 | 可能封装 TDX 协议，不会改善上游 TDX 的数据边界；未完成 License、维护与真实分钟落库验证。 |
+| JoinQuant / Tushare | 可选配置，BLOCKED_CONFIGURATION | 当前无本地授权凭据；代码声明的分钟能力未经过本机真实连接、权限、深度和批量验证。 |
 
 ## 未满足目标与准确原因
 

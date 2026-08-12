@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as echarts from "echarts";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { apiGet } from "../domain/api";
+import { apiGet, apiPut, invalidateQuery } from "../domain/api";
 import SeriesChart, { type NamedSeries } from "../components/charts/SeriesChart.vue";
 import HeatmapChart, { type HeatmapCell } from "../components/charts/HeatmapChart.vue";
 import RankingChart, { type RankingFrame } from "../components/charts/RankingChart.vue";
@@ -55,6 +55,10 @@ const browserViews = [
 
 const definitions = ref<DashboardDefinition[]>([]);
 const payloads = ref<Record<string, DashboardPayload>>({});
+const expandedPanels = ref<Set<string>>(new Set());
+interface PersonalPanel { id: string; title: string; metricId: string; chartType: "line" | "bar" | "kline"; color: string; hidden: boolean }
+const personalPanels = ref<PersonalPanel[]>([]);
+const newPanelMetric = ref("market-breadth");
 const loading = ref(false);
 const error = ref("");
 const categoryFilter = ref("");
@@ -71,22 +75,22 @@ const availablePanels = computed(() =>
   ),
 );
 
+async function loadLayout(): Promise<void> {
+  try { personalPanels.value = (await apiGet<{ panels: PersonalPanel[] }>("/api/personal/dashboard", undefined, { ttlMs: 5 * 60_000, persist: true })).panels; } catch { personalPanels.value = []; }
+}
+async function saveLayout(): Promise<void> { await apiPut("/api/personal/dashboard", { panels: personalPanels.value }); invalidateQuery("/api/personal/dashboard"); }
+async function addPanel(): Promise<void> {
+  const definition = definitions.value.find(item => item.id === newPanelMetric.value); if (!definition) return;
+  personalPanels.value.push({ id: `panel-${Date.now()}`, title: definition.title, metricId: definition.id, chartType: "line", color: "#d64b4b", hidden: false }); await saveLayout();
+}
+async function removePanel(id: string): Promise<void> { personalPanels.value = personalPanels.value.filter(panel => panel.id !== id); await saveLayout(); }
+
 async function loadDefinitions(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    const data = await apiGet<{ items: DashboardDefinition[] }>("/api/dashboard/definitions");
+    const data = await apiGet<{ items: DashboardDefinition[] }>("/api/dashboard/definitions", undefined, { ttlMs: 5 * 60_000, persist: true });
     definitions.value = data.items;
-    const available = data.items.filter((item) => item.available);
-    await Promise.all(
-      available.map(async (item) => {
-        try {
-          payloads.value[item.id] = await apiGet<DashboardPayload>(`/api/dashboard/${encodeURIComponent(item.id)}`);
-        } catch {
-          payloads.value[item.id] = { available: false };
-        }
-      }),
-    );
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "数据面板加载失败";
   } finally {
@@ -94,9 +98,16 @@ async function loadDefinitions(): Promise<void> {
   }
 }
 
+async function loadPanel(id: string): Promise<void> {
+  expandedPanels.value.add(id); expandedPanels.value = new Set(expandedPanels.value);
+  if (payloads.value[id]) return;
+  try { payloads.value[id] = await apiGet<DashboardPayload>(`/api/dashboard/${encodeURIComponent(id)}`, undefined, { ttlMs: 10 * 60_000, persist: true }); }
+  catch { payloads.value[id] = { available: false }; }
+}
+
 async function loadRanking(): Promise<void> {
   try {
-    ranking.value = await apiGet<RankingPayload>("/api/metrics/ranking", { category: rankingCategory.value, limit: 20 });
+    ranking.value = await apiGet<RankingPayload>("/api/metrics/ranking", { category: rankingCategory.value, limit: 20 }, { ttlMs: 5 * 60_000, persist: true });
   } catch {
     ranking.value = { category: rankingCategory.value, available: false, frames: [] };
   }
@@ -104,7 +115,7 @@ async function loadRanking(): Promise<void> {
 
 async function loadHeatmap(): Promise<void> {
   try {
-    heatmap.value = await apiGet<HeatmapPayload>("/api/metrics/heatmap", { category: heatmapCategory.value, limit: 20 });
+    heatmap.value = await apiGet<HeatmapPayload>("/api/metrics/heatmap", { category: heatmapCategory.value, limit: 20 }, { ttlMs: 5 * 60_000, persist: true });
   } catch {
     heatmap.value = { category: heatmapCategory.value, available: false, x: [], y: [], cells: [] };
   }
@@ -170,7 +181,9 @@ function renderChart(): void {
 }
 
 function refreshAll(): void {
-  void Promise.all([loadDefinitions(), loadRanking(), loadHeatmap(), loadBrowser()]);
+  invalidateQuery("/api/dashboard/definitions");
+  for (const id of expandedPanels.value) { invalidateQuery(`/api/dashboard/${id}`); delete payloads.value[id]; }
+  void loadDefinitions();
 }
 
 watch(view, () => void loadBrowser());
@@ -178,7 +191,7 @@ watch(rankingCategory, () => void loadRanking());
 watch(heatmapCategory, () => void loadHeatmap());
 
 onMounted(() => {
-  void Promise.all([loadDefinitions(), loadRanking(), loadHeatmap(), loadBrowser()]);
+  void Promise.all([loadDefinitions(), loadLayout()]);
   window.addEventListener("resize", renderChart);
 });
 
@@ -207,11 +220,17 @@ onBeforeUnmount(() => {
       <span class="muted">{{ availablePanels.length }} 个可用面板（无数据的面板自动隐藏）</span>
     </section>
 
+    <section class="panel">
+      <div class="panel-title"><h2>我的仪表盘</h2><div><el-select v-model="newPanelMetric" size="small"><el-option v-for="item in definitions" :key="item.id" :label="item.title" :value="item.id" /></el-select><el-button size="small" type="primary" @click="void addPanel()">添加面板</el-button></div></div>
+      <p v-if="!personalPanels.length" class="muted">尚未添加自定义面板。布局仅保存到本机个人配置，不会改变业务指标定义。</p>
+      <div v-else class="dashboard-grid"><div v-for="panel in personalPanels.filter(item => !item.hidden)" :key="panel.id" class="panel dashboard-panel"><div class="panel-title"><h3>{{ panel.title }}</h3><div><el-button text size="small" @click="void loadPanel(panel.metricId)">加载</el-button><el-button text type="danger" size="small" @click="void removePanel(panel.id)">删除</el-button></div></div><SeriesChart v-if="payloads[panel.metricId]?.series?.length" :title="panel.title" :series="payloads[panel.metricId]?.series ?? []" :height="240" /><div v-else class="chart-empty-panel">点击“加载”读取指标</div></div></div>
+    </section>
+
     <section v-if="availablePanels.length" class="dashboard-grid">
       <div v-for="panel in availablePanels" :key="panel.id" class="panel dashboard-panel" :data-test="`dashboard-${panel.id}`">
         <div class="panel-title">
           <h2>{{ panel.title }}</h2>
-          <el-tag size="small">{{ panel.category }}</el-tag>
+          <div><el-tag size="small">{{ panel.category }}</el-tag><el-button text size="small" @click="void loadPanel(panel.id)">{{ expandedPanels.has(panel.id) ? "已加载" : "加载面板" }}</el-button></div>
         </div>
         <SeriesChart
           v-if="payloads[panel.id]?.series?.length"
@@ -238,7 +257,7 @@ onBeforeUnmount(() => {
             <el-option label="市场广度" value="breadth" />
           </el-select>
         </div>
-        <RankingChart :frames="ranking.frames" :height="300" data-test="ranking-chart" />
+        <el-button v-if="!ranking.frames.length" text @click="void loadRanking()">加载排行</el-button><RankingChart v-else :frames="ranking.frames" :height="300" data-test="ranking-chart" />
       </section>
       <section class="panel">
         <div class="panel-title">
@@ -249,7 +268,7 @@ onBeforeUnmount(() => {
             <el-option label="存储占用" value="storage" />
           </el-select>
         </div>
-        <HeatmapChart :x="heatmap.x" :y="heatmap.y" :cells="heatmap.cells" :height="300" data-test="heatmap-chart" />
+        <el-button v-if="!heatmap.cells.length" text @click="void loadHeatmap()">加载热力图</el-button><HeatmapChart v-else :x="heatmap.x" :y="heatmap.y" :cells="heatmap.cells" :height="300" data-test="heatmap-chart" />
       </section>
     </div>
 
@@ -267,7 +286,7 @@ onBeforeUnmount(() => {
         <span class="muted">{{ total }} 条</span>
       </div>
       <el-alert v-if="browserError" :title="browserError" type="warning" :closable="false" class="page-alert" />
-      <div ref="chartElement" class="data-chart" />
+      <el-button v-if="!rows.length && !browserLoading" text @click="void loadBrowser()">加载数据浏览器</el-button><div v-if="rows.length || browserLoading" ref="chartElement" class="data-chart" />
       <el-table :data="rows" v-loading="browserLoading" max-height="520" empty-text="暂无数据">
         <el-table-column v-for="column in columns" :key="column" :prop="column" :label="column" min-width="150" show-overflow-tooltip />
       </el-table>

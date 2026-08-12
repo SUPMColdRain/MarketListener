@@ -89,6 +89,18 @@ desktop\.venv\Scripts\python -m market_monitor serve --data-root data_control --
 
 访问 `http://127.0.0.1:8765/`。行情页会显示本地实际覆盖，数据源页会展示来源、周期、字段完整度及本地路由配置；它们不在页面请求时抓取第三方数据。
 
+## Windows 非开发环境运行
+
+GitHub Actions 的 **Windows portable package** 会生成 `MarketListener-Windows-x64-<version>.zip`。下载、解压并双击 `启动网页.cmd` 即可；程序默认仅监听 `127.0.0.1:8765`，随后打开浏览器。用户数据、日志和空数据库初始化均位于 `%LOCALAPPDATA%\MarketListener\data`，不会写入压缩包目录，也不会随升级包覆盖。首次启动没有行情数据时会显示真实空状态。
+
+开发者可在 Windows 本机生成同一结构的包：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_windows_portable.ps1 -Version 0.1.0
+```
+
+发布包不包含 `data_control/`、`.env`、Cookie、Token、私钥或付费 SDK 凭据。升级时保留 `%LOCALAPPDATA%\MarketListener\data`，只替换程序文件即可。
+
 ## 研报知识库与产业链图谱
 
 电脑端后端启动后访问 `http://<电脑IP>:8765/industry/` 可查看 SVG 产业链图谱（177 条原始子链，支持搜索公司/产品/原材料/环节与事实定位）；访问 `http://<电脑IP>:8765/industry-v2/` 可查看新版券商研报式产业链全景图（浅色上游/中游/下游/服务分区、公司卡片密集、悬浮 F10、搜索/缩放/证据抽屉，完全离线零 CDN；当前展示口径 75 条链 / 7,090 家带代码公司 / F10 CN 5,539 + HK 2,806）。研报流水线全部本地执行，`行业产业链研报/` 不纳入 Git：

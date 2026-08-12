@@ -74,6 +74,10 @@ desktop/web/playwright-report/
 desktop/web/playwright/.cache/
 *.tsbuildinfo
 desktop/src/market_monitor/web_dist/
+desktop/build/
+desktop/dist/
+dist/
+*.spec
 
 # Python tool caches
 .ruff_cache/

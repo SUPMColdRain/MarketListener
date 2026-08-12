@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "./views/HomeView.vue";
-import DataView from "./views/DataView.vue";
-import DataSourcesView from "./views/DataSourcesView.vue";
-import F10View from "./views/F10View.vue";
-import IndustryView from "./views/IndustryView.vue";
-import LogsView from "./views/LogsView.vue";
-import MarketView from "./views/MarketView.vue";
-import StrategyView from "./views/StrategyView.vue";
-import StatsView from "./views/StatsView.vue";
+const HomeView = () => import("./views/HomeView.vue");
+const DataView = () => import("./views/DataView.vue");
+const DataSourcesView = () => import("./views/DataSourcesView.vue");
+const F10View = () => import("./views/F10View.vue");
+const IndustryView = () => import("./views/IndustryView.vue");
+const LogsView = () => import("./views/LogsView.vue");
+const MarketView = () => import("./views/MarketView.vue");
+const StrategyView = () => import("./views/StrategyView.vue");
+const StatsView = () => import("./views/StatsView.vue");
 
 export default createRouter({
   history: createWebHistory(),

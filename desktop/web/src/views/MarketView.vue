@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { apiDelete, apiGet, apiPost, formatAssetType, formatMarket, formatNumber, formatPeriod, formatStatus, formatTime } from "../domain/api";
+import { apiDelete, apiGet, apiPost, invalidateQuery, formatAssetType, formatMarket, formatNumber, formatPeriod, formatStatus, formatTime } from "../domain/api";
 import KLineChart, { type KLineBar } from "../components/charts/KLineChart.vue";
 
 interface MarketOverview {
@@ -72,6 +72,8 @@ const barsLoading = ref(false);
 const watchlistIds = ref<Set<string>>(new Set());
 const groups = ref<MarketGroup[]>([]);
 const expandedGroups = ref<string[]>([]);
+const groupsLoaded = ref(false);
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 const marketOptions = computed(() => {
   const values = new Set<string>();
@@ -89,7 +91,7 @@ function qualityType(status?: string): "success" | "danger" | "warning" | "info"
 
 async function loadOverview(): Promise<void> {
   try {
-    overview.value = await apiGet<MarketOverview>("/api/market/overview");
+    overview.value = await apiGet<MarketOverview>("/api/market/overview", undefined, { ttlMs: 5 * 60_000, persist: true });
     const available = overview.value.periods ?? [];
     periods.value = available;
     if (available.length > 0 && !available.includes(period.value)) period.value = available[0];
@@ -107,7 +109,7 @@ async function loadInstruments(): Promise<void> {
       q: query.value.trim(),
       page: page.value,
       pageSize,
-    });
+    }, { ttlMs: 60_000, persist: true });
     instruments.value = data.items;
     total.value = data.total;
   } catch (reason) {
@@ -121,8 +123,9 @@ async function loadInstruments(): Promise<void> {
 
 async function loadGroups(): Promise<void> {
   try {
-    const data = await apiGet<{ items: MarketGroup[] }>("/api/market/groups");
+    const data = await apiGet<{ items: MarketGroup[] }>("/api/market/groups", undefined, { ttlMs: 10 * 60_000, persist: true });
     groups.value = data.items;
+    groupsLoaded.value = true;
     if (!expandedGroups.value.length) expandedGroups.value = data.items.map((item) => item.categoryKey);
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "行情分类加载失败";
@@ -135,7 +138,7 @@ async function loadBars(instrumentId: string, wantedPeriod = period.value): Prom
     const data = await apiGet<BarsResponse>(`/api/market/instruments/${encodeURIComponent(instrumentId)}/bars`, {
       period: wantedPeriod,
       limit: 1000,
-    });
+    }, { ttlMs: 10 * 60_000, persist: true });
     periods.value = data.availablePeriods;
     bars.value = data.bars;
   } catch (reason) {
@@ -182,8 +185,13 @@ async function toggleWatchlist(row: InstrumentRow): Promise<void> {
 
 function reload(): void {
   error.value = "";
-  void Promise.all([loadOverview(), loadInstruments(), loadWatchlist(), loadGroups()]);
+  invalidateQuery("/api/market/overview");
+  invalidateQuery("/api/market/instruments", { market: market.value || "", q: query.value.trim(), page: page.value, pageSize });
+  void Promise.all([loadOverview(), loadInstruments(), loadWatchlist()]);
+  if (groupsLoaded.value) { invalidateQuery("/api/market/groups"); void loadGroups(); }
 }
+
+function debounceSearch(): void { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { page.value = 1; void loadInstruments(); }, 300); }
 
 watch(period, (next) => {
   if (selected.value) void loadBars(selected.value.instrumentId, next);
@@ -213,7 +221,8 @@ onMounted(reload);
 
     <section class="panel market-groups" data-test="market-groups">
       <div class="panel-heading"><div><h2>按市场与资产类别</h2><p class="muted">仅展示本地 Silver 中实际覆盖的数据；来源、质量与更新时间均来自已落库记录。</p></div></div>
-      <el-collapse v-model="expandedGroups">
+      <el-button v-if="!groupsLoaded" text type="primary" @click="void loadGroups()">加载分类覆盖</el-button>
+      <el-collapse v-else v-model="expandedGroups">
         <el-collapse-item v-for="item in groups" :key="item.categoryKey" :name="item.categoryKey">
           <template #title><span class="group-title"><strong>{{ formatMarket(item.market) }} · {{ formatAssetType(item.assetType) }}</strong><span>{{ formatPeriod(item.period) }} · {{ item.instruments }} 标的 · {{ formatNumber(item.rows) }} 行</span></span></template>
           <div class="group-details"><span>来源：{{ item.sources.join(" / ") || "暂无数据" }}</span><span>质量：{{ Object.entries(item.quality).map(([key, value]) => `${key} ${value}`).join(" · ") || "暂无数据" }}</span><span>最新K线：{{ formatTime(item.latestBarAt) }}</span><span>最后更新：{{ formatTime(item.lastUpdatedAt) }}</span></div>
@@ -225,7 +234,7 @@ onMounted(reload);
       <el-select v-model="market" clearable placeholder="全部市场" data-test="market-filter" @change="page = 1; void loadInstruments()">
         <el-option v-for="option in marketOptions" :key="option" :label="formatMarket(option)" :value="option" />
       </el-select>
-      <el-input v-model="query" placeholder="名称 / 代码 / instrumentId" clearable data-test="market-search" @keyup.enter="page = 1; void loadInstruments()" />
+      <el-input v-model="query" placeholder="名称 / 代码 / instrumentId" clearable data-test="market-search" @input="debounceSearch" @keyup.enter="page = 1; void loadInstruments()" />
       <el-button type="primary" :loading="loading" @click="page = 1; void loadInstruments()">查询</el-button>
       <span class="muted">{{ total }} 个标的 · 服务端筛选分页</span>
     </section>

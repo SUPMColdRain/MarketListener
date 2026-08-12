@@ -99,7 +99,9 @@ def test_metrics_ranking_and_heatmap_use_real_breadth_data(tmp_path: Path) -> No
     body = heatmap.json()
     assert body["available"] is True
     assert body["x"] == ["2026-08-06", "2026-08-07"]
-    assert body["y"] == ["上涨", "下跌", "平盘", "涨停", "跌停"]
+    # 涨停/跌停不能按统一 9.9% 阈值估算；在权威涨停池或分板规则验证前，
+    # 市场广度仅公开可由收盘价可靠计算的上涨、下跌、平盘。
+    assert body["y"] == ["上涨", "下跌", "平盘"]
     assert body["cells"]
 
 

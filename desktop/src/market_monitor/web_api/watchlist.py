@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .common import clean, load_inventory, load_json, now_iso, save_json
 
@@ -31,6 +31,10 @@ def _data_root(request: Request) -> Path:
 
 def _watchlist_path(data_root: Path) -> Path:
     return data_root / "personal" / "watchlist.json"
+
+
+def _dashboard_path(data_root: Path) -> Path:
+    return data_root / "personal" / "dashboard.json"
 
 
 def _load_entries(data_root: Path) -> list[dict[str, Any]]:
@@ -62,6 +66,21 @@ class WatchlistItemIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     instrumentId: str
     note: str = ""
+
+
+class DashboardPanelIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=80)
+    metricId: str = Field(min_length=1, max_length=80)
+    chartType: str = Field(default="line", pattern="^(line|bar|kline)$")
+    color: str = Field(default="#d64b4b", pattern=r"^#[0-9a-fA-F]{6}$")
+    hidden: bool = False
+
+
+class DashboardLayoutIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    panels: list[DashboardPanelIn] = Field(default_factory=list, max_length=30)
 
 
 @router.get("/watchlist")
@@ -98,6 +117,19 @@ def delete_watchlist(instrument_id: str, request: Request) -> dict[str, Any]:
     remaining = [entry for entry in entries if entry.get("instrumentId") != instrument_id]
     _save_entries(data_root, remaining)
     return clean({"item": removed})
+
+
+@router.get("/dashboard")
+def get_dashboard(request: Request) -> dict[str, Any]:
+    payload = load_json(_dashboard_path(_data_root(request)), {"panels": []})
+    return clean(payload if isinstance(payload, dict) else {"panels": []})
+
+
+@router.put("/dashboard")
+def save_dashboard(request: Request, body: DashboardLayoutIn) -> dict[str, Any]:
+    payload = {"updatedAt": now_iso(), "panels": [panel.model_dump() for panel in body.panels]}
+    save_json(_dashboard_path(_data_root(request)), payload)
+    return clean(payload)
 
 
 __all__ = ("router",)

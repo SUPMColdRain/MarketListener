@@ -5,6 +5,27 @@
 
 export type QueryParams = Record<string, string | number | undefined>;
 
+type CacheOptions = { ttlMs?: number; persist?: boolean; force?: boolean; signal?: AbortSignal };
+type CachedValue<T> = { value: T; savedAt: number };
+const memoryCache = new Map<string, CachedValue<unknown>>();
+const inFlight = new Map<string, Promise<unknown>>();
+const CACHE_PREFIX = "marketlistener.query.v1:";
+
+function queryKey(path: string, params?: QueryParams): string {
+  const pairs = Object.entries(params ?? {}).filter(([, value]) => value !== undefined && value !== "").sort(([a], [b]) => a.localeCompare(b));
+  return `${path}?${new URLSearchParams(pairs.map(([key, value]) => [key, String(value)])).toString()}`;
+}
+
+function readPersistent<T>(key: string): CachedValue<T> | undefined {
+  try { const raw = localStorage.getItem(CACHE_PREFIX + key); return raw ? JSON.parse(raw) as CachedValue<T> : undefined; } catch { return undefined; }
+}
+function writePersistent<T>(key: string, entry: CachedValue<T>): void {
+  try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry)); } catch { /* storage may be unavailable/full */ }
+}
+export function invalidateQuery(path: string, params?: QueryParams): void {
+  const key = queryKey(path, params); memoryCache.delete(key); try { localStorage.removeItem(CACHE_PREFIX + key); } catch { /* ignore */ }
+}
+
 async function errorMessage(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { detail?: unknown };
@@ -20,16 +41,23 @@ async function errorMessage(response: Response): Promise<string> {
   return `请求失败 (${response.status})`;
 }
 
-export async function apiGet<T>(path: string, params?: QueryParams): Promise<T> {
+export async function apiGet<T>(path: string, params?: QueryParams, options: CacheOptions = {}): Promise<T> {
   const url = new URL(path, window.location.origin);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
     }
   }
-  const response = await fetch(url.toString());
-  if (!response.ok) throw new Error(await errorMessage(response));
-  return (await response.json()) as T;
+  const key = queryKey(path, params); const ttlMs = options.ttlMs ?? 30_000;
+  const cached = (memoryCache.get(key) as CachedValue<T> | undefined) ?? (options.persist ? readPersistent<T>(key) : undefined);
+  if (!options.force && cached && Date.now() - cached.savedAt < ttlMs) { memoryCache.set(key, cached); return cached.value; }
+  if (!options.force && inFlight.has(key)) return inFlight.get(key) as Promise<T>;
+  const request = fetch(url.toString(), { signal: options.signal }).then(async response => {
+    if (!response.ok) throw new Error(await errorMessage(response));
+    const value = await response.json() as T; const entry = { value, savedAt: Date.now() }; memoryCache.set(key, entry);
+    if (options.persist) writePersistent(key, entry); return value;
+  }).finally(() => inFlight.delete(key));
+  inFlight.set(key, request); return request;
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {

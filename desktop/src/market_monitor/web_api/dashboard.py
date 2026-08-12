@@ -43,9 +43,9 @@ _EXCLUDED_METRIC_PREFIXES = (
 DASHBOARD_SPECS: tuple[dict[str, str], ...] = (
     {
         "id": "market-breadth",
-        "title": "市场广度",
+        "title": "A股涨跌广度",
         "category": "breadth",
-        "description": "本地 CN 股票/ETF/指数日线计算的每日涨跌与涨跌停家数",
+        "description": "本地 CN 股票日线计算的每日上涨、下跌与平盘家数；涨跌停/连板须由权威涨停池或分板规则另行验证",
     },
     {
         "id": "futures-breadth",
@@ -253,8 +253,6 @@ def _market_breadth_dashboard(data_root: Path) -> dict[str, Any]:
                 ("上涨", "advances"),
                 ("下跌", "declines"),
                 ("平盘", "unchanged"),
-                ("涨停", "limit_ups"),
-                ("跌停", "limit_downs"),
             ),
         ),
         "generatedAt": now_iso(),
@@ -513,8 +511,6 @@ def _heatmap_payload(data_root: Path, category: str, limit: int) -> dict[str, An
             ("上涨", "advances"),
             ("下跌", "declines"),
             ("平盘", "unchanged"),
-            ("涨停", "limit_ups"),
-            ("跌停", "limit_downs"),
         )
         dates = [snapshot.trading_date for snapshot in snapshots][-limit:]
         by_date = {snapshot.trading_date: snapshot for snapshot in snapshots}
