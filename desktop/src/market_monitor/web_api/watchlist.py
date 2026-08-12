@@ -77,6 +77,7 @@ class DashboardPanelIn(BaseModel):
     color: str = Field(default="#d64b4b", pattern=r"^#[0-9a-fA-F]{6}$")
     opacity: float = Field(default=0.16, ge=0.0, le=1.0)
     rangeDays: int = Field(default=0, ge=0, le=3650)
+    width: str = Field(default="half", pattern="^(half|full)$")
     hidden: bool = False
 
 

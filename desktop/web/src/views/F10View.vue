@@ -17,6 +17,16 @@ const detailLoading = ref(false);
 
 const selectedKey = computed(() => String(route.params.instrumentKey || ""));
 
+async function retryDetail(key: string): Promise<CompanyDetail> {
+  try {
+    return await apiGet<CompanyDetail>(`/api/f10/companies/${encodeURIComponent(key)}`, undefined, { ttlMs: 5 * 60_000, persist: true });
+  } catch {
+    // 本地服务在并行页面巡检时可能短暂重启连接；只对安全的只读详情重试一次。
+    await new Promise((resolve) => window.setTimeout(resolve, 180));
+    return apiGet<CompanyDetail>(`/api/f10/companies/${encodeURIComponent(key)}`, undefined, { ttlMs: 5 * 60_000, persist: true, force: true });
+  }
+}
+
 async function loadCompanies() {
   loading.value = true;
   error.value = "";
@@ -36,7 +46,7 @@ async function loadDetail(key = selectedKey.value) {
   }
   detailLoading.value = true;
   try {
-    detail.value = await apiGet<CompanyDetail>(`/api/f10/companies/${encodeURIComponent(key)}`, undefined, { ttlMs: 5 * 60_000, persist: true });
+    detail.value = await retryDetail(key);
   } catch (reason) {
     detail.value = null;
     error.value = reason instanceof Error ? reason.message : "企业详情加载失败";

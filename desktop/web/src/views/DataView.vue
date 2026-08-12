@@ -64,6 +64,7 @@ interface PersonalPanel {
   color: string;
   opacity: number;
   rangeDays: number;
+  width: "half" | "full";
   hidden: boolean;
 }
 const personalPanels = ref<PersonalPanel[]>([]);
@@ -97,6 +98,7 @@ async function loadLayout(): Promise<void> {
         color: /^#[0-9a-fA-F]{6}$/.test(panel.color ?? "") ? panel.color! : "#d64b4b",
         opacity: typeof panel.opacity === "number" ? Math.min(1, Math.max(0, panel.opacity)) : 0.16,
         rangeDays: typeof panel.rangeDays === "number" ? Math.max(0, panel.rangeDays) : 0,
+        width: panel.width === "full" ? "full" : "half",
         hidden: Boolean(panel.hidden),
       }));
   } catch { personalPanels.value = []; }
@@ -104,7 +106,7 @@ async function loadLayout(): Promise<void> {
 async function saveLayout(): Promise<void> { await apiPut("/api/personal/dashboard", { panels: personalPanels.value }); invalidateQuery("/api/personal/dashboard"); }
 async function addPanel(): Promise<void> {
   const definition = definitions.value.find(item => item.id === newPanelMetric.value); if (!definition) return;
-  personalPanels.value.push({ id: `panel-${Date.now()}`, title: definition.title, metricId: definition.id, chartType: "line", color: "#d64b4b", opacity: 0.16, rangeDays: 0, hidden: false }); await saveLayout();
+  personalPanels.value.push({ id: `panel-${Date.now()}`, title: definition.title, metricId: definition.id, chartType: "line", color: "#d64b4b", opacity: 0.16, rangeDays: 0, width: "half", hidden: false }); await saveLayout();
 }
 async function removePanel(id: string): Promise<void> { personalPanels.value = personalPanels.value.filter(panel => panel.id !== id); await saveLayout(); }
 async function togglePanelHidden(panel: PersonalPanel): Promise<void> { panel.hidden = !panel.hidden; await saveLayout(); }
@@ -253,9 +255,9 @@ onBeforeUnmount(() => {
       <div class="panel-title"><h2>我的仪表盘</h2><div><el-select v-model="newPanelMetric" size="small"><el-option v-for="item in definitions" :key="item.id" :label="item.title" :value="item.id" /></el-select><el-button size="small" type="primary" @click="void addPanel()">添加面板</el-button></div></div>
       <p v-if="!personalPanels.length" class="muted">尚未添加自定义面板。布局仅保存到本机个人配置，不会改变业务指标定义。</p>
       <div v-else class="dashboard-grid">
-        <div v-for="panel in personalPanels.filter(item => !item.hidden)" :key="panel.id" class="panel dashboard-panel">
+        <div v-for="panel in personalPanels.filter(item => !item.hidden)" :key="panel.id" class="panel dashboard-panel" :class="{ 'dashboard-panel-full': panel.width === 'full' }">
           <div class="panel-title"><h3>{{ panel.title }}</h3><div><el-button text size="small" @click="void movePanel(panel.id, -1)">上移</el-button><el-button text size="small" @click="void movePanel(panel.id, 1)">下移</el-button><el-button text size="small" @click="void togglePanelHidden(panel)">隐藏</el-button><el-button text size="small" @click="void loadPanel(panel.metricId)">加载</el-button><el-button text type="danger" size="small" @click="void removePanel(panel.id)">删除</el-button></div></div>
-          <div class="data-controls personal-panel-settings"><el-input v-model="panel.title" size="small" aria-label="面板标题" @change="void saveLayout()" /><el-select v-model="panel.chartType" size="small" aria-label="图表类型" @change="void saveLayout()"><el-option label="折线图" value="line" /><el-option label="柱状图" value="bar" /></el-select><el-select v-model="panel.rangeDays" size="small" aria-label="时间范围" @change="void saveLayout()"><el-option label="全部时间" :value="0" /><el-option label="近30天" :value="30" /><el-option label="近90天" :value="90" /><el-option label="近1年" :value="365" /></el-select><input v-model="panel.color" type="color" aria-label="图表颜色" @change="void saveLayout()" /><el-slider v-model="panel.opacity" :min="0" :max="1" :step="0.05" aria-label="面积透明度" @change="void saveLayout()" /></div>
+          <div class="data-controls personal-panel-settings"><el-input v-model="panel.title" size="small" aria-label="面板标题" @change="void saveLayout()" /><el-select v-model="panel.width" size="small" aria-label="面板宽度" @change="void saveLayout()"><el-option label="半宽" value="half" /><el-option label="整行" value="full" /></el-select><el-select v-model="panel.chartType" size="small" aria-label="图表类型" @change="void saveLayout()"><el-option label="折线图" value="line" /><el-option label="柱状图" value="bar" /></el-select><el-select v-model="panel.rangeDays" size="small" aria-label="时间范围" @change="void saveLayout()"><el-option label="全部时间" :value="0" /><el-option label="近30天" :value="30" /><el-option label="近90天" :value="90" /><el-option label="近1年" :value="365" /></el-select><input v-model="panel.color" type="color" aria-label="图表颜色" @change="void saveLayout()" /><el-slider v-model="panel.opacity" :min="0" :max="1" :step="0.05" aria-label="面积透明度" @change="void saveLayout()" /></div>
           <SeriesChart v-if="payloads[panel.metricId]?.series?.length" :title="panel.title" :series="payloads[panel.metricId]?.series ?? []" :height="240" :color="panel.color" :chart-type="panel.chartType" :opacity="panel.opacity" :range-days="panel.rangeDays" /><div v-else class="chart-empty-panel">点击“加载”读取指标</div>
         </div>
       </div>

@@ -393,6 +393,7 @@ code {
   align-items: start;
 }
 .dashboard-panel { margin-top: 16px; }
+.dashboard-panel-full { grid-column: 1 / -1; }
 .dashboard-panel .panel-title { margin-bottom: 10px; }
 .metrics-layout {
   display: grid;

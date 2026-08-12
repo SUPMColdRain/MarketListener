@@ -128,7 +128,7 @@ def test_market_breadth_excludes_etfs_and_indexes(tmp_path: Path) -> None:
 def test_personal_dashboard_layout_accepts_display_options(tmp_path: Path) -> None:
     client = _app(tmp_path)
     payload = {
-        "panels": [{"id": "breadth", "title": "我的广度", "metricId": "market-breadth", "chartType": "bar", "color": "#123456", "opacity": 0.35, "rangeDays": 90, "hidden": True}],
+        "panels": [{"id": "breadth", "title": "我的广度", "metricId": "market-breadth", "chartType": "bar", "color": "#123456", "opacity": 0.35, "rangeDays": 90, "width": "full", "hidden": True}],
     }
     saved = client.put("/api/personal/dashboard", json=payload)
     assert saved.status_code == 200
