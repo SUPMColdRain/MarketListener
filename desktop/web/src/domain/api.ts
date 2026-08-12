@@ -107,12 +107,16 @@ export function invalidateQuery(path: string, params?: QueryParams): void {
 }
 
 function fetchQuery<T>(url: URL, key: string, options: CacheOptions): Promise<T> {
-  const request = fetch(url.toString(), { signal: options.signal }).then(async response => {
+  let request: Promise<T>;
+  request = fetch(url.toString(), { signal: options.signal }).then(async response => {
     if (!response.ok) throw new Error(await errorMessage(response));
     const value = await response.json() as T; const entry = { value, savedAt: Date.now() }; memoryCache.set(key, entry);
     if (options.persist) void writePersistent(key, entry);
     return value;
-  }).finally(() => inFlight.delete(key));
+  }).finally(() => {
+    // 旧请求结束时不能删掉同一个 key 的新请求，否则会破坏后续去重。
+    if (inFlight.get(key) === request) inFlight.delete(key);
+  });
   inFlight.set(key, request); return request;
 }
 
