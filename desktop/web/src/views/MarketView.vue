@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { apiDelete, apiGet, apiPost, formatNumber, formatTime } from "../domain/api";
+import { apiDelete, apiGet, apiPost, formatAssetType, formatMarket, formatNumber, formatPeriod, formatStatus, formatTime } from "../domain/api";
 import KLineChart, { type KLineBar } from "../components/charts/KLineChart.vue";
 
 interface MarketOverview {
@@ -30,6 +30,7 @@ interface InstrumentRow {
 interface BarsResponse {
   instrumentId: string;
   period: string;
+  availablePeriods: string[];
   bars: KLineBar[];
   total: number;
   lastBarAt?: string;
@@ -39,6 +40,19 @@ interface WatchlistItem {
   instrumentId: string;
   addedAt: string;
   note: string;
+}
+
+interface MarketGroup {
+  categoryKey: string;
+  market: string;
+  assetType: string;
+  period: string;
+  instruments: number;
+  rows: number;
+  latestBarAt?: string;
+  lastUpdatedAt?: string;
+  sources: string[];
+  quality: Record<string, number>;
 }
 
 const overview = ref<MarketOverview>({});
@@ -56,6 +70,8 @@ const period = ref("1d");
 const bars = ref<KLineBar[]>([]);
 const barsLoading = ref(false);
 const watchlistIds = ref<Set<string>>(new Set());
+const groups = ref<MarketGroup[]>([]);
+const expandedGroups = ref<string[]>([]);
 
 const marketOptions = computed(() => {
   const values = new Set<string>();
@@ -103,6 +119,16 @@ async function loadInstruments(): Promise<void> {
   }
 }
 
+async function loadGroups(): Promise<void> {
+  try {
+    const data = await apiGet<{ items: MarketGroup[] }>("/api/market/groups");
+    groups.value = data.items;
+    if (!expandedGroups.value.length) expandedGroups.value = data.items.map((item) => item.categoryKey);
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : "行情分类加载失败";
+  }
+}
+
 async function loadBars(instrumentId: string, wantedPeriod = period.value): Promise<void> {
   barsLoading.value = true;
   try {
@@ -110,6 +136,7 @@ async function loadBars(instrumentId: string, wantedPeriod = period.value): Prom
       period: wantedPeriod,
       limit: 1000,
     });
+    periods.value = data.availablePeriods;
     bars.value = data.bars;
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "K线加载失败";
@@ -155,7 +182,7 @@ async function toggleWatchlist(row: InstrumentRow): Promise<void> {
 
 function reload(): void {
   error.value = "";
-  void Promise.all([loadOverview(), loadInstruments(), loadWatchlist()]);
+  void Promise.all([loadOverview(), loadInstruments(), loadWatchlist(), loadGroups()]);
 }
 
 watch(period, (next) => {
@@ -181,12 +208,22 @@ onMounted(reload);
       <div class="metric compact"><span>K线行数</span><strong>{{ overview.rows ?? "暂无数据" }}</strong></div>
       <div class="metric compact"><span>周期</span><strong>{{ periods.length ? periods.join(" / ") : "暂无数据" }}</strong></div>
       <div class="metric compact"><span>最新K线</span><strong class="small">{{ formatTime(overview.latestBarAt) }}</strong></div>
-      <div class="metric compact wide"><span>市场分布</span><strong class="small">{{ marketOptions.length ? marketOptions.join(" · ") : "暂无数据" }}</strong></div>
+      <div class="metric compact wide"><span>市场分布</span><strong class="small">{{ marketOptions.length ? marketOptions.map(formatMarket).join(" · ") : "暂无数据" }}</strong></div>
+    </section>
+
+    <section class="panel market-groups" data-test="market-groups">
+      <div class="panel-heading"><div><h2>按市场与资产类别</h2><p class="muted">仅展示本地 Silver 中实际覆盖的数据；来源、质量与更新时间均来自已落库记录。</p></div></div>
+      <el-collapse v-model="expandedGroups">
+        <el-collapse-item v-for="item in groups" :key="item.categoryKey" :name="item.categoryKey">
+          <template #title><span class="group-title"><strong>{{ formatMarket(item.market) }} · {{ formatAssetType(item.assetType) }}</strong><span>{{ formatPeriod(item.period) }} · {{ item.instruments }} 标的 · {{ formatNumber(item.rows) }} 行</span></span></template>
+          <div class="group-details"><span>来源：{{ item.sources.join(" / ") || "暂无数据" }}</span><span>质量：{{ Object.entries(item.quality).map(([key, value]) => `${key} ${value}`).join(" · ") || "暂无数据" }}</span><span>最新K线：{{ formatTime(item.latestBarAt) }}</span><span>最后更新：{{ formatTime(item.lastUpdatedAt) }}</span></div>
+        </el-collapse-item>
+      </el-collapse>
     </section>
 
     <section class="panel market-controls">
       <el-select v-model="market" clearable placeholder="全部市场" data-test="market-filter" @change="page = 1; void loadInstruments()">
-        <el-option v-for="option in marketOptions" :key="option" :label="option" :value="option" />
+        <el-option v-for="option in marketOptions" :key="option" :label="formatMarket(option)" :value="option" />
       </el-select>
       <el-input v-model="query" placeholder="名称 / 代码 / instrumentId" clearable data-test="market-search" @keyup.enter="page = 1; void loadInstruments()" />
       <el-button type="primary" :loading="loading" @click="page = 1; void loadInstruments()">查询</el-button>
@@ -210,8 +247,8 @@ onMounted(reload);
               <small>{{ scope.row.instrumentId }} · {{ scope.row.symbol || "暂无数据" }}</small>
             </template>
           </el-table-column>
-          <el-table-column prop="market" label="市场" width="70" />
-          <el-table-column prop="assetType" label="类型" width="84" />
+          <el-table-column label="市场" width="120"><template #default="scope">{{ formatMarket(scope.row.market) }}</template></el-table-column>
+          <el-table-column label="类型" width="150"><template #default="scope">{{ formatAssetType(scope.row.assetType) }}</template></el-table-column>
           <el-table-column label="最新收盘" width="112" align="right">
             <template #default="scope">{{ formatNumber(scope.row.lastClose, 4) }}</template>
           </el-table-column>
@@ -220,7 +257,7 @@ onMounted(reload);
           </el-table-column>
           <el-table-column label="质量" width="92">
             <template #default="scope">
-              <el-tag size="small" :type="qualityType(scope.row.qualityStatus)">{{ scope.row.qualityStatus || "暂无数据" }}</el-tag>
+              <el-tag size="small" :type="qualityType(scope.row.qualityStatus)">{{ formatStatus(scope.row.qualityStatus) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="" width="78" fixed="right">
@@ -249,10 +286,10 @@ onMounted(reload);
         <div class="chart-heading">
           <div>
             <h2>{{ selected?.name || selected?.instrumentId || "选择标的" }}</h2>
-            <p class="muted">{{ selected ? `${selected.instrumentId} · ${selected.market || "暂无数据"} · ${selected.assetType || "暂无数据"}` : "从左侧列表选择标的后展示 K 线" }}</p>
+            <p class="muted">{{ selected ? `${selected.instrumentId} · ${formatMarket(selected.market)} · ${formatAssetType(selected.assetType)}` : "从左侧列表选择标的后展示 K 线" }}</p>
           </div>
           <el-radio-group v-if="periods.length" v-model="period" size="small" data-test="period-switch">
-            <el-radio-button v-for="item in periods" :key="item" :value="item">{{ item }}</el-radio-button>
+            <el-radio-button v-for="item in periods" :key="item" :value="item">{{ formatPeriod(item) }}</el-radio-button>
           </el-radio-group>
         </div>
         <div v-loading="barsLoading" class="kline-wrap">

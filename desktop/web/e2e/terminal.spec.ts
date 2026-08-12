@@ -4,6 +4,7 @@ const ROUTES = [
   ["/", "首页"],
   ["/market/", "行情"],
   ["/data/", "数据"],
+  ["/data-sources/", "数据源"],
   ["/strategy/", "策略"],
   ["/stats/", "统计"],
   ["/f10/", "F10 企业资料库"],
@@ -78,6 +79,12 @@ test("home only exposes predefined operations and rejects arbitrary payloads", a
     data: { kind: "__import__('os').system('whoami')" },
   });
   expect(arbitrary.status()).toBe(422);
+
+  await page.reload();
+  const queue = page.locator(".el-table").last();
+  await expect(queue).toContainText("刷新状态");
+  await expect(queue).not.toContainText("STATUS_REFRESH");
+  await expect(queue).toContainText(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
 });
 
 test("data workbench is read-only, bounded and shows real dashboards", async ({ page }) => {
@@ -179,5 +186,12 @@ test("market workbench lists instruments and renders the K line view", async ({ 
   });
   await page.locator('[data-test="instrument-table"] .el-table__row td').first().click();
   await expect(page.locator(".kline-wrap canvas").first()).toBeVisible({ timeout: 15_000 });
+  await expectCleanTerminal(page);
+});
+
+test("data source page reports local categories and provider configuration", async ({ page }) => {
+  await page.goto("/data-sources/");
+  await expect(page.locator('[data-test="data-source-inventory"] .el-table__row').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-test="provider-registry"] .el-table__row').first()).toBeVisible();
   await expectCleanTerminal(page);
 });

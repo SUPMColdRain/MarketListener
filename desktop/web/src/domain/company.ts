@@ -27,6 +27,7 @@ export interface CompanySummary {
   topRevenueSegment?: RevenueSegment;
   products?: string[];
   source?: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -50,13 +51,13 @@ export function textOrNone(value?: string | null): string {
 }
 
 export function formatMoney(snapshot?: MoneySnapshot): string {
-  if (!snapshot || !Number.isFinite(snapshot.value) || snapshot.value <= 0 || !snapshot.currency || !snapshot.asOf) {
+  if (!snapshot || !Number.isFinite(snapshot.value) || snapshot.value <= 0 || !snapshot.currency) {
     return "暂无数据";
   }
   const scale = snapshot.value >= 100_000_000 ? 100_000_000 : 1;
   const amount = snapshot.value / scale;
   const unit = scale === 100_000_000 ? "亿" : "";
-  return `${amount.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}${unit} ${snapshot.currency} · ${snapshot.asOf}`;
+  return `${amount.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}${unit} ${snapshot.currency}`;
 }
 
 export function formatRevenue(segment?: RevenueSegment): string {

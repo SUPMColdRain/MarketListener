@@ -7,7 +7,7 @@ import type { ThemeMode } from "./design/tokens";
 const theme = useThemeStore();
 const route = useRoute();
 
-const workbench = [
+const client = [
   ["/market/", "行情"],
   ["/data/", "数据"],
   ["/strategy/", "策略"],
@@ -15,8 +15,9 @@ const workbench = [
   ["/industry/", "产业链"],
 ] as const;
 
-const management = [
+const backend = [
   ["/", "首页"],
+  ["/data-sources/", "数据源"],
   ["/f10/", "F10"],
   ["/logs/", "日志"],
 ] as const;
@@ -40,19 +41,19 @@ function chooseTheme(mode: string): void {
   <el-container class="terminal">
     <el-header class="topbar">
       <router-link class="brand" to="/" data-test="brand">MarketListener</router-link>
-      <nav class="nav-group workbench-nav" aria-label="研究工作台">
-        <span class="nav-label">研究</span>
+      <nav class="nav-group workbench-nav" aria-label="客户端">
+        <span class="nav-label">客户端</span>
         <router-link
-          v-for="[path, label] in workbench"
+          v-for="[path, label] in client"
           :key="path"
           :to="path"
           :class="{ active: isActive(path) }"
         >{{ label }}</router-link>
       </nav>
-      <nav class="nav-group management-nav" aria-label="管理区">
-        <span class="nav-label">管理</span>
+      <nav class="nav-group management-nav" aria-label="后端">
+        <span class="nav-label">后端</span>
         <router-link
-          v-for="[path, label] in management"
+          v-for="[path, label] in backend"
           :key="path"
           :to="path"
           :class="{ active: isActive(path) }"

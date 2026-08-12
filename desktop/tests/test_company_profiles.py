@@ -64,6 +64,10 @@ def test_company_repository_uses_canonical_instrument_and_money_provenance(tmp_p
         "asOf": "2026-08-09T10:00:00+08:00",
         "source": "tencent_quote",
     }
+    # Historical cache records do not have a dedicated creation timestamp;
+    # their first detail fetch remains the stable fallback.
+    assert document["createdAt"] == "2026-08-09T10:00:00+08:00"
+    assert document["updatedAt"] == "2026-08-09T10:00:00+08:00"
     assert document["topRevenueSegment"]["name"] == "茅台酒"
     assert document["revenueSegments"][0]["amount"]["currency"] == "CNY"
 

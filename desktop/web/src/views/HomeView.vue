@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { formatOperation, formatStatus, formatTime } from "../domain/api";
 
 type OperationStatus = "QUEUED" | "RUNNING" | "PASS" | "PARTIAL_FAILURE" | "FAILED" | "CANCELLED";
 interface Operation { operation_id: string; kind: string; status: OperationStatus; created_at: string; detail?: string }
@@ -56,6 +57,6 @@ onMounted(() => { void refresh(); });
       <div class="metric"><span>存储字节</span><strong>{{ health.stats?.storage_bytes?.toLocaleString() ?? "—" }}</strong></div>
     </section>
     <section class="panel"><h2>受控操作</h2><div class="operation-buttons"><el-button v-for="[kind,label] in operationButtons" :key="kind" :loading="busy === kind" @click="submit(kind)">{{ label }}</el-button></div></section>
-    <section class="panel"><div class="panel-title"><h2>任务队列</h2><el-button text @click="refresh">刷新</el-button></div><el-table :data="operations" empty-text="暂无操作记录"><el-table-column prop="kind" label="操作" min-width="170" /><el-table-column prop="status" label="状态" width="150"><template #default="scope"><el-tag :type="scope.row.status === 'FAILED' ? 'danger' : scope.row.status === 'PASS' ? 'success' : 'warning'">{{ scope.row.status }}</el-tag></template></el-table-column><el-table-column prop="created_at" label="创建时间" min-width="180" /><el-table-column prop="detail" label="结果" min-width="240" /><el-table-column label="" width="80"><template #default="scope"><el-button v-if="scope.row.status === 'QUEUED'" text type="danger" @click="cancel(scope.row)">取消</el-button></template></el-table-column></el-table></section>
+    <section class="panel"><div class="panel-title"><h2>任务队列</h2><el-button text @click="refresh">刷新</el-button></div><el-table :data="operations" empty-text="暂无操作记录"><el-table-column label="操作" min-width="170"><template #default="scope">{{ formatOperation(scope.row.kind) }}</template></el-table-column><el-table-column label="状态" width="150"><template #default="scope"><el-tag :type="scope.row.status === 'FAILED' ? 'danger' : scope.row.status === 'PASS' ? 'success' : 'warning'">{{ formatStatus(scope.row.status) }}</el-tag></template></el-table-column><el-table-column label="创建时间" min-width="180"><template #default="scope">{{ formatTime(scope.row.created_at) }}</template></el-table-column><el-table-column prop="detail" label="结果" min-width="240" /><el-table-column label="" width="80"><template #default="scope"><el-button v-if="scope.row.status === 'QUEUED'" text type="danger" @click="cancel(scope.row)">取消</el-button></template></el-table-column></el-table></section>
   </section>
 </template>

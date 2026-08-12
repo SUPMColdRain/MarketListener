@@ -137,6 +137,7 @@ class CompanySummary:
     largest_revenue_segment: RevenueSegment | None = None
     products: tuple[str, ...] = ()
     source: str | None = None
+    created_at: str | None = None
     updated_at: str | None = None
 
     @property
@@ -172,6 +173,7 @@ class CompanySummary:
                 "topRevenueSegment": largest,
                 "products": list(self.products),
                 "source": self.source,
+                "createdAt": self.created_at,
                 "updatedAt": self.updated_at,
             }
         )

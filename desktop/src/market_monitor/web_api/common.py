@@ -128,9 +128,10 @@ class SilverInventory:
 
 
 _inventory_cache: dict[tuple[str, int, float], SilverInventory] = {}
+_INVENTORY_LOCK = threading.Lock()
 
 
-def load_inventory(data_root: Path, *, max_instruments: int = 1000) -> SilverInventory:
+def load_inventory(data_root: Path, *, max_instruments: int = 20_000) -> SilverInventory:
     """Read the silver parquet partitions and return a compact instrument index.
 
     The index is cached by partition fingerprint (path, file count, newest
@@ -140,37 +141,40 @@ def load_inventory(data_root: Path, *, max_instruments: int = 1000) -> SilverInv
     cached = _inventory_cache.get(key)
     if cached is not None:
         return cached
-    files = silver_partitions(data_root)
-    rows = 0
-    markets: dict[str, int] = {}
-    asset_types: dict[str, int] = {}
-    periods: set[str] = set()
-    instruments: dict[str, dict[str, Any]] = {}
-    latest_bar_at: str | None = None
-    if files:
-        try:
-            import duckdb
-
-            connection = duckdb.connect(database=":memory:")
+    # The market view starts three requests concurrently.  Let one request
+    # build the index and let the other two reuse it, rather than scanning all
+    # parquet partitions three times at once.
+    with _INVENTORY_LOCK:
+        cached = _inventory_cache.get(key)
+        if cached is not None:
+            return cached
+        files = silver_partitions(data_root)
+        rows = 0
+        periods: set[str] = set()
+        instruments: dict[str, dict[str, Any]] = {}
+        latest_bar_at: str | None = None
+        if files:
             try:
-                query = (
-                    f"SELECT instrument_id, market, asset_type, period, bar_open_time, bar_json "
-                    f"FROM read_parquet({[str(path) for path in files]!r})"
-                )
-                for instrument_id, market, asset_type, period, bar_open_time, bar_json in connection.execute(query).fetchall():
-                    rows += 1
-                    key_id = str(instrument_id)
-                    market = str(market or "")
-                    asset_type = str(asset_type or "")
-                    period = str(period or "")
-                    markets[market] = markets.get(market, 0) + 1
-                    asset_types[asset_type] = asset_types.get(asset_type, 0) + 1
-                    if period:
-                        periods.add(period)
-                    if bar_open_time and (latest_bar_at is None or str(bar_open_time) > latest_bar_at):
-                        latest_bar_at = str(bar_open_time)
-                    existing = instruments.get(key_id)
-                    if existing is None or str(bar_open_time or "") > str(existing.get("lastBarAt") or ""):
+                import duckdb
+
+                connection = duckdb.connect(database=":memory:")
+                try:
+                    source = repr([str(path) for path in files])
+                    rows, latest_bar_at, period_values = connection.execute(
+                        f"SELECT count(*), max(bar_open_time), list(DISTINCT period) "
+                        f"FROM read_parquet({source})"
+                    ).fetchone()
+                    periods = {str(value) for value in (period_values or []) if value}
+                    query = (
+                        "WITH ranked AS ("
+                        "SELECT instrument_id, market, asset_type, period, bar_open_time, bar_json, "
+                        "row_number() OVER (PARTITION BY instrument_id ORDER BY bar_open_time DESC) AS rank "
+                        f"FROM read_parquet({source})"
+                        ") SELECT instrument_id, market, asset_type, period, bar_open_time, bar_json "
+                        "FROM ranked WHERE rank = 1 ORDER BY instrument_id"
+                    )
+                    for instrument_id, market, asset_type, period, bar_open_time, bar_json in connection.execute(query).fetchall():
+                        key_id = str(instrument_id)
                         try:
                             payload = json.loads(str(bar_json))
                         except ValueError:
@@ -181,33 +185,41 @@ def load_inventory(data_root: Path, *, max_instruments: int = 1000) -> SilverInv
                             "instrumentId": key_id,
                             "symbol": str(payload.get("symbol") or ""),
                             "name": str(payload.get("name") or ""),
-                            "market": market,
-                            "assetType": asset_type,
-                            "period": period,
+                            "market": str(market or ""),
+                            "assetType": str(asset_type or ""),
+                            "period": str(period or ""),
                             "lastClose": _clean_value(payload.get("close")),
                             "lastBarAt": str(bar_open_time or ""),
                             "source": str(payload.get("source") or ""),
                             "qualityStatus": str(payload.get("quality_status") or ""),
                             "updatedAt": str(payload.get("fetched_at") or ""),
                         }
-            finally:
-                connection.close()
-        except ImportError:
-            return SilverInventory({}, 0, {}, {}, [], None, now_iso())
-        except Exception:
-            return SilverInventory({}, 0, {}, {}, [], None, now_iso())
-    ordered = dict(sorted(instruments.items())[:max_instruments])
-    inventory = SilverInventory(
-        instruments=ordered,
-        rows=rows,
-        markets=markets,
-        asset_types=asset_types,
-        periods=sorted(periods),
-        latest_bar_at=latest_bar_at,
-        generated_at=now_iso(),
-    )
-    _inventory_cache[key] = inventory
-    return inventory
+                finally:
+                    connection.close()
+            except ImportError:
+                return SilverInventory({}, 0, {}, {}, [], None, now_iso())
+            except Exception:
+                return SilverInventory({}, 0, {}, {}, [], None, now_iso())
+        ordered = dict(sorted(instruments.items())[:max_instruments])
+        markets: dict[str, int] = {}
+        asset_types: dict[str, int] = {}
+        for item in ordered.values():
+            market = str(item.get("market") or "")
+            asset_type = str(item.get("assetType") or "")
+            markets[market] = markets.get(market, 0) + 1
+            asset_types[asset_type] = asset_types.get(asset_type, 0) + 1
+        inventory = SilverInventory(
+            instruments=ordered,
+            rows=int(rows or 0),
+            markets=markets,
+            asset_types=asset_types,
+            periods=sorted(periods),
+            latest_bar_at=str(latest_bar_at) if latest_bar_at else None,
+            generated_at=now_iso(),
+        )
+        _inventory_cache.clear()
+        _inventory_cache[key] = inventory
+        return inventory
 
 
 def read_bars(

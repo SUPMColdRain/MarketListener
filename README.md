@@ -20,7 +20,7 @@
 
 正式项目计划已由 `FULL-001` 固化并独立验收通过，实时进度只看 [STATUS.md](./STATUS.md)。`FULL-002` 已建立首个 Git 回退提交并锁定工具链；`FULL-003` 的统一验证入口已由独立验收接受；`FULL-100`（Provider Contract v2）已通过全新独立验收。`FULL-101`（本地配置、日志脱敏、受控 runner 与 CLI 退出码）已完成层数无关转义归一化修复并重新进入 `REVIEW`，等待新的独立审查；详见 `STATUS.md` 与 `docs/deliveries/FULL-101.md`。
 
-2026-08-09 最新进展：Android 同步包下载/手动导入两处报错已修复并回归；行情数据为真实部分覆盖（48 标的、72,321 根 K 线），后端 `/api/health` 如实展示各市场覆盖数；`行业产业链研报/` 的 720 篇研报已跑通知识库生产流水线（717 解析、33,096 条事实、719 篇规则核验通过、1 篇待 OCR），聚合为 155 条产业链并生成 SVG 图谱页 `/industry/`（`data_control/industry/industry-map.html` 随同步包下发，Android 产业链页加载网页快照，不重读研报）。
+2026-08-12 最新进展：桌面后端已完成 A 股、港股个股和境内 ETF 的可恢复日线回填；当前本地 Silver 为 9,937 个标的、3,090,089 条 K 线（实际计数由 `/api/market/overview` 返回）。其中 A 股 7,118、港股 2,807、ETF 1,559；仍有 1 只港股与 14 只 ETF 因上游未返回可写入日线而未完成。行情页已改为 DuckDB 内聚合和最新记录索引，避免在浏览器加载时逐条解析全量 K 线。`行业产业链研报/` 的 720 篇研报已跑通知识库生产流水线（717 解析、33,096 条事实、719 篇规则核验通过、1 篇待 OCR），聚合为 155 条产业链并生成 SVG 图谱页 `/industry/`（`data_control/industry/industry-map.html` 随同步包下发，Android 产业链页加载网页快照，不重读研报）。
 
 > 正式开发口径：项目不再区分 P0/FULL 阶段；`FULL-*` 编号仅作历史任务追踪，不代表优先级或阶段。
 > 当前按 5.1–5.9 系列统一开发，完成后再集中测试、审查与验收。
@@ -71,6 +71,23 @@ desktop\.venv\Scripts\python -m market_monitor probe --config-file $env:USERPROF
 ```
 
 `probe` 总会生成 JSON 和 Markdown 报告，并输出一行机器可读 JSON：`0` 表示没有失败或阻塞，`2` 表示部分能力失败/阻塞，`3` 表示全部选定能力都因本地配置缺失而阻塞，`64` 表示参数或显式配置文件错误。没有真实凭据时，JQData 的用户名和密码分别报告为 `BLOCKED/CONFIGURATION`；该命令不把未探测来源写成成功。
+
+## 全量日线回填与本地后端
+
+全量任务会把数据写到本机的 `data_control/`，该目录及其断点状态、错误日志均被 Git 忽略。命令可安全重跑：已完成标的会从本地检查点跳过。所有页面显示时间统一为中国标准时间，格式为 `YYYY-MM-DD HH:MM:SS`。
+
+```powershell
+# A 股、港股个股日线（可选 CN / HK / BOTH）
+desktop\.venv\Scripts\python -m market_monitor bulk-stocks --data-root data_control --market BOTH --workers 4
+# 境内 ETF 日线
+desktop\.venv\Scripts\python -m market_monitor bulk-etfs --data-root data_control --workers 4
+# 同花顺市场宽度与指数快照；受站点反爬/登录策略影响可能部分完成
+desktop\.venv\Scripts\python -m market_monitor ths-market --data-root data_control
+# 启动仅本机可访问的网页后端
+desktop\.venv\Scripts\python -m market_monitor serve --data-root data_control --host 127.0.0.1 --port 8765 --quiet
+```
+
+访问 `http://127.0.0.1:8765/`。行情页会显示本地实际覆盖，数据源页会展示来源、周期、字段完整度及本地路由配置；它们不在页面请求时抓取第三方数据。
 
 ## 研报知识库与产业链图谱
 

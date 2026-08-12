@@ -104,11 +104,11 @@ def _combine(bars: Sequence[Mapping[str, Any]], period_minutes: int, expected_en
             "bar_open_time": first["bar_open_time"],
             "bar_close_time": last["bar_close_time"],
             "open": first["open"],
-            "high": max(float(bar["high"]) for bar in bars),
-            "low": min(float(bar["low"]) for bar in bars),
+            "high": _max_optional(bars, "high"),
+            "low": _min_optional(bars, "low"),
             "close": last["close"],
-            "volume": sum(float(bar.get("volume", 0)) for bar in bars),
-            "amount": sum(float(bar.get("amount", 0)) for bar in bars),
+            "volume": _sum_optional(bars, "volume"),
+            "amount": _sum_optional(bars, "amount"),
             "open_interest": last.get("open_interest"),
             "session_rule_version": rule_version,
             "is_partial": _parse(str(last["bar_close_time"])) < expected_end,
@@ -127,11 +127,11 @@ def _combine_daily(bars: Sequence[Mapping[str, Any]], output_period: str) -> dic
             "bar_open_time": first["bar_open_time"],
             "bar_close_time": last["bar_close_time"],
             "open": first["open"],
-            "high": max(float(bar["high"]) for bar in bars),
-            "low": min(float(bar["low"]) for bar in bars),
+            "high": _max_optional(bars, "high"),
+            "low": _min_optional(bars, "low"),
             "close": last["close"],
-            "volume": sum(float(bar.get("volume", 0)) for bar in bars),
-            "amount": sum(float(bar.get("amount", 0)) for bar in bars),
+            "volume": _sum_optional(bars, "volume"),
+            "amount": _sum_optional(bars, "amount"),
             "open_interest": last.get("open_interest"),
             "aggregated_from": "1d",
             "aggregation_rule_version": 1,
@@ -139,6 +139,31 @@ def _combine_daily(bars: Sequence[Mapping[str, Any]], output_period: str) -> dic
         }
     )
     return output
+
+
+def _numeric(value: object) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sum_optional(bars: Sequence[Mapping[str, Any]], field: str) -> float | None:
+    """Do not turn an unavailable upstream metric into a synthetic zero."""
+    values = [_numeric(bar.get(field)) for bar in bars]
+    return sum(values) if values and all(value is not None for value in values) else None
+
+
+def _max_optional(bars: Sequence[Mapping[str, Any]], field: str) -> float | None:
+    values = [_numeric(bar.get(field)) for bar in bars]
+    return max(values) if values and all(value is not None for value in values) else None
+
+
+def _min_optional(bars: Sequence[Mapping[str, Any]], field: str) -> float | None:
+    values = [_numeric(bar.get(field)) for bar in bars]
+    return min(values) if values and all(value is not None for value in values) else None
 
 
 def _trading_day_for_bar(

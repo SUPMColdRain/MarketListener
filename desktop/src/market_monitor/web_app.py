@@ -28,12 +28,13 @@ from .package_builder import latest_package_info
 from .operations import OperationKind, OperationManager
 from .web_api import dashboard as dashboard_api
 from .web_api import market as market_api
+from .web_api import sources as sources_api
 from .web_api import stats as stats_api
 from .web_api import strategy as strategy_api
 from .web_api import watchlist as watchlist_api
 
 
-_WEB_ROUTES = {"/", "/market/", "/data/", "/strategy/", "/stats/", "/f10/", "/industry/", "/logs/"}
+_WEB_ROUTES = {"/", "/market/", "/data/", "/strategy/", "/stats/", "/f10/", "/industry/", "/logs/", "/data-sources/"}
 _LOOPBACK_HOSTS = {"127.0.0.1", "::1"}
 
 
@@ -58,6 +59,7 @@ def create_web_app(
     app = FastAPI(title="MarketListener Local Research Terminal", docs_url=None, redoc_url=None)
     app.state.data_root = root
     app.include_router(market_api.router)
+    app.include_router(sources_api.router)
     app.include_router(watchlist_api.router)
     app.include_router(strategy_api.router)
     app.include_router(stats_api.router)

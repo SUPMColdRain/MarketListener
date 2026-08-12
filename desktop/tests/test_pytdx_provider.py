@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from market_monitor.providers import AssetType, CapabilityStatus, ErrorCategory, Market, ProviderError
-from market_monitor.providers.pytdx import TdxProvider
+from market_monitor.providers.pytdx import TdxProvider, _iso_datetime
 
 
 class FakeTdxApi:
@@ -114,8 +114,8 @@ def test_bars_are_normalised() -> None:
             "open_interest": None,
         }
     ]
-    assert result.earliest == "2026-08-07"
-    assert result.latest == "2026-08-07"
+    assert result.earliest == "2026-08-07T00:00:00+08:00"
+    assert result.latest == "2026-08-07T00:00:00+08:00"
 
 
 def test_empty_bars_raise_no_coverage() -> None:
@@ -153,3 +153,8 @@ def test_configure_overrides_servers() -> None:
 
     assert ("10.0.0.1", 7709) in provider._servers
     assert ("10.0.0.2", 7709) in provider._servers
+
+
+def test_corrupted_tdx_calendar_date_is_rejected_before_capability_persistence() -> None:
+    with pytest.raises(ValueError):
+        _iso_datetime("6427-90-45")

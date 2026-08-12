@@ -9,6 +9,8 @@ from pathlib import Path
 
 from market_monitor import __version__
 from market_monitor.collector import run_fetch_session
+from market_monitor.full_market import run_full_etf_backfill, run_full_stock_backfill
+from market_monitor.ths_market import run_ths_market_snapshot
 from market_monitor.configuration import ConfigurationError, load_local_configuration
 from market_monitor.f10 import f10_status, run_f10_fetch, run_revenue_fetch
 from market_monitor.industry_graph.f10.enrichment import enrich_batch
@@ -64,6 +66,20 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--limit-cn-stocks", type=int, default=5, help="number of CN stocks to fetch as samples")
     fetch.add_argument("--max-workers", type=int, default=4, help="concurrent fetch workers")
     fetch.add_argument("--task-timeout-seconds", type=float, default=90.0, help="per-task wall-clock timeout")
+    bulk_stocks = subcommands.add_parser("bulk-stocks", help="resumable full A/H-share daily-bar backfill")
+    bulk_stocks.add_argument("--data-root", type=Path, default=Path("data_control"))
+    bulk_stocks.add_argument("--market", choices=["CN", "HK", "BOTH"], default="BOTH")
+    bulk_stocks.add_argument("--history-days", type=int, default=450, help="calendar days to fetch per stock")
+    bulk_stocks.add_argument("--workers", type=int, default=4, help="rate-limited concurrent requests (1-4)")
+    bulk_stocks.add_argument("--batch-size", type=int, default=20, help="durable checkpoint interval")
+    bulk_stocks.add_argument("--pause-seconds", type=float, default=0.3, help="per-worker pause after each request")
+    bulk_etfs = subcommands.add_parser("bulk-etfs", help="resumable full domestic ETF daily-bar backfill")
+    bulk_etfs.add_argument("--data-root", type=Path, default=Path("data_control"))
+    bulk_etfs.add_argument("--workers", type=int, default=4)
+    bulk_etfs.add_argument("--batch-size", type=int, default=20)
+    bulk_etfs.add_argument("--pause-seconds", type=float, default=0.2)
+    ths = subcommands.add_parser("ths-market", help="collect THS market breadth and CSI index snapshots")
+    ths.add_argument("--data-root", type=Path, default=Path("data_control"))
     f10 = subcommands.add_parser("f10", help="fetch A/H share F10 basics (throttled, resumable)")
     f10.add_argument("--data-root", type=Path, default=Path("data_control"))
     f10.add_argument("--market", default="CN", choices=["CN", "HK"], help="CN or HK listed companies")
@@ -137,6 +153,12 @@ def main(argv: list[str] | None = None) -> int:
             return _serve(args)
         if args.command == "fetch":
             return _fetch(args)
+        if args.command == "bulk-stocks":
+            return _bulk_stocks(args)
+        if args.command == "bulk-etfs":
+            return _bulk_etfs(args)
+        if args.command == "ths-market":
+            return _ths_market(args)
         if args.command == "f10":
             return _f10(args)
         if args.command == "package":
@@ -216,6 +238,37 @@ def _fetch(args: argparse.Namespace) -> int:
         ),
     )
     return exit_code
+
+
+def _bulk_stocks(args: argparse.Namespace) -> int:
+    summary = run_full_stock_backfill(
+        args.data_root,
+        market=args.market,
+        history_days=args.history_days,
+        workers=args.workers,
+        batch_size=args.batch_size,
+        pause_seconds=args.pause_seconds,
+    )
+    success = summary["状态"] == "完成"
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    _emit("SUCCESS" if success else "PARTIAL_FAILURE", EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE, message="全量个股日线抓取结束")
+    return EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE
+
+
+def _bulk_etfs(args: argparse.Namespace) -> int:
+    summary = run_full_etf_backfill(args.data_root, workers=args.workers, batch_size=args.batch_size, pause_seconds=args.pause_seconds)
+    success = summary["状态"] == "完成"
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    _emit("SUCCESS" if success else "PARTIAL_FAILURE", EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE, message="全量ETF日线抓取结束")
+    return EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE
+
+
+def _ths_market(args: argparse.Namespace) -> int:
+    summary = run_ths_market_snapshot(args.data_root)
+    success = summary["状态"] == "完成"
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    _emit("SUCCESS" if success else "PARTIAL_FAILURE", EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE, message="同花顺市场宽度与指数快照任务结束")
+    return EXIT_SUCCESS if success else EXIT_PARTIAL_FAILURE
 
 
 def _f10(args: argparse.Namespace) -> int:

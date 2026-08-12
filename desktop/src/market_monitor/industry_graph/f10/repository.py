@@ -109,7 +109,17 @@ def company_detail_from_record(record: Mapping[str, Any]) -> CompanyDetail | Non
         return None
     instrument_key = _instrument_key(market, code)
     currency = "HKD" if market == "HK" else "CNY"
-    updated_at = _clean_text(record.get("fetched_at")) or _clean_text(record.get("detail_fetched_at"))
+    created_at = (
+        _clean_text(record.get("created_at"))
+        or _clean_text(record.get("detail_created_at"))
+        or _clean_text(record.get("detail_fetched_at"))
+        or _clean_text(record.get("fetched_at"))
+    )
+    updated_at = (
+        _clean_text(record.get("enriched_at"))
+        or _clean_text(record.get("fetched_at"))
+        or _clean_text(record.get("detail_fetched_at"))
+    )
     source = _clean_text(record.get("source")) or "local_f10_cache"
     quote_as_of = _clean_text(record.get("quote_as_of")) or _clean_text(record.get("quote_time")) or updated_at
     quote_source = _clean_text(record.get("quote_source")) or "tencent_quote"
@@ -145,6 +155,7 @@ def company_detail_from_record(record: Mapping[str, Any]) -> CompanyDetail | Non
         largest_revenue_segment=_top_revenue_segment(revenue_segments),
         products=products,
         source=source,
+        created_at=created_at,
         updated_at=updated_at,
     )
     return CompanyDetail(

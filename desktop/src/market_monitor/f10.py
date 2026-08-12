@@ -816,10 +816,13 @@ def run_f10_fetch(
    for index, code in enumerate(pending[:limit_details], start=1):
        try:
            record = fetch_company_survey(code, market=market_key, quote=quotes.get(code))
+           fetched_at = _now()
+           previous = existing.get(code, {})
            record.update(
                {
                    "market": market_key,
-                   "detail_fetched_at": _now(),
+                   "created_at": previous.get("created_at") or previous.get("detail_fetched_at") or fetched_at,
+                   "detail_fetched_at": fetched_at,
                    "quote": (quotes.get(code) and {
                        "total_market_cap_yi": quotes[code].total_market_cap_yi,
                        "float_market_cap_yi": quotes[code].float_market_cap_yi,

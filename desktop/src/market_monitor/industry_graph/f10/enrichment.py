@@ -466,6 +466,7 @@ def enrich_one(
         "marketCapMissing": cap_reasons or {},
     }
     merged[_MARKER_KEY] = marker
+    merged.setdefault("created_at", merged.get("detail_fetched_at") or fetched_at)
     merged["enriched_at"] = fetched_at
     merged["source"] = merged.get("source") or "eastmoney_f10 + multi_source"
     with _PERSIST_LOCK:

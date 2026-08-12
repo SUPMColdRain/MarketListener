@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { apiGet, apiPost, formatNumber, formatTime } from "../domain/api";
+import { apiGet, apiPost, formatNumber, formatStatus, formatTime } from "../domain/api";
 
 interface StrategyDefinition {
   strategyId: string;
@@ -187,7 +187,7 @@ onMounted(() => void load());
           <h3>运行结果</h3>
           <el-descriptions :column="2" size="small" border>
             <el-descriptions-item label="Run ID">{{ runResult.report?.runId || "暂无数据" }}</el-descriptions-item>
-            <el-descriptions-item label="状态">{{ runResult.report?.status || "暂无数据" }}</el-descriptions-item>
+            <el-descriptions-item label="状态">{{ formatStatus(runResult.report?.status) }}</el-descriptions-item>
             <el-descriptions-item label="标的数">{{ formatNumber(runResult.report?.instrumentCount, 0) }}</el-descriptions-item>
             <el-descriptions-item label="信号数">{{ formatNumber(runResult.report?.totalSignals, 0) }}</el-descriptions-item>
           </el-descriptions>
@@ -209,7 +209,7 @@ onMounted(() => void load());
         <el-table-column prop="runId" label="Run ID" min-width="150" />
         <el-table-column prop="strategyId" label="策略" min-width="140" />
         <el-table-column prop="status" label="状态" width="110">
-          <template #default="scope"><el-tag size="small" :type="statusType(scope.row.status)">{{ scope.row.status }}</el-tag></template>
+          <template #default="scope"><el-tag size="small" :type="statusType(scope.row.status)">{{ formatStatus(scope.row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="instrumentCount" label="标的数" width="90" align="right" />
         <el-table-column prop="signalCount" label="信号数" width="90" align="right" />

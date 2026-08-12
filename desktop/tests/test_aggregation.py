@@ -96,3 +96,19 @@ def test_daily_aggregation_rejects_unknown_period():
         assert "output_period" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("expected ValueError")
+
+
+def test_optional_fields_remain_null_when_any_input_is_missing():
+    rows = [
+        minute("2026-08-03T09:30:00+08:00", "2026-08-03T09:45:00+08:00", close=100),
+        minute("2026-08-03T09:45:00+08:00", "2026-08-03T10:00:00+08:00", close=101),
+    ]
+    rows[1]["volume"] = None
+    rows[1]["amount"] = None
+    rows[1]["high"] = None
+    rows[1]["low"] = None
+    result = aggregate_bars(rows, 60, "CN_STOCK")
+    assert result[0]["volume"] is None
+    assert result[0]["amount"] is None
+    assert result[0]["high"] is None
+    assert result[0]["low"] is None

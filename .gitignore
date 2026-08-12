@@ -49,6 +49,19 @@ Thumbs.db
 data_control/
 data_control_old_20260808/
 desktop/*.log
+desktop-backend*.log
+# Resumable full-market / F10 collection state and local diagnostic exports.
+*_backfill_state.json
+*_backfill_errors.jsonl
+f10_*_state.json
+f10_*_errors.jsonl
+ths_ctx.txt
+ths_dict.txt
+ths_fixed_out.txt
+ths_labels.txt
+ths_op_out.txt
+ths_out.txt
+ths_repr.txt
 android/gradle_build_*.log
 android/gradle_build_*.err.log
 android/gradle_final_*.log

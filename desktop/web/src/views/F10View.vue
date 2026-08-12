@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CompanyDetailPanel from "../components/CompanyDetailPanel.vue";
 import { formatMoney, type CompanyDetail, type CompanyPage, type CompanySummary } from "../domain/company";
+import { formatTime } from "../domain/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -82,7 +83,7 @@ onMounted(() => {
           <el-table-column prop="name" label="企业" min-width="138"><template #default="scope"><strong>{{ scope.row.name }}</strong><small>{{ scope.row.code }} · {{ scope.row.market }}</small></template></el-table-column>
           <el-table-column prop="industry" label="行业" min-width="128" />
           <el-table-column label="总市值" min-width="175"><template #default="scope">{{ formatMoney(scope.row.totalMarketCap) }}</template></el-table-column>
-          <el-table-column prop="updatedAt" label="更新日期" min-width="150" />
+          <el-table-column label="更新时间" min-width="170"><template #default="scope">{{ formatTime(scope.row.updatedAt) }}</template></el-table-column>
         </el-table>
       </section>
       <section class="panel detail-panel" v-loading="detailLoading">

@@ -9,6 +9,7 @@ setting (comma-separated host:port pairs).
 from __future__ import annotations
 
 import os
+from datetime import date
 from typing import Any, Callable, Mapping, Sequence
 
 from .base import (
@@ -126,8 +127,8 @@ class TdxProvider(Provider):
             dates = [str(row["date"]) for row in records]
             return FetchResult(
                 records=records,
-                earliest=min(dates),
-                latest=max(dates),
+                earliest=_iso_datetime(min(dates)),
+                latest=_iso_datetime(max(dates)),
                 detail=f"TDX {host} 600519 daily bars",
             )
         finally:
@@ -352,4 +353,7 @@ def _normalise_bar(row: Mapping[str, Any], market: int, code: str) -> Mapping[st
 
 def _iso_datetime(bar_date: str) -> str:
     """TDX bars only carry a calendar date; treat it as an Asia/Shanghai midnight."""
-    return f"{bar_date}T00:00:00+08:00"
+    # Some public TDX hosts occasionally return a corrupted calendar tuple.
+    # Reject it here so invalid evidence cannot enter a capability report.
+    value = date.fromisoformat(bar_date)
+    return f"{value.isoformat()}T00:00:00+08:00"

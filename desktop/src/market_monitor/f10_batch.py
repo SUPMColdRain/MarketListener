@@ -37,7 +37,9 @@ def run(market: str, limit: int, delay: float, data_root: str = "../data_control
             try:
                 record = fetch_company_survey(code, market=market)
                 record["market"] = market
-                record["detail_fetched_at"] = _now()
+                fetched_at = _now()
+                record["created_at"] = fetched_at
+                record["detail_fetched_at"] = fetched_at
                 _append_jsonl(_record_path(root, market, "details"), record)
                 fetched += 1
                 done_codes.add(code)

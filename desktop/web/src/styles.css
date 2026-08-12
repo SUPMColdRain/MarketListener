@@ -329,6 +329,18 @@ code {
   gap: 16px;
   align-items: start;
 }
+
+.data-source-panel { margin-top: 16px; }
+.data-source-panel h2 { margin: 0 0 12px; font-size: 16px; }
+.market-groups { margin: 16px 0; }
+.panel-heading h2 { margin: 0 0 4px; font-size: 16px; }
+.group-title { display: flex; gap: 10px; align-items: baseline; }
+.group-title span, .group-details { color: var(--el-text-color-secondary); font-size: 12px; }
+.group-details { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 4px 0; }
+.source-routing { display: grid; gap: 6px; min-width: 280px; }
+.source-routing .el-select { width: 100%; }
+.custom-source { display: flex; gap: 6px; }
+.custom-source .el-input { min-width: 0; }
 .market-table-panel, .chart-panel { min-width: 0; }
 .chart-heading {
   display: flex;

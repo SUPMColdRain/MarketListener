@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "./views/HomeView.vue";
 import DataView from "./views/DataView.vue";
+import DataSourcesView from "./views/DataSourcesView.vue";
 import F10View from "./views/F10View.vue";
 import IndustryView from "./views/IndustryView.vue";
 import LogsView from "./views/LogsView.vue";
@@ -14,6 +15,7 @@ export default createRouter({
     { path: "/", component: HomeView },
     { path: "/market/", component: MarketView },
     { path: "/data/", component: DataView },
+    { path: "/data-sources/", component: DataSourcesView },
     { path: "/strategy/", component: StrategyView },
     { path: "/stats/", component: StatsView },
     { path: "/f10/", component: F10View },

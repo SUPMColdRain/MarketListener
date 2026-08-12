@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatMoney, formatRevenue, textOrNone, type CompanyDetail } from "../domain/company";
+import { formatTime } from "../domain/api";
 
 defineProps<{ company: CompanyDetail }>();
 </script>
@@ -27,7 +28,9 @@ defineProps<{ company: CompanyDetail }>();
         <template v-if="company.products?.length"><el-tag v-for="product in company.products" :key="product" class="product-tag">{{ product }}</el-tag></template>
         <template v-else>暂无数据</template>
       </el-descriptions-item>
-      <el-descriptions-item label="F10 来源 / 更新时间">{{ textOrNone(company.source) }} · {{ textOrNone(company.updatedAt) }}</el-descriptions-item>
+      <el-descriptions-item label="F10 来源">{{ textOrNone(company.source) }}</el-descriptions-item>
+      <el-descriptions-item label="F10 数据创建时间">{{ formatTime(company.createdAt) }}</el-descriptions-item>
+      <el-descriptions-item label="F10 数据更新时间">{{ formatTime(company.updatedAt) }}</el-descriptions-item>
       <el-descriptions-item label="产业链定位"><template v-if="company.chainLocations?.length"><el-tag v-for="location in company.chainLocations" :key="`${location.chain}-${location.stage}-${location.node}`" class="product-tag">{{ [location.chain, location.stage, location.node].filter(Boolean).join(' / ') }}</el-tag></template><template v-else>暂无数据</template></el-descriptions-item>
     </el-descriptions>
     <section class="revenue-section">
@@ -35,7 +38,7 @@ defineProps<{ company: CompanyDetail }>();
       <el-table v-if="company.revenueSegments?.length" :data="company.revenueSegments" size="small">
         <el-table-column prop="name" label="业务" min-width="150" />
         <el-table-column label="占比" width="100"><template #default="scope">{{ typeof scope.row.ratio === 'number' ? `${(scope.row.ratio * 100).toFixed(1)}%` : '暂无数据' }}</template></el-table-column>
-        <el-table-column label="金额与日期" min-width="180"><template #default="scope">{{ formatMoney(scope.row.amount) }}</template></el-table-column>
+        <el-table-column label="金额" min-width="180"><template #default="scope">{{ formatMoney(scope.row.amount) }}</template></el-table-column>
       </el-table>
       <p v-else class="muted">暂无结构化收入构成。</p>
     </section>
