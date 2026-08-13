@@ -6,7 +6,7 @@ __pycache__/
 *.egg-info/
 artifacts/
 reports/
-data/
+/data/
 
 # Local environment and secrets
 .env
