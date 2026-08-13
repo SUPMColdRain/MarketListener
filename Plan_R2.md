@@ -82,26 +82,26 @@
 - `验收标准`：每个候选均有证据与结论；`测试要求`：许可/官方文档/实际探针审计；`输出规范`：不得复制无许可证代码或私人代理；`风险`：外部条款变化；`回滚方案`：文档/注册表独立回退。
 - `实际修改文件`：`docs/DATA_SOURCE_CAPABILITY_MATRIX.md`；`验证命令`：候选 URL 只读抓取与现有 adapter 审计；`验证结果`：AData 页面抓取 404，GitHub Topic 仅发现入口，mootdx/easy_tdx 未完成许可/真实探针；JoinQuant/Tushare 缺本机授权，任务保持 BLOCKED；`遗留问题`：需要合法来源条款与账号/Token 后再提升。
 
-### R2-T007 — Windows 可携带后端网页发行包与 GitHub Actions
+### R2-T007 — Windows 可携带后端网页发行包与 GitHub Actions（已撤销）
 
-- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：DONE；`failure_count`：1；`来源`：R2 总指令。
+- `type`：发布工程；`priority`：P1；`执行对象/模块`：PyInstaller/启动器、Vue dist、workflow、README、`.gitignore`；`state`：CANCELLED；`failure_count`：1；`来源`：R2 总指令；`撤销原因`：2026-08-13 用户明确不需要 Windows 便携版。
 - `现状/问题`：当前需要开发环境运行；没有 GitHub Actions 或 Windows 可下载包。
 - `目标`：生成 `MarketListener-Windows-x64-<version>.zip`，双击启动并自动打开 localhost，外置可写 data/log/config，Actions 构建、校验、烟雾测试、artifact/tag release。
 - `影响范围`：构建脚本、CI、发行说明；`依赖关系`：R2-T002；`前置条件`：审计打包依赖和静态资源路径。
 - `实施方案`：默认只监听 127.0.0.1，不打入数据/凭据；Windows runner 构建前端与 Python bundle，启动后验证 `/` 和 `/api/health`。
 - `验收标准`：workflow_dispatch 可执行、zip/sha256 产出、smoke test 通过。
 - `测试要求`：本地或 CI Windows package smoke；`输出规范`：升级/迁移说明；`风险`：PyInstaller 隐式依赖；`回滚方案`：独立 workflow/打包目录。
-- `实际修改文件`：`.github/workflows/windows-portable.yml`、`scripts/build_windows_portable.ps1`、`README.md`、`.gitignore`；`验证命令`：`scripts/build_windows_portable.ps1`、便携 EXE `serve --timeout-seconds 1`、GitHub Actions runs `31624423028`、`31625230417`、`31651052390`、`31651716726`；`验证结果`：本机已生成 `dist/MarketListener-Windows-x64-0.1.1.zip` 与 SHA256，最新 EXE 成功以 `127.0.0.1` 随机端口启动并退出；连续 Actions 均已成功，CI 构建、zip、启动 EXE、`/` 和 `/api/health` smoke 全通过。`31651716726` 已在提交 `9e153d2` 上成功完成。最初后台启动命令受环境策略拦截，`failure_count=1`，已用 CLI 短时服务验证修正；`遗留问题`：无。
+- `历史结果`：便携版曾完成本机和 GitHub Actions 验证；现已删除 workflow、构建脚本、PyInstaller 中间目录、本地发行目录和 README 使用入口，不再维护或发布 Windows 便携包。
 
 ### R2-T008 — R2 统一回归、安全审查与发布
 
 - `type`：质量与交付；`priority`：P0；`执行对象/模块`：全仓库、CI、Git；`state`：DONE；`failure_count`：0；`来源`：R2 总指令、R1-T009。
 - `现状/问题`：R2 会跨前后端、数据和打包改动，需统一验证和泄漏审查。
-- `目标`：运行现有统一验证、专项测试、构建、页面/API/package smoke、安全扫描；仅提交 R2 路径并推送。
+- `目标`：运行现有统一验证、专项测试、构建、页面/API 与安全扫描；仅提交 R2 路径并推送。
 - `影响范围`：全部 R2 变更；`依赖关系`：R2-T001 至 R2-T007；`前置条件`：实现完成或外部阻塞证据完整。
 - `实施方案`：检查 Git diff、ignored files、凭据模式、Actions；不重置、不强推、不合并 PR。
 - `验收标准`：命令与结果记录；Actions 成功或外部 BLOCKED 有证据。
-- `测试要求`：`scripts/verify.ps1`、pytest、ruff、Vue build/E2E、package smoke、适用 Android；`输出规范`：最终报告；`风险`：环境/CI 外部失败；`回滚方案`：按提交回退。
+- `测试要求`：`scripts/verify.ps1`、pytest、ruff、Vue build/E2E、适用 Android；`输出规范`：最终报告；`风险`：环境/CI 外部失败；`回滚方案`：按提交回退。
 - `实际修改文件`：全部本轮 R2 文件；`验证命令`：`scripts/verify.ps1`、定向 pytest、`npm run build`、`npm run test:e2e`、`git diff --check`、GitHub Actions REST 查询；`验证结果`：FULL-003 统一验证通过（锁定依赖、Ruff、完整桌面 pytest、Android lint/单测/APK）；在提交 `9e153d2` 上复验：`pip check`、Ruff、525 项桌面 pytest、Android lint/单测/APK 均通过，且临时盘符已清理；前端构建和 14 项 Playwright 端到端测试通过，Git security diff 审查未发现新增凭据/数据库/构建产物；最新 Windows Action `31651716726` 成功。`gh` 未安装，但已通过 GitHub REST 读取 Actions 状态；`遗留问题`：无。
 
 ### R2-T009 — 历史外部验收与领域欠账审计

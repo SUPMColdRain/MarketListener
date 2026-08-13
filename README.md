@@ -76,6 +76,19 @@ desktop\.venv\Scripts\python -m market_monitor probe --config-file $env:USERPROF
 
 全量任务会把数据写到本机的 `data_control/`，该目录及其断点状态、错误日志均被 Git 忽略。命令可安全重跑：已完成标的会从本地检查点跳过。所有页面显示时间统一为中国标准时间，格式为 `YYYY-MM-DD HH:MM:SS`。
 
+### 本地数据存储
+
+本项目采用分层混合存储，而不是把所有内容放进单一数据库：
+
+- `catalog.duckdb`：DuckDB 目录库，保存采集运行、分区登记、数据集定义和 Gold 派生指标，并直接查询 Silver Parquet。
+- `silver/**/*.parquet`：A 股、港股、ETF、指数和期货等标准化行情；按市场、资产类型、周期和年份分区。
+- `bronze/**/*.json`、`f10/**/*.jsonl`：上游原始响应、F10 明细、收入构成及可恢复采集记录。
+- `personal/*.json[l]`、`logs/*.jsonl`：自选、仪表盘、台账和追加式事件日志。
+- SQLite：只用于 Android 同步包 `payload.sqlite`、包台账和部分任务检查点，不是电脑端行情主库。
+- 浏览器 IndexedDB：只保存网页查询缓存，不是权威业务数据源。
+
+`data_control` 出现在仓库根目录，是因为 CLI 的 `--data-root data_control` 使用相对路径；相对路径按启动命令的当前工作目录解析。这是本地开发时期形成的运行约定，并非 DuckDB 或 Parquet 的限制。所有采集和后端命令都可以改传仓库外的绝对路径，例如 `D:\MarketListenerData`。迁移已有数据时，采集、后端、定时任务和脚本必须统一切换到同一个绝对路径，不能只移动目录。
+
 ```powershell
 # A 股、港股个股日线（可选 CN / HK / BOTH）
 desktop\.venv\Scripts\python -m market_monitor bulk-stocks --data-root data_control --market BOTH --workers 4
@@ -88,18 +101,6 @@ desktop\.venv\Scripts\python -m market_monitor serve --data-root data_control --
 ```
 
 访问 `http://127.0.0.1:8765/`。行情页会显示本地实际覆盖，数据源页会展示来源、周期、字段完整度及本地路由配置；它们不在页面请求时抓取第三方数据。
-
-## Windows 非开发环境运行
-
-GitHub Actions 的 **Windows portable package** 会生成 `MarketListener-Windows-x64-<version>.zip`。下载、解压并双击 `启动网页.cmd` 即可；程序默认仅监听 `127.0.0.1:8765`，随后打开浏览器。用户数据、日志和空数据库初始化均位于 `%LOCALAPPDATA%\MarketListener\data`，不会写入压缩包目录，也不会随升级包覆盖。首次启动没有行情数据时会显示真实空状态。
-
-开发者可在 Windows 本机生成同一结构的包：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_windows_portable.ps1 -Version 0.1.0
-```
-
-发布包不包含 `data_control/`、`.env`、Cookie、Token、私钥或付费 SDK 凭据。升级时保留 `%LOCALAPPDATA%\MarketListener\data`，只替换程序文件即可。
 
 ## 研报知识库与产业链图谱
 
